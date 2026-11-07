@@ -1,7 +1,7 @@
 # Workspace check contract
 
 Owner: alm. Rust-OE source: `19e4133c0461129b0f5fdb286abd7b87511242e2`.
-The [full audit](../docs/rust-oe-full-audit.md) owns the current applicability
+The [full audit](../docs/maintainers/rust-oe-full-audit.md) owns the current applicability
 assessment and open obligations; the adoption record retains selection history.
 
 ## Selected configuration
@@ -40,9 +40,9 @@ Historical schema-2 campaigns retain their original scope without retroactively
 claiming a compiler identity they did not record.
 Fresh campaigns and retries also pass `--jobs=2` to each Cargo build, in addition
 to the two mutant workers. This is an explicit compilation bound, not a cure for
-host launch failures. The [combined review](../docs/rust-oe-current-review.md)
+host launch failures. The [combined review](../docs/maintainers/rust-oe-current-review.md)
 records the failed Mac gate and pre-harness launch stalls. The subsequent
-[Linux verification](../docs/rust-oe-linux-verification.md) closes L01 with a fresh
+[Linux verification](../docs/maintainers/rust-oe-linux-verification.md) closes L01 with a fresh
 complete 790-case run and independent reviews against unchanged inputs/policy.
 Its 12 reviewed timeouts and one resource-killed reviewed loop remain distinct
 from failing tests and uncompilable cases; the earlier failures retain their scope.
@@ -69,9 +69,9 @@ failed, cancelled, or skipped prerequisites. Main-branch protection must require
 that status to make it a merge gate. The 2026-11-06 public API snapshot confirms
 unprotected `main`, no repository/parent rulesets and no applicable branch rules;
 the configured status is not currently enforced. The
-[Linux/forge verification record](../docs/rust-oe-linux-verification.json) retains
+[Linux/forge verification record](../docs/maintainers/evidence/rust-oe-linux-verification.json) retains
 those responses. This local change does not modify GitHub settings.
-The [rule evidence pass](../docs/rust-oe-closure.md) maps the latest boundary
+The [rule evidence pass](../docs/maintainers/rust-oe-closure.md) maps the latest boundary
 repairs to code and regressions; earlier adherence records retain their scope.
 Native test/doctest jobs cover Linux aarch64, macOS x86_64/aarch64, and Windows
 x86_64 with explicit target triples. These match the five distributed release
@@ -100,7 +100,7 @@ format/CPU and native runner, usable help, a typed known-cycle witness, and an
 unchanged binary digest across smoke commands. Collection independently checks
 downloaded format/CPU, recorded version/runner, inventory, identity and hashes.
 These unsigned schema-2 records do not verify a complete ABI or establish
-independent provenance; see the [release runbook](../docs/maintainer-runbook.md).
+independent provenance; see the [release runbook](../docs/maintainers/maintainer-runbook.md).
 
 ## Lint policy and exceptions
 
@@ -113,7 +113,7 @@ type-complexity allowances have been removed. The documented compiler-visibility
 conflict and local quota/concurrency exceptions remain narrow and justified.
 Tests permit expect/unwrap/panic and indexing; helpers retain explicit reasons.
 Passing Clippy is not a semantic code review. See the current
-[engineering record](../docs/quality-engineering.md) for tool scope and evidence.
+[engineering record](../docs/maintainers/quality-engineering.md) for tool scope and evidence.
 
 ## Boundary and failure policy
 
@@ -174,7 +174,8 @@ rather than by review alone (Rust-OE TEST rules at
 - The generator also covers `.mts`/`.cts`/`.mjs`/`.cjs` sources, `--extensions`
   and YAML extension overrides, tsconfig `extends` through `node_modules`
   packages (file paths, `tsconfig` fields, `exports` maps, subpaths and
-  conditions), byte-order marks with CRLF, case-variant specifiers (resolved by
+  conditions), type-only imports with `--skip-type-imports` and YAML
+  overrides, byte-order marks with CRLF, case-variant specifiers (resolved by
   the host filesystem's rules), and on Windows `\` spellings of operands and
   excludes. CI's `differential` job runs 1,000 cases on Linux and Windows and
   uploads shrunk failures.
@@ -205,8 +206,8 @@ CC_x86_64_pc_windows_gnu=$T/zigcc AR_x86_64_pc_windows_gnu="$T/zig ar" \
 
 ## Verification and remaining scope
 
-[Current control evidence](../docs/rust-oe-combined-controls.json) comes from
-`python3 scripts/verify-controls.py --boundaries --output docs/rust-oe-combined-controls.json`
+[Current control evidence](../docs/maintainers/evidence/rust-oe-combined-controls.json) comes from
+`python3 scripts/verify-controls.py --boundaries --output docs/maintainers/evidence/rust-oe-combined-controls.json`
 with Python 3.11+. It runs real xtask commands in disposable
 copies for passing, injected formatting/lock/doctest/unsafe-operation failures,
 and repaired cases. Unsafe probes are compiled only and never called; production
@@ -230,8 +231,8 @@ The CLI shares finite aggregate quotas and uses iterative graph traversal;
 small graphs, and deep graphs on a small stack. Counters bound admissions and
 logical work rather than exact process RSS or elapsed time. Native parsing and
 filesystem operations are not preempted. Hosted hostile-repository scanning still
-needs OS resource limits and isolation. The [verification record](../docs/verification.md) selects owned configuration
-and native syntax fuzz pilots. The [engineering tool record](../docs/quality-engineering.md)
+needs OS resource limits and isolation. The [verification record](../docs/maintainers/verification.md) selects owned configuration
+and native syntax fuzz pilots. The [engineering tool record](../docs/maintainers/quality-engineering.md)
 adds required CRAP and Miri CI jobs, mutation campaigns and measured Hotpath
 profiling. No third-party Vet trust, semver baseline or performance threshold is
 claimed.

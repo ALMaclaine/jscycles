@@ -400,7 +400,7 @@ impl HumanFormatter {
             label(&edge.to_package)
         )?;
         for (file, subpath) in &edge.files {
-            Self::format_edge_file(file, subpath.as_deref(), writer)?;
+            Self::format_edge_file(file, &edge.to_package, subpath.as_deref(), writer)?;
         }
         Ok(())
     }
@@ -408,13 +408,14 @@ impl HumanFormatter {
     /// Format a single file in an edge.
     fn format_edge_file(
         file: &std::path::Path,
+        package: &str,
         subpath: Option<&str>,
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
         let file_display = label(&file.to_string_lossy());
         if let Some(subpath_value) = subpath {
-            let sub = label(subpath_value);
-            writeln!(writer, "      - {file_display} (imports /{sub})")
+            let target = label(&format!("{package}/{subpath_value}"));
+            writeln!(writer, "      - {file_display} (imports {target})")
         } else {
             writeln!(writer, "      - {file_display}")
         }
@@ -1499,7 +1500,7 @@ mod tests {
 
         // Check subpath is shown
         assert!(
-            output_str.contains("(imports /helpers)"),
+            output_str.contains("(imports @pkg/a/helpers)"),
             "should show subpath: {output_str}"
         );
     }

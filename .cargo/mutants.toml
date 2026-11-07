@@ -1,4 +1,4 @@
-# Reviewed equivalent mutants only; see docs/quality-engineering.md.
+# Reviewed equivalent mutants only; see docs/maintainers/quality-engineering.md.
 # Positions are deliberate: moving/changing the implementation requires review.
 # A backslash outside a JSON string already makes the document invalid. Skipping
 # its following byte cannot make the retained backslash valid JSON.

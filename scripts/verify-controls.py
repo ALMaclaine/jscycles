@@ -22,7 +22,7 @@ import tomllib
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--toolchain", default="1.98.1")
-    parser.add_argument("--output", default="docs/rust-oe-validation.json")
+    parser.add_argument("--output", default="docs/maintainers/evidence/rust-oe-validation.json")
     parser.add_argument("--boundaries", action="store_true",
                         help="Also replay selected configuration/workspace faults in the disposable copy")
     args = parser.parse_args()

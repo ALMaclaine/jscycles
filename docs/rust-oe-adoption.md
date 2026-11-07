@@ -9,8 +9,8 @@ updated with `rust-oe plan --diff`, `rust-oe sync`, and `rust-oe check`.
 
 ## Scope
 
-This record retains the original adoption history. The [full audit](rust-oe-full-audit.md)
-owns the applicability assessment. The [engineering tool results](quality-engineering.md)
+This record retains the original adoption history. The [full audit](maintainers/rust-oe-full-audit.md)
+owns the applicability assessment. The [engineering tool results](maintainers/quality-engineering.md)
 supersede earlier deferrals of strict Clippy, CRAP, mutation testing, Miri, and
 profiling. Installation and passing checks do not establish full adherence.
 
@@ -86,14 +86,14 @@ and exceptions remain here, outside managed bundles.
 On native macOS aarch64, Rust 1.98.1 passed `cargo xtask ci`: 369 target tests and
 one executable library doctest, plus formatting, locked builds, Clippy, dependency
 policy, and documentation. Rust 1.92.0 passed the same target tests and doctest.
-All 12 pass/defect/repair control cases passed; [the report](rust-oe-validation.json)
+All 12 pass/defect/repair control cases passed; [the report](maintainers/evidence/rust-oe-validation.json)
 records commands, input hashes, exits, and limits. No unsafe probe was executed.
 
 The pinned coverage wrapper produced LCOV, and its earlier failing CLI tests
 propagated failure before repair. The synthetic 1000-file, one-cycle release
 workload completed one warm-up and seven checked samples; its median was about
 14 ms on this host. These are local synthetic observations, with binary/corpus
-hashes in [the retained experiment](rust-oe-benchmark.json); they support no madge speedup.
+hashes in [the retained experiment](maintainers/evidence/rust-oe-benchmark.json); they support no madge speedup.
 The updated source crate passed `cargo package --locked --allow-dirty` including
 verification; its size fell from 37.8 MiB to about 508 KiB. GitHub workflows passed
 local actionlint 1.7.12 checks. Guidance passed an
@@ -109,7 +109,7 @@ test source and is not a product correctness score.
 
 ## Subsequent adherence audit
 
-The [adherence record](rust-oe-adherence.md) closes concrete selection, output-mode,
+The [adherence record](maintainers/rust-oe-adherence.md) closes concrete selection, output-mode,
 alias-path, and explicit-input gaps with regression tests. It also adds the
 network-independent guidance-integrity gate and combined required status. Its
 validation report supersedes the original control report for current inputs;

@@ -25,12 +25,10 @@ fn default_exclude() -> Vec<String> {
 
 /// Default file extensions to analyze.
 fn default_extensions() -> Vec<String> {
-    vec![
-        "ts".to_owned(),
-        "tsx".to_owned(),
-        "js".to_owned(),
-        "jsx".to_owned(),
-    ]
+    crate::DEFAULT_EXTENSIONS
+        .iter()
+        .map(|&extension| extension.to_owned())
+        .collect()
 }
 
 /// Root configuration for jscycles.
@@ -79,10 +77,16 @@ impl Default for ScanConfig {
 /// Default settings applied to all packages.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[non_exhaustive]
 pub struct DefaultsConfig {
     /// File extensions to analyze.
     #[serde(default = "default_extensions")]
     pub extensions: Vec<String>,
+
+    /// Leave out imports erased from JavaScript output: `import type`,
+    /// `export type`, type-position `import()`, and declaration files.
+    #[serde(default)]
+    pub skip_type_imports: bool,
 }
 
 impl Default for DefaultsConfig {
@@ -90,6 +94,7 @@ impl Default for DefaultsConfig {
     fn default() -> Self {
         Self {
             extensions: default_extensions(),
+            skip_type_imports: false,
         }
     }
 }
@@ -97,6 +102,7 @@ impl Default for DefaultsConfig {
 /// Package-specific configuration overrides.
 #[derive(Debug, Default, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
+#[non_exhaustive]
 pub struct PackageConfig {
     /// Override file extensions for this package.
     #[serde(default, deserialize_with = "present")]
@@ -105,6 +111,10 @@ pub struct PackageConfig {
     /// Glob patterns for files to ignore within this package.
     #[serde(default, deserialize_with = "present")]
     pub ignore: Option<Vec<String>>,
+
+    /// Override `defaults.skip_type_imports` for this package.
+    #[serde(default, deserialize_with = "present")]
+    pub skip_type_imports: Option<bool>,
 }
 
 /// An omitted override is `None`; an explicit YAML `null` is an error rather
@@ -259,7 +269,10 @@ mod tests {
             config.scan.exclude,
             vec!["**/node_modules", "**/dist", "**/build"]
         );
-        assert_eq!(config.defaults.extensions, vec!["ts", "tsx", "js", "jsx"]);
+        assert_eq!(
+            config.defaults.extensions,
+            vec!["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs"]
+        );
     }
 
     #[test]

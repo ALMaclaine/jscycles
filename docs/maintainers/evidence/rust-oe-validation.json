@@ -1,0 +1,326 @@
+{
+  "schema": 1,
+  "toolchain": "1.98.1",
+  "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+  "rust_oe_revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+  "cases": [
+    {
+      "name": "C01 passing",
+      "command": [
+        "cargo",
+        "xtask",
+        "fmt"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.376,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\n$ cargo fmt --manifest-path fuzz/Cargo.toml --check\n"
+    },
+    {
+      "name": "C01 rejects unformatted xtask member",
+      "command": [
+        "cargo",
+        "xtask",
+        "fmt"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 0.509,
+      "output_tail": "Diff in /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/xtask/src/main.rs:370:\n         .map_err(|error| eprintln!(\"{workload} profiling workload failed: {error}\"))\n }\n \n\u001b[31m-fn formatting_probe( ){ }\n\u001b(B\u001b[m\u001b[32m+fn formatting_probe() {}\n\u001b(B\u001b[m \n   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/xtask)\nwarning: function `formatting_probe` is never used\n   --> xtask/src/main.rs:373:4\n    |\n373 | fn formatting_probe( ){ }\n    |    ^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `xtask` (bin \"xtask\") generated 1 warning\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.20s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\nfmt failed: command exited with non-zero code `cargo fmt --all --check`: 1\n"
+    },
+    {
+      "name": "C01 repaired",
+      "command": [
+        "cargo",
+        "xtask",
+        "fmt"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.484,
+      "output_tail": "   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/xtask)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\n$ cargo fmt --manifest-path fuzz/Cargo.toml --check\n"
+    },
+    {
+      "name": "C02 passing",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.32,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/xtask)\n    Checking jscycles v0.2.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s\n"
+    },
+    {
+      "name": "C02 rejects stale lock",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 101,
+      "matched": true,
+      "seconds": 0.034,
+      "output_tail": "error: cannot update the lock file /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/Cargo.lock because --locked was passed to prevent this\nhelp: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.\n"
+    },
+    {
+      "name": "C02 repaired",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.255,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s\n"
+    },
+    {
+      "name": "C03 passing",
+      "command": [
+        "cargo",
+        "xtask",
+        "doctest"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.662,
+      "output_tail": "\nrunning 1 test\ntest src/lib.rs - (line 6) ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\nall doctests ran in 0.35s; merged doctests compilation took 0.21s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s\n   Doc-tests jscycles\n"
+    },
+    {
+      "name": "C03 rejects incorrect public example",
+      "command": [
+        "cargo",
+        "xtask",
+        "doctest"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 2.061,
+      "output_tail": "sertion `left == right` failed\n  left: 1\n right: 2\nstack backtrace:\n   0: __rustc::rust_begin_unwind\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5\n   1: core::panicking::panic_fmt\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14\n   2: core::panicking::assert_failed_inner\n   3: core::panicking::assert_failed::<usize, usize>\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:394:5\n   4: doctest_bundle_2024::__doctest_0::main\n   5: doctest_bundle_2024::__doctest_0::__main_fn\n   6: doctest_runner_2024::__doctest_0::TEST::{closure#0}\n   7: <doctest_runner_2024::__doctest_0::TEST::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n   8: doctest_runner_2024::main\n   9: <fn() -> std::process::ExitCode as core::ops::function::FnOnce<()>>::call_once\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\n\nfailures:\n    src/lib.rs - (line 6)\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\nall doctests ran in 0.38s; merged doctests compilation took 0.22s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles v0.2.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.42s\n   Doc-tests jscycles\nerror: doctest failed, to rerun pass `-p jscycles --doc`\ndoctest failed: command exited with non-zero code `cargo test --workspace --doc --all-features --locked`: 101\n"
+    },
+    {
+      "name": "C03 repaired",
+      "command": [
+        "cargo",
+        "xtask",
+        "doctest"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 1.366,
+      "output_tail": "\nrunning 1 test\ntest src/lib.rs - (line 6) ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\nall doctests ran in 0.36s; merged doctests compilation took 0.21s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles v0.2.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.74s\n   Doc-tests jscycles\n"
+    },
+    {
+      "name": "C04 rejects implicit unsafe operation",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 0.983,
+      "output_tail": "eatures --locked\n    Checking jscycles v0.2.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project)\nerror[E0133]: dereference of raw pointer is unsafe and requires unsafe block\n   --> src/lib.rs:304:55\n    |\n304 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n    |                                                       ^^^^^^^^ dereference of raw pointer\n    |\n    = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior\nnote: an unsafe function restricts its caller, but its body is safe by default\n   --> src/lib.rs:304:1\n    |\n304 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>\n    = note: requested on the command line with `-F unsafe-op-in-unsafe-fn`\n\nwarning: function `operation_probe` is never used\n   --> src/lib.rs:304:11\n    |\n304 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n    |           ^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nFor more information about this error, try `rustc --explain E0133`.\nwarning: `jscycles` (lib) generated 1 warning\nerror: could not compile `jscycles` (lib) due to 1 previous error; 1 warning emitted\nwarning: build failed, waiting for other jobs to finish...\nwarning: `jscycles` (lib test) generated 1 warning (1 duplicate)\nerror: could not compile `jscycles` (lib test) due to 1 previous error; 1 warning emitted\ncheck failed: command exited with non-zero code `cargo check --workspace --all-targets --all-features --locked`: 101\n"
+    },
+    {
+      "name": "C04 explicit operation compiles",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 1.199,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking jscycles v0.2.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project)\nwarning: function `operation_probe` is never used\n   --> src/lib.rs:304:11\n    |\n304 | unsafe fn operation_probe(pointer: *const u8) -> u8 { unsafe { *pointer } }\n    |           ^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `jscycles` (lib) generated 1 warning\nwarning: `jscycles` (lib test) generated 1 warning (1 duplicate)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.00s\n"
+    },
+    {
+      "name": "C04 restored safe-only project",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 1.161,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking jscycles v0.2.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.96s\n"
+    },
+    {
+      "name": "Fuzz dependency policy passing",
+      "command": [
+        "cargo",
+        "xtask",
+        "deny"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 1.232,
+      "output_tail": "     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n$ cargo deny --workspace --all-features --locked check --config ../deny.toml\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:45:6\n   \u2502\n45 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:48:6\n   \u2502\n48 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:53:6\n   \u2502\n53 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n"
+    },
+    {
+      "name": "Fuzz dependency policy rejects an unapproved license",
+      "command": [
+        "cargo",
+        "xtask",
+        "deny"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 1.154,
+      "output_tail": "4.13\n     \u2514\u2500\u2500 jscycles-fuzz v0.0.0\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:45:6\n   \u2502\n45 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:48:6\n   \u2502\n48 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:53:6\n   \u2502\n53 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nfuzz dependency policy failed: command exited with non-zero code `cargo deny --workspace --all-features --locked check --config ../deny.toml`: 4\n"
+    },
+    {
+      "name": "Fuzz dependency policy repaired",
+      "command": [
+        "cargo",
+        "xtask",
+        "deny"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 2.211,
+      "output_tail": "     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n$ cargo deny --workspace --all-features --locked check --config ../deny.toml\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:45:6\n   \u2502\n45 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:48:6\n   \u2502\n48 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_lo8u9k4/project/fuzz/../deny.toml:53:6\n   \u2502\n53 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n"
+    },
+    {
+      "name": "Guidance integrity passing",
+      "command": [
+        "/Users/alm/.local/bin/python3.13",
+        "-B",
+        "scripts/check_adoption.py"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.037,
+      "output_tail": "Rust-OE integrity passed: 17 managed files, configuration, and agent block\n"
+    },
+    {
+      "name": "Guidance integrity rejects drift",
+      "command": [
+        "/Users/alm/.local/bin/python3.13",
+        "-B",
+        "scripts/check_adoption.py"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 0.031,
+      "output_tail": "Rust-OE integrity failed: managed content drift: INDEX.md\n"
+    },
+    {
+      "name": "Guidance integrity repaired",
+      "command": [
+        "/Users/alm/.local/bin/python3.13",
+        "-B",
+        "scripts/check_adoption.py"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.03,
+      "output_tail": "Rust-OE integrity passed: 17 managed files, configuration, and agent block\n"
+    },
+    {
+      "name": "Guidance guard pass/defect/repair tests",
+      "command": [
+        "/Users/alm/.local/bin/python3.13",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_*.py"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.323,
+      "output_tail": "..............................................................\n----------------------------------------------------------------------\nRan 62 tests in 0.256s\n\nOK\n"
+    },
+    {
+      "name": "Baseline rejects unrecognized selection arguments",
+      "command": [
+        "cargo",
+        "xtask",
+        "check",
+        "--unexpected"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 0.168,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check --unexpected`\nxtask commands accept no extra arguments except install-tools <tool>\n"
+    }
+  ],
+  "input_sha256": {
+    ".cargo/config.toml": "77c33876d6611a8a2f4d92dd782f037643545201cd3c9329395f3fe99432b298",
+    ".github/workflows/ci.yml": "85623f0ccc10ea79cfcad3498ccd59017ba99f9d2acb48131cd62d757cbcea2f",
+    ".github/workflows/maintenance.yml": "ca4de0d6a66398e5bc97c5aad4091c839404d574794fcdc927af085ab44a3ae3",
+    ".github/workflows/release.yml": "ce06737d47315d7ed9581ac4b709c64dafbf99e8d9ae7307676f7b1ee66b6950",
+    "AGENTS.md": "9544d6661052ec360615378581203c5f131c6368916f6dd9d2c6e505609e9e9f",
+    "Cargo.lock": "005fc359a099ef86aaa36f7efa7f6d9532712fa55700b5349a9839f7c4f8fd7d",
+    "Cargo.toml": "0394cd6a6a13a1913e3bceda4f27f32cb304de66a1f2004c0882e37cd0a4fe97",
+    "clippy.toml": "88ae2190c00cde179abc8b397f4b55e87abf1f9b4db839e6c577fabaa20157ac",
+    "deny.toml": "8a54a90670023ef6aeef43b7cdaea5d52af488f892c629222c5b162bfe36620c",
+    "fuzz/Cargo.lock": "ee913cb8a405cee2d3f03c585c7d952522a98e55b0905b7878b2f125b862e576",
+    "fuzz/Cargo.toml": "f507a7c09f97e71e2f1a3e43d735da33baa8d7bbd4e99734cbf19b61674e5ade",
+    "fuzz/deny.exceptions.toml": "153db57af33bb2d66ce435c5bd637a96a293a9dacf2c931ad05e5555ec50abaa",
+    "fuzz/fuzz_targets/configuration.rs": "18d499e0555b3708b52c1460a4ac52bfa1ef541a40cd5834f8d65e392a190e09",
+    "fuzz/fuzz_targets/graph_semantics.rs": "193add26351110f8fac12ead279ad6675fd1fc5d85f3038c3de2da80d7675b5d",
+    "fuzz/fuzz_targets/source_syntax.rs": "6bddee3b6a6b35c7a8a620d93ad17487e41dbf7840810dd8ecd158d409f82331",
+    "fuzz/fuzz_targets/text_adapters.rs": "97c6eb8a8f58563187df9149ad8e9f5a31aef8c0533b0deec386927d6bf422ca",
+    "rust-oe.lock.json": "014ff57cc6f231d185683b0c69061a8626cf726af2d79c19d17bab47b8d11d0e",
+    "rust-oe.toml": "8b1d236531d0f364d702403353816500ca93ffe66cde17c0513bbba1d3e25937",
+    "rust-toolchain.toml": "b36eb8ee6d003e4a655f23628f257dd3e89e13d9dee83eb4901f50dce60b4f10",
+    "rustfmt.toml": "fc53c6ca3c63893a6f9dad3e99a95116a2a699937bbc9744f194d34b8bc26096",
+    "scripts/benchmark.py": "7b9ee879ec91e5ab4112b4cedc4b4b273cf4103b6391f43e4d0ab970bad83ac3",
+    "scripts/check_adoption.py": "081a72dc71060d81c21f0806a7eeb2db065fd2367304b3ccc3789c1e6a9d205a",
+    "scripts/compare_tools.py": "fe8a603c1fb98d7b15e3ba56ca7d457cc8f6f9bf4ed48e0f0a2e283cc52b2e4d",
+    "scripts/differential/difftest.py": "c9e65a078684b18477be1b8dd64172d842f9d65342f17c578e1ea07afb1ebb5c",
+    "scripts/differential/real_repos.py": "061cd91429a48d4370fd6b4e5d09cca19b986acbb9c8a083e8aa0175b135b744",
+    "scripts/fuzz.py": "09f018854e3fc7cb0074fec4416745aa32a6f344e30396a1c2d81aa7eea9d1c4",
+    "scripts/mutation.py": "d9537cf6a88d858dc6424760eab7e55263f471e8b0f1c9bf0c34872de1f5d1f3",
+    "scripts/release_record.py": "ca0cbf86717d01f156bf214a7a6703f8a7f18a86cf740d44b1340ac32adbfa78",
+    "scripts/test_check_adoption.py": "d438e162f60f126bc6d6c2fd070ab8a037ff295342616688ae2591e4ff80da34",
+    "scripts/test_mutation.py": "6844a31d71a206b29b54a382879bb8d4ae517212950260163fce437086c23aee",
+    "scripts/test_release_record.py": "ec502cb67af3531f5908bfea569a1c983df1cc59948cc18acdd6cc6279cc62a3",
+    "scripts/verify-controls.py": "fb0b1a42341c469bbebd5b1d2a0f417ab2632e340061dbc8ecd2841d3dfde68b",
+    "src/analysis.rs": "da971c9d50cd78b8edb7d6f183825ac894fa8864941f0242640b042580229f6b",
+    "src/budget.rs": "ed5b90916fc88d401dc50fb7356d42e76fff4d837a5c3f4f6c7ae97c31e03a17",
+    "src/config.rs": "7ae1abd5e9e8d6b6f3e7b475094a964e97581daf11dabe1e0958435edf14533a",
+    "src/cycles.rs": "5bbc991411d8bb7f8d5cfa202134afff61df8fdca6e9b61cae288e6ee57aefd6",
+    "src/discovery.rs": "d7b2a47a898b5a3c2d28b2583f2a2e76586d8da441fd3f84d4ebfb74ecbb5100",
+    "src/graph.rs": "78ed235273c95065e4f10e93938094daae8d564b59bcc0171021735c4d37b5e9",
+    "src/imports.rs": "0f5a2a896ad6571fe300539490fa9ade9b31ec4661d86b5295eacd395be1d950",
+    "src/input.rs": "f6d7f600dd047eef174a120b988245b34160556d64a7390918929dd86c896a23",
+    "src/lib.rs": "9d0ee8c33270c55102ae2b94cc44085688c7e03d034fe1b5f07b8bd17d9ede7a",
+    "src/main.rs": "b9aba18e527ef6e964bee234d66d391215a1fb8491bbf317b2324e99ddf57da8",
+    "src/module_syntax.rs": "05ce75ea9340914ec94ef3e8bb2a6665e73f858c8e942b80fea6f1c1eb66a4fe",
+    "src/output.rs": "d178dd238343d345760a7dfd6acc1ece5939a3800c0500299f4b54be9a5d9c9c",
+    "src/syntax.rs": "aa927962dd5378ff53833229562c17f7f64a447c0d5b8a0a7cb7cdf178187b95",
+    "src/terminal.rs": "f8a1865eb89cf7d9fcbfcc67c3cad217b78410ded0e07f8365477d3c10aadc9f",
+    "src/tsconfig.rs": "ae653b02bba5cbdecd5dc30b6745d6b6a08bdc0ce84f1cc8d44d07eb584c4106",
+    "src/workspace.rs": "3faf47f42df8afc15be9fc9993c2ae6d899a22df0808405e9404aff977afd9d8",
+    "tests/adherence.rs": "6d46d4f278404f2fcf196afda6018404c6fb815c95beb8dd9580bb19246f7e03",
+    "tests/boundary_closure.rs": "fdc6fb0998c7cc1898289f130998f7fe6afd1e874ca3b2fde02c54c221e9bdfe",
+    "tests/budgets.rs": "c07238edb9cdb6434569591f94a13db8b1d467e11dcf1579b537d62575fa6b1b",
+    "tests/cli.rs": "9a4b8dfb883b6b9e30d7c5a96691b8d6bde7c66177d9365b71ecef7fc083d98e",
+    "tests/config_schema.rs": "f8fd9e4a3decdf3b3643a3c53baaef72c96b02cd8a1dbd8b0e2b6a989ae940a2",
+    "tests/import_forms.rs": "8c2499edc9688cfaf9c45573064a5a5bafe73f742b18ba00e998145675c786f1",
+    "tests/integration.rs": "47f584e88c30125a0b534c5156b5903aefd678950b36ab74ad9f844d96cb2302",
+    "tests/miri.rs": "047ae1ec1160072ddd8cc85fb78dfe8f338b9ef99cd56061679e187572e30f09",
+    "tests/mutation_contracts.rs": "7d42123cae57addc5950e25de3d0f59feb0fb5a11a90290b5cea6ace575f95ed",
+    "tests/resolution.rs": "3a10cbc4c4cf67e3a2be9e0acbb9c242371fd61600b5e953c67ee61d8451b770",
+    "tests/source_boundaries.rs": "5f97cee04ad59af6ba4e06864a1007bcc7b1ccd870b436da47f88134ce55ac5c",
+    "tests/source_traversal.rs": "d59d5b6ac7fad3499f2e4c5bb51b9866e77b666948c389285f958546559ea19b",
+    "tests/source_walk_hints.rs": "ee52169fe6244ac1053be705a69d8b4af7a7b408cd9332f4259f02a321f97379",
+    "tests/spelling_matrix.rs": "7873b27a158629b23c41946e46efb46fe74e25151231e3760fcd1ef753ef5e02",
+    "tests/tsconfig_cache.rs": "2edbf4848fb3507e05e402ca862485123927b68435262d8f9165d00b32418dd1",
+    "tests/workspace_alias_targets.rs": "7ab99fba7e7bf7faf7408497face67920de4e10c93dec2f03ab845e31d357b4f",
+    "tests/workspace_aliases.rs": "0913ead388578780c2e026dc2859d3c35afbe133f55ad32161d47384de34e636",
+    "xtask/Cargo.toml": "a3f9cf0f2ed6c637e33b8407b51e5c7357b0630a9082223db39f3f5adf646741",
+    "xtask/src/main.rs": "cf081ccb226b9a7234a8928762c7eaeebbc9f3bdd87b8fe06e1d69f4beeb9f3c"
+  },
+  "source_unchanged": true,
+  "passed": true
+}

@@ -40,7 +40,7 @@ def main():
     hashes = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in inputs}
     compiler = subprocess.check_output([environment.get('CC', 'cc'), '--version'], text=True, timeout=10)
     if 'Apple clang' in compiler:
-        raise SystemExit('Native C ASan needs upstream LLVM clang; select CC/CXX as described in docs/verification.md')
+        raise SystemExit('Native C ASan needs upstream LLVM clang; select CC/CXX as described in docs/maintainers/verification.md')
     environment['CFLAGS'] = environment.get('CFLAGS', '') + ' -fsanitize=fuzzer-no-link,address -fno-omit-frame-pointer'
     start = time.monotonic()
     result = subprocess.run(command, cwd=root, env=environment, capture_output=True, text=True, timeout=args.seconds+240)

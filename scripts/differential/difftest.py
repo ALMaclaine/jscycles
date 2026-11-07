@@ -42,7 +42,7 @@ WINDOWS = os.name == "nt"
 TOOL_DIR = REPO / "target" / "tooling" / "differential"
 TYPESCRIPT = "5.9.3"
 SOURCE_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs")
-DEFAULT_EXTENSIONS = ["ts", "tsx", "js", "jsx"]
+DEFAULT_EXTENSIONS = ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs"]
 STEM = re.compile(r"(\.d)?\.(ts|tsx|js|jsx|mts|cts|mjs|cjs)$")
 BUILTIN_EXCLUDED = {"node_modules", "dist", "build", ".next", ".git"}
 SPECIFIER = re.compile(r"""(?:from\s+|import\s*\(\s*|require\s*\(\s*|^\s*import\s+)(['"])([^'"]+)\1""", re.M)
@@ -160,6 +160,8 @@ def cli_args(args: dict) -> list[str]:
         out.append("--no-tsconfig")
     if args.get("extensions"):
         out += ["--extensions", args["extensions"]]
+    if args.get("skip_type_imports"):
+        out.append("--skip-type-imports")
     return out + list(args.get("operands", []))
 
 
@@ -333,6 +335,9 @@ def model(root: Path, resolver: Resolver) -> Expected:
         package_tsconfig = None if args.get("no_tsconfig") else nearest_tsconfig(package_dir, root)
         ignored = ignores.get(name, [])
         scanned = extensions_for(name)
+        # CLI flag > packages.<name>.skip_type_imports > defaults > off.
+        skip_types = bool(args.get("skip_type_imports")) or config.get("packages", {}).get(name, {}).get(
+            "skip_type_imports", config.get("defaults", {}).get("skip_type_imports", False))
 
         def ignored_path(path: Path) -> bool:
             relative = os.path.relpath(path, package_dir).replace(os.sep, "/")
@@ -357,7 +362,13 @@ def model(root: Path, resolver: Resolver) -> Expected:
                 # One tsconfig per package: the nearest at or above the package
                 # directory (a config nested inside the package is not consulted).
                 tsconfig_path = package_tsconfig
-                for match in SPECIFIER.finditer(source.read_text(encoding="utf-8-sig")):
+                declaration = re.search(r"\.d\.[mc]?ts$", source.name) is not None
+                if skip_types and declaration:
+                    continue
+                lines = source.read_text(encoding="utf-8-sig").splitlines()
+                for line, match in ((line, m) for line in lines for m in SPECIFIER.finditer(line)):
+                    if skip_types and line.lstrip().startswith(("import type ", "export type ")):
+                        continue
                     specifier = match.group(2)
                     if workspace and not specifier.startswith((".", "/")):
                         split_result = split(specifier)
@@ -636,8 +647,11 @@ def generate(rng: random.Random, root: Path) -> dict[str, str]:
                     spec = "./missing" + str(rng.randint(0, 9))
                 if spec is None:
                     continue
-                form = rng.choice(["import '{s}';", "export * from '{s}';", "import x{n} from '{s}';",
-                                   "void import('{s}');", "require('{s}');"])
+                forms = ["import '{s}';", "export * from '{s}';", "import x{n} from '{s}';",
+                         "void import('{s}');", "require('{s}');"]
+                if re.search(r"\.[mc]?tsx?$", source):  # type syntax is TypeScript-only
+                    forms += ["import type {{ T{n} }} from '{s}';", "export type {{ T{n} }} from '{s}';"]
+                form = rng.choice(forms)
                 lines.append(form.format(s=spec, n=len(lines)))
             files[source] = "\n".join(lines) + "\n" if lines else "export {};\n"
     # Optional configuration (JSON is valid YAML): scan.exclude in several
@@ -698,6 +712,15 @@ def generate(rng: random.Random, root: Path) -> dict[str, str]:
         args["no_tsconfig"] = True
     if rng.random() < 0.12:
         args["extensions"] = ",".join(rng.choice(extension_sets))
+    if rng.random() < 0.15:
+        args["skip_type_imports"] = True
+    if rng.random() < 0.08:
+        config.setdefault("defaults", {})["skip_type_imports"] = rng.random() < 0.7
+    if rng.random() < 0.05:
+        package = rng.choice(owners)
+        config.setdefault("packages", {}).setdefault(package["name"], {})["skip_type_imports"] = rng.random() < 0.5
+    if config:
+        files["jscycles.yaml"] = json.dumps(config)
     if "operands" not in args and rng.random() < 0.1:
         top = packages[0]["dir"].split("/")[0]
         include = rng.choice([top + "/*", top + "/", "./" + top, top + "/*/", str(root.resolve() / top), "."])

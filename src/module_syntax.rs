@@ -159,11 +159,18 @@ fn first_error(root: &Node<'_>) -> (u64, u64, &'static str) {
 
 /// Parse once, reject recovery, and admit source bytes before traversal. The sink
 /// owns decoding, target resolution and admission of retained import records.
+///
+/// With `skip_type_only`, imports TypeScript erases from JavaScript output are
+/// not reported: `import type`/`export type` statements (including
+/// `import type x = require()`) and `import()` in type positions. A named
+/// import whose specifiers are all `type` is still reported, because it stays
+/// a side-effect import under `verbatimModuleSyntax`.
 pub(crate) fn visit(
     source: &str,
     path: &Path,
     language: Language,
     budget: &AnalysisBudget,
+    skip_type_only: bool,
     mut sink: impl FnMut(&str) -> Result<(), ExtractError>,
 ) -> Result<(), ExtractError> {
     budget.check()?;
@@ -204,8 +211,10 @@ pub(crate) fn visit(
         let node = cursor.node();
         let _ = required_text(&node, source, path)?;
         let literal = match roles.kind(&node) {
+            SyntaxKind::SourceStatement if skip_type_only && is_type_only_statement(&node) => None,
             SyntaxKind::SourceStatement => node.child_by_field_name("source"),
-            SyntaxKind::Call => call_source(&node, source, path, roles)?,
+            SyntaxKind::Call => call_source(&node, source, path, roles)?
+                .filter(|_| !(skip_type_only && in_type_position(&node))),
             SyntaxKind::Other
             | SyntaxKind::Import
             | SyntaxKind::Identifier
@@ -255,6 +264,55 @@ mod length_tests {
             );
         }
     }
+}
+
+/// `import type ...`, `export type ... from`, and `import type x = require()`
+/// carry a `type` keyword directly after `import`/`export`.
+fn is_type_only_statement(node: &SyntaxNode<'_>) -> bool {
+    let mut cursor = node.walk();
+    let mut children = node.children(&mut cursor);
+    let first = children.next();
+    let second = children.next();
+    // The `import_require_clause` of `import type x = require()` is itself a
+    // source statement; its parent statement holds the keyword.
+    if node.kind() == "import_require_clause" {
+        return node
+            .parent()
+            .is_some_and(|parent| is_type_only_statement(&parent));
+    }
+    first.is_some_and(|first| matches!(first.kind(), "import" | "export"))
+        && second.is_some_and(|second| second.kind() == "type")
+}
+
+/// Whether a call lies in a type: an annotation, alias, interface, `typeof`
+/// query, type arguments/parameters or heritage clause, or the type side of
+/// `as`/`satisfies`. Called only for module calls when skipping is enabled.
+fn in_type_position(node: &SyntaxNode<'_>) -> bool {
+    let mut child = *node;
+    while let Some(parent) = child.parent() {
+        match parent.kind() {
+            "type_annotation"
+            | "opting_type_annotation"
+            | "omitting_type_annotation"
+            | "asserts_annotation"
+            | "type_predicate_annotation"
+            | "type_alias_declaration"
+            | "interface_declaration"
+            | "type_query"
+            | "type_arguments"
+            | "type_parameters"
+            | "implements_clause"
+            | "extends_type_clause" => return true,
+            "as_expression" | "satisfies_expression"
+                if parent.named_child(0).is_some_and(|value| value != child) =>
+            {
+                return true;
+            },
+            _ => {},
+        }
+        child = parent;
+    }
+    false
 }
 
 fn call_source<'a>(
@@ -354,6 +412,7 @@ mod tests {
             Path::new("source.ts"),
             Language::TypeScript,
             &AnalysisBudget::default(),
+            false,
             |_| {
                 delivered += 1;
                 Ok(())
@@ -383,6 +442,7 @@ mod tests {
             Path::new("source.ts"),
             Language::TypeScript,
             &admission_budget,
+            false,
             |_| {
                 delivered += 1;
                 Ok(())
@@ -411,6 +471,7 @@ mod tests {
             Path::new("source.ts"),
             Language::TypeScript,
             &sink_budget,
+            false,
             |_| {
                 sink_budget.consume(Resource::Imports, 1)?;
                 delivered += 1;
@@ -443,6 +504,7 @@ mod tests {
                 Path::new("nested"),
                 language,
                 &AnalysisBudget::default(),
+                false,
                 |literal| {
                     found.push(
                         crate::syntax::module_literal(literal)
@@ -472,6 +534,7 @@ mod tests {
                 Path::new("typed"),
                 language,
                 &AnalysisBudget::default(),
+                false,
                 |literal| {
                     found.push(
                         crate::syntax::module_literal(literal)
@@ -484,6 +547,52 @@ mod tests {
             .expect("valid type wrappers");
             assert_eq!(found, ["types", "yes", "dyn"]);
         }
+    }
+
+    #[test]
+    fn type_only_imports_are_skipped_only_when_requested() {
+        let source = "import type { A } from 'a';\n\
+            import type B from 'b';\n\
+            import type * as C from 'c';\n\
+            export type { D } from 'd';\n\
+            import type E = require('e');\n\
+            type F = import('f').F;\n\
+            let g: typeof import('g');\n\
+            interface H extends Base<import('h').H> {}\n\
+            const i = value as import('i').I;\n\
+            const j = value satisfies import('j').J;\n\
+            function k(x: import('k').K): void {}\n\
+            class L implements import('l').L {}\n\
+            import { type M } from 'm';\n\
+            import n from 'n';\n\
+            export * from 'o';\n\
+            import P = require('p');\n\
+            const q = import('q');\n\
+            const r = (import('r') as Promise<unknown>);\n\
+            const s = require('s') satisfies object;\n";
+        let collect = |skip| {
+            let mut found = Vec::new();
+            visit(
+                source,
+                Path::new("typed.ts"),
+                Language::TypeScript,
+                &AnalysisBudget::default(),
+                skip,
+                |literal| {
+                    found.push(
+                        crate::syntax::module_literal(literal)
+                            .expect("literal value")
+                            .into_owned(),
+                    );
+                    Ok(())
+                },
+            )
+            .expect("valid source");
+            found
+        };
+        let all = collect(false);
+        assert_eq!(all.len(), 19, "{all:?}");
+        assert_eq!(collect(true), ["m", "n", "o", "p", "q", "r", "s"]);
     }
 
     #[test]

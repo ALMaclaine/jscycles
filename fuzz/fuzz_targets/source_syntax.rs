@@ -20,7 +20,9 @@ fn extracted(source: &str, extension: &str) -> Result<Vec<String>, ExtractError>
         &path,
         module_syntax::Language::for_path(&path),
         &budget,
-        |literal| {
+        // Exercise type-only skipping on half of the inputs.
+        source.len() % 2 == 0,
+        |literal: &str| {
             budget.consume(budget::Resource::Imports, 1)?;
             budget.consume(
                 budget::Resource::GraphBytes,

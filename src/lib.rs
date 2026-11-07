@@ -1,4 +1,4 @@
-//! Fast circular dependency detection for JavaScript/TypeScript projects.
+//! Find circular imports between files and workspace packages in JavaScript and TypeScript projects.
 //!
 //! `jscycles` is a CLI tool that detects circular dependencies within JS/TS packages,
 //! with file-level and workspace-package cycle detection.
@@ -282,6 +282,10 @@ pub enum WorkspaceError {
 }
 
 // Re-exports for public API
+/// Source extensions analyzed when neither the CLI nor the configuration
+/// selects others.
+pub const DEFAULT_EXTENSIONS: [&str; 8] = ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs"];
+
 pub use config::Config;
 pub use cycles::{
     Cycle, CycleDetector, PackageCycle, PackageCycleDetector, PackageCycleEdge,

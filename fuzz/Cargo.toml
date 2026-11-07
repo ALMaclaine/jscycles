@@ -17,7 +17,7 @@ libfuzzer-sys = "=0.4.13"
 tree-sitter = { package = "willbooster-tree-sitter", version = "=18.0.2" }
 tree-sitter-javascript = { package = "willbooster-tree-sitter-javascript", version = "=22.0.1" }
 tree-sitter-typescript = { package = "willbooster-tree-sitter-typescript", version = "=26.0.1" }
-jscycles = { path = "..", version = "0.1.1" }
+jscycles = { path = "..", version = "0.2.0" }
 serde_json = "1"
 
 [workspace]

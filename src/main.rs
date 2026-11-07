@@ -1,4 +1,4 @@
-//! jscycles - Fast circular dependency detection for JS/TS.
+//! jscycles - find circular imports in JavaScript and TypeScript projects.
 //!
 //! Reports file-level and workspace-package cycles in local checkouts.
 
@@ -23,7 +23,7 @@ use jscycles::{
 fn build_cli() -> Command {
     Command::new("jscycles")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("Fast circular dependency detection for JavaScript/TypeScript")
+        .about("Find circular imports in JavaScript and TypeScript projects")
         .arg(
             Arg::new("paths")
                 .help("Paths to check (if empty, uses config scan paths)")
@@ -46,7 +46,7 @@ fn build_cli() -> Command {
             Arg::new("extensions")
                 .long("extensions")
                 .help("File extensions to analyze")
-                .default_value("ts,tsx,js,jsx")
+                .default_value("ts,tsx,mts,cts,js,jsx,mjs,cjs")
                 .value_parser(|value: &str| {
                     if !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_alphanumeric()) { Ok(value.to_owned()) }
                     else { Err("extension must be a nonempty alphanumeric suffix without a leading dot") }
@@ -64,6 +64,12 @@ fn build_cli() -> Command {
                 .long("no-tsconfig")
                 .help("Skip tsconfig.json auto-detection")
                 .conflicts_with("tsconfig")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("skip-type-imports")
+                .long("skip-type-imports")
+                .help("Ignore type-only imports (import type, export type, declaration files)")
                 .action(ArgAction::SetTrue),
         )
         .arg(
@@ -123,6 +129,8 @@ struct ProcessOptions {
     explicit_tsconfig: Option<Arc<TsConfig>>,
     /// Skip tsconfig.json auto-detection.
     no_tsconfig: bool,
+    /// `--skip-type-imports`, overriding the configuration.
+    skip_type_imports: bool,
     /// File extensions to analyze.
     extensions: Vec<String>,
 
@@ -272,12 +280,13 @@ fn processing_options(
         found.load_path_aliases(explicit_tsconfig.as_deref(), budget)?;
     }
     let extensions = matches.get_many::<String>("extensions").map_or_else(
-        || ["ts", "tsx", "js", "jsx"].map(str::to_owned).to_vec(),
+        || jscycles::DEFAULT_EXTENSIONS.map(str::to_owned).to_vec(),
         |values| values.cloned().collect(),
     );
     Ok(ProcessOptions {
         explicit_tsconfig,
         no_tsconfig,
+        skip_type_imports: matches.get_flag("skip-type-imports"),
         extensions,
         extensions_override: matches.value_source("extensions")
             == Some(clap::parser::ValueSource::CommandLine),
@@ -484,7 +493,10 @@ fn process_package_with_imports(
     };
 
     // Create import extractor with workspace context
+    let skip_type_imports =
+        opts.skip_type_imports || package.config.skip_type_imports.unwrap_or(false);
     let mut extractor = ImportExtractor::new(extensions, None)
+        .with_skip_type_imports(skip_type_imports)
         .with_shared_tsconfig(tsconfig)
         .with_shared_workspace(opts.workspace.as_ref().map(Arc::clone))
         .with_budget(opts.budget.clone())

@@ -97,6 +97,9 @@ pub struct ImportExtractor {
     /// a file link belongs to the owner of its target.
     owners: Arc<[PathBuf]>,
 
+    /// Leave out imports erased from JavaScript output.
+    skip_type_imports: bool,
+
     /// Cache for extension resolution to avoid redundant filesystem stat calls.
     resolution_cache: ResolutionCache,
     budget: AnalysisBudget,
@@ -115,6 +118,7 @@ impl ImportExtractor {
             invalid_ignore: None,
             nested_packages: HashSet::new(),
             owners: Arc::from(Vec::new()),
+            skip_type_imports: false,
             resolution_cache: Arc::new(Mutex::new(ResolutionEntries::default())),
             budget: AnalysisBudget::default(),
         }
@@ -200,6 +204,16 @@ impl ImportExtractor {
     #[must_use]
     pub fn with_owners(mut self, owners: Arc<[PathBuf]>) -> Self {
         self.owners = owners;
+        self
+    }
+
+    /// Leave out imports TypeScript erases from JavaScript output: `import
+    /// type`, `export type`, type-position `import()`, and every import of a
+    /// declaration file (`.d.ts`, `.d.mts`, `.d.cts`). Declaration files are
+    /// still parsed, so syntax errors in them still fail.
+    #[must_use]
+    pub const fn with_skip_type_imports(mut self, skip: bool) -> Self {
+        self.skip_type_imports = skip;
         self
     }
 
@@ -376,12 +390,17 @@ impl ImportExtractor {
 
     fn extract_source(&self, source: &str, file_path: &Path) -> Result<Vec<Import>, ExtractError> {
         let mut imports = Vec::new();
+        let declaration = self.skip_type_imports && is_declaration_file(file_path);
         crate::module_syntax::visit(
             source,
             file_path,
             crate::module_syntax::Language::for_path(file_path),
             &self.budget,
+            self.skip_type_imports,
             |literal| {
+                if declaration {
+                    return Ok(());
+                }
                 if let Some(import) = self.create_import_from_specifier_text(literal, file_path)? {
                     imports.push(import);
                 }
@@ -795,6 +814,17 @@ mod lexical_path_tests {
             );
         }
     }
+}
+
+/// `.d.ts`, `.d.mts` and `.d.cts` files hold only types.
+fn is_declaration_file(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            [".d.ts", ".d.mts", ".d.cts"]
+                .iter()
+                .any(|suffix| name.ends_with(suffix))
+        })
 }
 
 #[cfg(test)]

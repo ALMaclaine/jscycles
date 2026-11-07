@@ -1,9 +1,22 @@
-# Migration notes for the next 0.2 release
+# Upgrading to 0.2
 
-This is unreleased guidance, not a version bump or publication authorization.
-The public surface is the documented `jscycles` modules/reexports and CLI/JSON
-contract. Patch releases must not conceal source or behavioral incompatibilities.
-Owner: alm; Rust-OE API-010, CI-009 and STD-015/016/068.
+The [changelog](../CHANGELOG.md) summarizes 0.2 for CLI users. This page lists
+every behavior and library API change in detail, for library callers and for
+anyone explaining why a scan's results changed. The public surface is the
+documented `jscycles` modules/reexports and the CLI/JSON contract
+([product contract](product-contract.md)).
+
+- `.mts`, `.cts`, `.mjs` and `.cjs` sources are analyzed by default
+  (`jscycles::DEFAULT_EXTENSIONS`). Pass `--extensions ts,tsx,js,jsx` or set
+  `defaults.extensions` to keep the 0.1 selection.
+- `--skip-type-imports`, `defaults.skip_type_imports` and
+  `packages.<pattern>.skip_type_imports` leave out `import type`,
+  `export type`, type-position `import()` and declaration-file imports.
+  Library callers use `ImportExtractor::with_skip_type_imports`. A named import
+  whose specifiers are all `type` (`import { type A } from`) still counts,
+  because it remains a side-effect import under `verbatimModuleSyntax`.
+- `DefaultsConfig` and `PackageConfig` are `#[non_exhaustive]`; build them from
+  `Default` and set fields.
 
 - `ConfigError::Parse` now carries `serde_saphyr::Error`; update callers that name
   the old serde_yaml payload. Config adds public `limits`; use `Config::default()`

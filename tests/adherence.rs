@@ -1911,3 +1911,58 @@ fn byte_order_marks_and_crlf_are_accepted_everywhere() {
     .expect("stdin written");
     assert_eq!(child.wait().expect("exit").code(), Some(1));
 }
+
+#[test]
+fn type_only_imports_can_be_left_out() {
+    // A cycle closed only by `import type` (or by a declaration file) is real
+    // for type checking but not at runtime; `--skip-type-imports` or
+    // `skip_type_imports` leaves such edges out.
+    let temp = tempfile::tempdir().expect("directory");
+    let root = temp.path();
+    write(
+        root,
+        "package.json",
+        r#"{"name":"root","workspaces":["packages/*"]}"#,
+    );
+    write(root, "packages/a/package.json", r#"{"name":"a"}"#);
+    write(root, "packages/b/package.json", r#"{"name":"b"}"#);
+    write(root, "packages/a/x.ts", "import { y } from './y';");
+    write(
+        root,
+        "packages/a/y.ts",
+        "import type { X } from './x';\nexport const y = 1;",
+    );
+    write(root, "packages/a/p.ts", "export * from './q';");
+    write(root, "packages/a/q.d.ts", "export * from './p';");
+    write(root, "packages/b/m.ts", "import { y } from 'a';");
+    write(root, "packages/a/r.ts", "export type { M } from 'b';");
+    let cycles = |args: &[&str]| {
+        let output = scan(root, &[&["--json"][..], args].concat());
+        let json: serde_json::Value = serde_json::from_slice(&output.stdout).expect("JSON");
+        let files = json["file_cycles"]
+            .as_array()
+            .expect("file cycles")
+            .iter()
+            .map(|entry| entry["cycles"].as_array().map_or(0, Vec::len))
+            .sum::<usize>();
+        let packages = json["package_cycles"].as_array().map_or(0, Vec::len);
+        (output.status.code(), files, packages)
+    };
+    assert_eq!(
+        cycles(&[]),
+        (Some(1), 2, 1),
+        "type imports count by default"
+    );
+    assert_eq!(cycles(&["--skip-type-imports"]), (Some(0), 0, 0));
+    write(root, "skip.yaml", "defaults:\n  skip_type_imports: true\n");
+    assert_eq!(cycles(&["--config", "skip.yaml"]), (Some(0), 0, 0));
+    write(
+        root,
+        "override.yaml",
+        "defaults:\n  skip_type_imports: true\npackages:\n  a:\n    skip_type_imports: false\n",
+    );
+    assert_eq!(cycles(&["--config", "override.yaml"]), (Some(1), 2, 1));
+    // Declaration files are still parsed.
+    write(root, "packages/a/q.d.ts", "export * from (");
+    assert_eq!(status(root, &["--skip-type-imports"]), Some(2));
+}

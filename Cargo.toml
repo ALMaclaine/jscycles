@@ -115,13 +115,13 @@ unimplemented = "deny"
 [package]
 name = "jscycles"
 publish = ["crates-io"]
-version = "0.1.1"
+version = "0.2.0"
 edition.workspace = true
 rust-version.workspace = true
-description = "Fast circular dependency detection for JS/TS"
+description = "Find circular imports between files and workspace packages in JavaScript and TypeScript projects"
 readme = "README.md"
-include = ["src/**", "tests/**", "/README.md", "LICENSE-*", "clippy.toml", "rustfmt.toml", "Cargo.toml", "Cargo.lock"]
-repository = "https://github.com/EnderHub/jscycles"
+include = ["src/**", "tests/**", "/README.md", "/CHANGELOG.md", "/jscycles.schema.json", "LICENSE-*", "clippy.toml", "rustfmt.toml", "Cargo.toml", "Cargo.lock"]
+repository = "https://github.com/ALMaclaine/jscycles"
 license.workspace = true
 keywords = ["javascript", "typescript", "circular-dependencies", "static-analysis"]
 categories = ["development-tools", "command-line-utilities"]

@@ -1,0 +1,302 @@
+{
+  "schema": 1,
+  "reviewed": "2026-11-04",
+  "scope": "The five explicitly requested engineering tools, on native macOS aarch64",
+  "rust_oe_revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+  "host": "macOS-15.7.4-arm64-arm-64bit",
+  "commands": [
+    {
+      "command": "cargo +1.98.1 xtask ci",
+      "exit": 0,
+      "log": "target/tooling/quality/ci-final.log",
+      "log_sha256": "35c1a933383d3d78e3e5a996ee793cc75f9cfde55d0bc1896085a5c5ea8f4901"
+    },
+    {
+      "command": "cargo +1.98.1 xtask crap",
+      "exit": 0,
+      "log": "target/tooling/quality/crap-gate-final.log",
+      "log_sha256": "06c57b91bba428047ecaa4ca2ffceb4fac324417436c885ff71834fc887aa071"
+    },
+    {
+      "command": "cargo +1.98.1 xtask mutants",
+      "exit": 0,
+      "log": "target/tooling/quality/mutants-gate-final.log",
+      "log_sha256": "f68dcbe37d08a509c7e9162a28faf930996f550763977a0593f89e3975c11588"
+    },
+    {
+      "command": "cargo +1.98.1 xtask miri",
+      "exit": 0,
+      "log": "target/tooling/quality/miri-gate-final.log",
+      "log_sha256": "b7395d9877c4486e6086f9051cdbbdd513616c658dbd521a193e825927ea9776"
+    },
+    {
+      "command": "cargo +1.98.1 xtask profile",
+      "exit": 0,
+      "log": "target/tooling/quality/profile-gate-final.log",
+      "log_sha256": "9a8dcc66d5a77517fdeb7c5cc9d764d59b3621939066e9b9ea46c95634bc0dd3"
+    },
+    {
+      "command": "cargo +1.92.0 test --workspace --all-targets --all-features --locked",
+      "exit": 0,
+      "log": "target/tooling/quality/msrv-final.log",
+      "log_sha256": "04591d8d6d081b94109a0ffcd9d18b4b100493e1bb6c8da1674bc66b36435209"
+    },
+    {
+      "command": "cargo +1.92.0 test --workspace --doc --all-features --locked",
+      "exit": 0,
+      "log": "target/tooling/quality/msrv-doc-final.log",
+      "log_sha256": "b1719229d31abff74ae30713c8686570396a37e216713abae0a9d90d5516d9ed"
+    }
+  ],
+  "clippy": {
+    "selection": "workspace, all targets and features; -D warnings",
+    "groups": [
+      "all",
+      "pedantic",
+      "nursery",
+      "cargo"
+    ],
+    "restrictions": "Selected in Cargo.toml; contradictory restriction group is not enabled wholesale",
+    "exceptions": "Justified local exceptions and redundant_pub_crate vs compiler forbid(unreachable_pub), documented in quality-engineering.md"
+  },
+  "crap": {
+    "tool": "cargo-crap 0.9.0",
+    "coverage_tool": "cargo-llvm-cov 0.9.1",
+    "scope": "Default-feature runtime functions across all workspace members, including uncovered xtask; fresh native target-test LCOV",
+    "before": {
+      "functions": 278,
+      "scores_at_least_30": 5,
+      "max": 420.0,
+      "major_functions": [
+        {
+          "file": "xtask/src/main.rs",
+          "function": "main",
+          "line": 23,
+          "cyclomatic": 20.0,
+          "coverage": null,
+          "crap": 420.0,
+          "crate": "xtask"
+        },
+        {
+          "file": "xtask/src/main.rs",
+          "function": "ci",
+          "line": 98,
+          "cyclomatic": 8.0,
+          "coverage": null,
+          "crap": 72.0,
+          "crate": "xtask"
+        },
+        {
+          "file": "src/main.rs",
+          "function": "run",
+          "line": 173,
+          "cyclomatic": 43.0,
+          "coverage": 89.44099378881988,
+          "crap": 45.17673743991838,
+          "crate": "jscycles",
+          "uncovered": [
+            {
+              "start": 193,
+              "end": 199
+            },
+            {
+              "start": 257,
+              "end": 257
+            },
+            {
+              "start": 269,
+              "end": 277
+            },
+            {
+              "start": 283,
+              "end": 283
+            },
+            {
+              "start": 384,
+              "end": 384
+            }
+          ]
+        },
+        {
+          "file": "src/syntax.rs",
+          "function": "module_literal",
+          "line": 6,
+          "cyclomatic": 33.0,
+          "coverage": 88.73239436619718,
+          "crap": 34.557839798162114,
+          "crate": "jscycles",
+          "uncovered": [
+            {
+              "start": 9,
+              "end": 9
+            },
+            {
+              "start": 28,
+              "end": 28
+            },
+            {
+              "start": 35,
+              "end": 40
+            }
+          ]
+        },
+        {
+          "file": "xtask/src/main.rs",
+          "function": "install_tools",
+          "line": 182,
+          "cyclomatic": 5.0,
+          "coverage": null,
+          "crap": 30.0,
+          "crate": "xtask"
+        }
+      ]
+    },
+    "after": {
+      "functions": 297,
+      "scores_at_least_30": 0,
+      "max": 28.0,
+      "diagnostics": {
+        "analyzed_files": 15,
+        "lcov_files": 15,
+        "matched_files": 15,
+        "source_only": {
+          "count": 0,
+          "examples": []
+        },
+        "lcov_only": {
+          "count": 0,
+          "examples": []
+        }
+      }
+    },
+    "gate": "--threshold 30 --fail-above; no function exclusions beyond normal test/example/fuzz source selection",
+    "report_sha256": "44bf445fab308436f1045d1c8064b4dc1905def0d98b0bcc444de54be009970b",
+    "lcov_sha256": "9c7035a4a2fe046bacb720ac2ee7948e8b8d4c56004c29862f90d39bd9149f79"
+  },
+  "mutation": {
+    "tool": "cargo-mutants 27.1.0",
+    "scope": [
+      "src/syntax.rs",
+      "src/budget.rs"
+    ],
+    "test_scope": [
+      "library",
+      "tests/boundary_closure.rs",
+      "tests/budgets.rs"
+    ],
+    "selected": 135,
+    "caught": 122,
+    "uncompilable": 3,
+    "reviewed_test_timeouts": 10,
+    "surviving": 0,
+    "equivalent_exclusions": 6,
+    "unmutated_baseline": "Success",
+    "raw_cargo_mutants_exit": 3,
+    "reviewed_gate_exit": 0,
+    "review_policy": ".cargo/mutation-review.json",
+    "equivalence_policy": ".cargo/mutants.toml",
+    "timeouts": "Exact source-bound diffs reproduced at 60 seconds before accepting 15-second mutation timeouts; no baseline, unknown, build or surviving-mutant failure is accepted",
+    "outcomes_sha256": "f1fa4cb37b88c98b511bf7f39a13874e81be65a7310470e463fee3978f1fa99c"
+  },
+  "miri": {
+    "toolchain": "nightly-2026-10-19",
+    "passed": 35,
+    "groups": {
+      "graph": 29,
+      "text_and_unicode": 4,
+      "bounded_cycles_and_concurrent_quota_output": 2
+    },
+    "scope": "Actual production Rust, excluding execution of native tree-sitter FFI",
+    "warnings": "Pinned nightly deprecates legacy lint-key spelling and fetch_update; the stable atomic API is retained for MSRV 1.92"
+  },
+  "hotpath": {
+    "version": "0.28.6",
+    "mode": "timing",
+    "normal_build": "Feature profiling disabled; no Hotpath dependency",
+    "changes": [
+      "Cache immutable import/require patterns per grammar",
+      "Cache canonical relative target identities per extraction",
+      "Combine three retained-import byte reservations into one checked atomic admission, preserving overflow rejection"
+    ],
+    "fresh_profile_sha256": "fe3036577b229dd60deb0ab51265dc2f951620501a9867ee74af4d01701264e4",
+    "measured_functions": 13,
+    "measurements_include_instrumentation_overhead": true,
+    "release_comparisons": [
+      {
+        "path": "docs/maintainers/evidence/quality-performance.json",
+        "sha256": "0fb6ba5d8b551825e5c8461976a5d082ddde310747da2c724112fa51b00623ab",
+        "files": 10000,
+        "before_median_seconds": 0.14893629200000014,
+        "after_median_seconds": 0.12740408400000014,
+        "elapsed_reduction_percent": 14.457327835179335,
+        "samples_per_binary": 21,
+        "outputs_equal": true
+      },
+      {
+        "path": "docs/maintainers/evidence/quality-performance-1000.json",
+        "sha256": "aba89bafcc60c6e518a77ee3da2d0f06c64acd5f5ed106ed55ad38b416025bcb",
+        "files": 1000,
+        "before_median_seconds": 0.016935874999999934,
+        "after_median_seconds": 0.012959874999999954,
+        "elapsed_reduction_percent": 23.476791131252416,
+        "samples_per_binary": 21,
+        "outputs_equal": true
+      }
+    ]
+  },
+  "other_checks": {
+    "native_target_tests": 434,
+    "doctests": 1,
+    "exact_msrv": "1.92.0",
+    "python_tests": 24,
+    "guidance_integrity": "passed",
+    "github_actionlint": "1.7.12, passed",
+    "gitlab_yaml": "parsed locally"
+  },
+  "limitations": [
+    "Local execution; configured hosted CI jobs have not been executed by this session",
+    "Mutation scope is the two named modules, not the entire product",
+    "Synthetic warm-filesystem timings on this host; no cross-platform, cold-cache, madge or performance-SLA claim"
+  ],
+  "inputs": {
+    ".cargo/mutants.toml": "887a2ab168f72cec371c86cf40b81d7aacfc4aca434b5b868f9af749a8d7a932",
+    ".cargo/mutation-review.json": "6c3e48db9a278f6c245a532af7f79636dec5ef5ca8ba6d3335bd02273ada47d0",
+    ".github/workflows/ci.yml": "d9bcd8c25277fd8fc6f809eec32c8ab0736d215d55f2576aa858142dae04199c",
+    ".github/workflows/maintenance.yml": "9c65d24eee3ad88a41683561b8a345b321ce30d59187d228c1b09fa6626347e3",
+    ".gitlab-ci.yml": "71fbe5c3a3eb5478f068a720f20e40c0d731962f4a9aebf286cced209b7f43a8",
+    "Cargo.lock": "2260878abf7b6bbf714ac745d5ad7ed1e9b5080f50f0acf1aeae1be1099dd477",
+    "Cargo.toml": "b83c8e0c033f633427acc105e1ce9dbdccc8f505038a1e21a2b1aa7a06119cdf",
+    "clippy.toml": "58734493534f24434c642acc05bf8f665fb44a5d543d1b13fcb16cf39be579c1",
+    "scripts/benchmark.py": "cfb4a77298dbebdd888265150e1be4264a8cec568c05840cfe3242a8ab0e6d3b",
+    "scripts/check_adoption.py": "cb5d3254eeaada7cf62ef0ec48424914ff813c2d9b2127ba934d36c27b84448f",
+    "scripts/fuzz.py": "bf18d1c368df9240d7a15abfe6a862bec222f7e06c8187491430f04e6c062f15",
+    "scripts/mutation.py": "c7ce6c1ef5871b8b510b3ad45542afb8338ea4f0bfc9fc9b08c3a517a96539ea",
+    "scripts/release_record.py": "7e9d19e089d9863027ab2d0a5228035fe6d83330b18747fdfe1ac174496789b8",
+    "scripts/test_check_adoption.py": "d438e162f60f126bc6d6c2fd070ab8a037ff295342616688ae2591e4ff80da34",
+    "scripts/test_mutation.py": "e9642ef58a5b00f7642bc897c02570bce5340e3852b23b493a9ea093c53bd30e",
+    "scripts/test_release_record.py": "c0430ba6073dfb754623d88ea7a654a7f6cb47b1e1b6e446f3a0b2ae7deaced5",
+    "scripts/verify-controls.py": "b90fa92de1efe6eda574c4d1e81df84e8e94f643138152a37930b55a687d700f",
+    "src/analysis.rs": "da971c9d50cd78b8edb7d6f183825ac894fa8864941f0242640b042580229f6b",
+    "src/budget.rs": "ed5b90916fc88d401dc50fb7356d42e76fff4d837a5c3f4f6c7ae97c31e03a17",
+    "src/config.rs": "a3b8ab7c20a553b43072478de320367c7f63607d5427a16aee091050c4417e51",
+    "src/cycles.rs": "415d6ca3b6dea8853cc11e190806679a5ea59329dd9029983de2ac5e8a0369cf",
+    "src/discovery.rs": "c9556fc2434a051c1d8efda70a77c1619ca4e5e92ceb3190a0e961c5dd586540",
+    "src/graph.rs": "78ed235273c95065e4f10e93938094daae8d564b59bcc0171021735c4d37b5e9",
+    "src/imports.rs": "c9d000c2ba22feb0fbea7fb4639f45a3281e48b75df6e010ca30053f09e938f9",
+    "src/input.rs": "4e97daa9a8ed033ce86d21f36a08d10c961ad867567a6185265c0dd20355bf73",
+    "src/lib.rs": "3a98b6555fd75881fbcab71d0a6ae04b2e88f01064ded862922ad9b0347b0e9e",
+    "src/main.rs": "81e798ad944f60722921b1df70ffdb8c27b32a38a88c9ba405982deb450658d8",
+    "src/output.rs": "569929b5b497e3e1bc62a4cb60fcdd4f317465c0dad7ebc6a3d32e59bbadef71",
+    "src/syntax.rs": "1fdf159a876d3485b2e5bd80dc8597eacdad43d7ce8b8ba62d8426a7879e046f",
+    "src/tsconfig.rs": "32c2bf0f5341413191f81b73858988cf6b30d992f953bcb46143cda12f499f50",
+    "src/workspace.rs": "d48b487e52bc878cd37b52bb1690759f9dd66ecdd48685c551b94143f3817c9f",
+    "tests/adherence.rs": "7afa79572ba46043da1d3a89a5f6b23186b35aff89c3665972f77afab3e66b4b",
+    "tests/boundary_closure.rs": "fdc6fb0998c7cc1898289f130998f7fe6afd1e874ca3b2fde02c54c221e9bdfe",
+    "tests/budgets.rs": "c07238edb9cdb6434569591f94a13db8b1d467e11dcf1579b537d62575fa6b1b",
+    "tests/cli.rs": "4795373a2f8a4892b657ccff1a894688278f0a40f9e07c1bda1290a74cc20284",
+    "tests/integration.rs": "df3f73d2b8a9e9f34907c98baa277ace390bc9fd156667ff21df5234af808deb",
+    "tests/miri.rs": "ec7151c0bc1898fc3800e25db0ed0d30b321e8e61187c6132a22d91b4a14ad91",
+    "xtask/Cargo.toml": "9a90b3a4d9e18e8339df514116d0664444d4669d35ae522171a8fe7151b7bd1b",
+    "xtask/src/main.rs": "ce12a0e5607cb61f45cd78a084635f8b18f2b79e59f99a3bd9e82f86cb20871d"
+  }
+}

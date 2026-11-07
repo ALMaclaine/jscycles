@@ -7,9 +7,9 @@ reported as such. Intentional dependency changes refresh and review Cargo.lock
 before locked checks. Install cargo-deny with `cargo xtask install-tools`.
 Also run `python3 -B scripts/check_adoption.py` and the Python tests with
 `python3 -B -m unittest discover -s scripts -p 'test_*.py'` using Python 3.11+.
-The [full audit](docs/rust-oe-full-audit.md) owns applicability and remaining
+The [full audit](docs/maintainers/rust-oe-full-audit.md) owns applicability and remaining
 obligations; read its product and threat contracts for relevant changes. Follow
-[verification guidance](docs/verification.md) for parser campaigns and coverage
+[verification guidance](docs/maintainers/verification.md) for parser campaigns and coverage
 triage. Inventory completeness, documentation and green local checks are not
 full-adherence evidence.
 

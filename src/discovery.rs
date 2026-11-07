@@ -72,6 +72,9 @@ pub struct PackageDiscovery {
 
     /// Default extensions.
     default_extensions: Vec<String>,
+
+    /// Default for leaving out type-only imports.
+    default_skip_type_imports: bool,
 }
 
 impl PackageDiscovery {
@@ -188,6 +191,7 @@ impl PackageDiscovery {
             exclude_filters,
             package_configs: config.packages.clone(),
             default_extensions: config.defaults.extensions.clone(),
+            default_skip_type_imports: config.defaults.skip_type_imports,
         })
     }
 
@@ -664,6 +668,9 @@ impl PackageDiscovery {
 
         if config.extensions.is_none() {
             config.extensions = Some(self.default_extensions.clone());
+        }
+        if config.skip_type_imports.is_none() {
+            config.skip_type_imports = Some(self.default_skip_type_imports);
         }
 
         Package {

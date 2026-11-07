@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/ALMaclaine/jscycles/main/jscycles.schema.json",
+  "title": "jscycles configuration",
+  "description": "jscycles.yaml. See https://github.com/ALMaclaine/jscycles/blob/main/docs/configuration.md",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "scan": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where to look for packages.",
+      "properties": {
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "."
+          ],
+          "description": "Directories searched for package.json files when no paths are given on the command line."
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules",
+            "**/dist",
+            "**/build"
+          ],
+          "description": "Directories skipped when finding packages and reading their files."
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Settings for every package.",
+      "properties": {
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]+$"
+          },
+          "description": "File suffixes to analyze, without the dot. An empty list analyzes no files.",
+          "default": [
+            "ts",
+            "tsx",
+            "mts",
+            "cts",
+            "js",
+            "jsx",
+            "mjs",
+            "cjs"
+          ]
+        },
+        "skip_type_imports": {
+          "type": "boolean",
+          "default": false,
+          "description": "Leave out import type, export type, type-position import() and declaration-file imports."
+        }
+      }
+    },
+    "packages": {
+      "type": "object",
+      "description": "Overrides keyed by a glob over package names; the first matching pattern in lexical order applies.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "extensions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9]+$"
+            },
+            "description": "File suffixes to analyze, without the dot. An empty list analyzes no files."
+          },
+          "ignore": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Globs for files to leave out, relative to the package directory."
+          },
+          "skip_type_imports": {
+            "type": "boolean",
+            "description": "Override defaults.skip_type_imports for these packages."
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Resource limits for one scan. See docs/analysis-limits.md.",
+      "properties": {
+        "max_entries": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000000,
+          "description": "Filesystem entries visited, including excluded ones"
+        },
+        "max_files": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 100000,
+          "description": "File admissions for metadata reads and queued sources"
+        },
+        "max_total_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 536870912,
+          "description": "Bytes read from all source and metadata files"
+        },
+        "max_file_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 16777216,
+          "description": "Largest single source or metadata file, in bytes"
+        },
+        "max_imports": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2000000,
+          "description": "Import records"
+        },
+        "max_nodes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 500000,
+          "description": "Nodes across all file and package graphs"
+        },
+        "max_edges": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2000000,
+          "description": "Distinct edges, summed across graphs"
+        },
+        "max_cycles": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10000,
+          "description": "File cycle representatives and package cycles combined"
+        },
+        "max_work": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 20000000,
+          "description": "Source bytes parsed plus logical traversal and matching operations"
+        },
+        "max_graph_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 134217728,
+          "description": "Retained paths, imports, metadata and graph labels, in bytes"
+        },
+        "max_cycle_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 33554432,
+          "description": "Cycle paths and expanded evidence, in bytes"
+        },
+        "max_output_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 33554432,
+          "description": "Encoded report size, in bytes"
+        }
+      }
+    }
+  }
+}
