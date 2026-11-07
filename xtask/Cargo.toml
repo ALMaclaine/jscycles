@@ -6,14 +6,22 @@ rust-version.workspace = true
 license.workspace = true
 description = "Build automation tasks for the workspace"
 publish = false
+repository = "https://github.com/EnderHub/jscycles"
+readme = "../README.md"
+keywords = ["development", "automation"]
+categories = ["development-tools"]
 
 [dependencies]
 xshell = "0.2"
 
-# xtask is a dev tool - use relaxed lints, not the strict workspace lints
+# Maintenance commands print diagnostics; enforce the same Clippy groups while
+# keeping their intentional command output outside product restrictions.
 [lints.rust]
 unsafe-code = "forbid"
+unsafe-op-in-unsafe-fn = "deny"
 
 [lints.clippy]
-all = "warn"
-pedantic = "warn"
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+cargo = { level = "deny", priority = -1 }

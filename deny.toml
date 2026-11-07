@@ -15,8 +15,8 @@ targets = [
     "x86_64-pc-windows-msvc",
 ]
 
-# Exclude dev-dependencies from checks (they don't ship with your code)
-exclude-dev = true
+# Include development/build dependencies in the CI trust boundary
+exclude-dev = false
 
 [advisories]
 version = 2
@@ -52,17 +52,10 @@ allow = [
     "Zlib",
     "MPL-2.0",         # Weak copyleft, file-level only
     "Unicode-3.0",     # Required by unicode crates
-    "BUSL-1.1",        # Required by surrealdb (Business Source License)
 ]
 
 # Skip checking these crates (e.g., private crates with custom licenses)
 exceptions = []
-
-# Clarify licenses for crates with unclear license files
-[[licenses.clarify]]
-name = "ring"
-expression = "MIT AND ISC AND OpenSSL"
-license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
 
 [bans]
 # Lint level for multiple versions of the same crate
@@ -86,7 +79,7 @@ skip = []
 skip-tree = []
 
 # [bans.build] section removed - build scripts are allowed by default
-# The ast-grep dependencies have build scripts for tree-sitter parsers
+# The willbooster-tree-sitter runtime and grammars have cc build scripts
 
 [sources]
 # Only allow crates from crates.io

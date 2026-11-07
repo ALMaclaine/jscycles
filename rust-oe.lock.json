@@ -1,0 +1,187 @@
+{
+  "schema": 1,
+  "config_sha256": "57e72e97b2e66d1980e19ef114b77b6bd198e08469913dfde0040b1586e9cf83",
+  "directory": ".rust-oe",
+  "repository": "ssh://git@gitlab.maclaine.io:10022/alm/rust-oe.git",
+  "catalog": "rust-oe-bundles.toml",
+  "selections": [
+    "standards",
+    "agents",
+    "api",
+    "cli",
+    "dependencies",
+    "verification",
+    "observability",
+    "tools"
+  ],
+  "notes": [
+    "docs/rust-oe-adoption.md"
+  ],
+  "bundles": {
+    "agents": {
+      "revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+      "catalog_sha256": "cfacf725ab01dd5c5215ed590e86e440c701ff28dcb7fb05db1336f5218e697b",
+      "description": "Concise task-triggered guidance for coding agents",
+      "requires": [
+        "standards"
+      ],
+      "files": {
+        "distribution/agent-guidance.md": {
+          "source_sha256": "6e0c1a613dcd1875f20961b0993d081dbc08437351c1a942b15f3de14d7422a1",
+          "sha256": "a37c7f6bf5f93a5b4dd1e81a42f08ee881065482efd44450fda627f60068deea"
+        },
+        "docs/practice-adoption.md": {
+          "source_sha256": "71728b1b3e37adf26d0b1cb80ac617f6d50d57d8e93fd8f34e5a568cd7e9e3cf",
+          "sha256": "bc22c179d30250409f1c6c64411260c1e3dbcda70a5f5c6b170ede37c5700202"
+        }
+      }
+    },
+    "api": {
+      "revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+      "catalog_sha256": "cfacf725ab01dd5c5215ed590e86e440c701ff28dcb7fb05db1336f5218e697b",
+      "description": "Public API design, ownership, trait laws, and compatibility",
+      "requires": [
+        "standards"
+      ],
+      "files": {
+        "practices/rust-api-semantic-boundaries.md": {
+          "source_sha256": "c6900abe22601f780716fa0d35593dbac4aa95e1434ce1e2bba1e22fc98c7dae",
+          "sha256": "5c421d499ecce441da2569bf195211a202999a5fd312161d128b6255c3330304"
+        }
+      }
+    },
+    "cli": {
+      "revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+      "catalog_sha256": "cfacf725ab01dd5c5215ed590e86e440c701ff28dcb7fb05db1336f5218e697b",
+      "description": "Untrusted input, subprocess, file publication, and CLI failure contracts",
+      "requires": [
+        "standards"
+      ],
+      "files": {
+        "practices/cli-failure-reporting.md": {
+          "source_sha256": "04a59038aea804119fcd7dd8047ac3ea54e4b48dea2c4c2c8559b9b6e7ba557d",
+          "sha256": "a1fc8d36c95881e78558c414498ab13a8586e0ef272ba7eca72aa11e8e50217a"
+        },
+        "practices/untrusted-input-boundaries.md": {
+          "source_sha256": "daff0558bc9ed78f90ef85a3335c8383939b7fd359ea60c65c557717f0f1a04b",
+          "sha256": "f6ba1772a2c721bded617689a88df90bbc29269e85fe979aaa439c84851d3a2c"
+        }
+      }
+    },
+    "dependencies": {
+      "revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+      "catalog_sha256": "cfacf725ab01dd5c5215ed590e86e440c701ff28dcb7fb05db1336f5218e697b",
+      "description": "Third-party audit trust and Cargo support/control selection",
+      "requires": [
+        "standards"
+      ],
+      "files": {
+        "practices/cargo-ci-control-selection.md": {
+          "source_sha256": "715156ade463fa41c8cd92ba35b59e8194d8df8df5f550042a5576566cb0fa36",
+          "sha256": "57e43ce9432c82945bdd80b9006763928dbf440a117e2b69acd52565b272ce52"
+        },
+        "practices/dependency-audit-policy.md": {
+          "source_sha256": "a2de7362e83eed2e8e3f02fb51a8ffeb846453828ed8a98de6ef81ee7ef1d075",
+          "sha256": "887a4b835ae3012177ca33c18ab88f51762ae3949315095d6a793acb033e3af4"
+        }
+      }
+    },
+    "observability": {
+      "revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+      "catalog_sha256": "cfacf725ab01dd5c5215ed590e86e440c701ff28dcb7fb05db1336f5218e697b",
+      "description": "Representative performance evidence, profiling, and telemetry budgets",
+      "requires": [
+        "standards"
+      ],
+      "files": {
+        "practices/performance-observability.md": {
+          "source_sha256": "fae549e15952467fbb9b2fef6312b9fa16a02569ceebda2f964b6d336971981f",
+          "sha256": "e9f3b1cc4027c035d25dbf97a94d98a28263554f8fecb49bc0422fb017bd9e1c"
+        }
+      }
+    },
+    "standards": {
+      "revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+      "catalog_sha256": "cfacf725ab01dd5c5215ed590e86e440c701ff28dcb7fb05db1336f5218e697b",
+      "description": "Engineering standards, applicability, ownership, and authority",
+      "requires": [],
+      "files": {
+        "docs/practice-adoption.md": {
+          "source_sha256": "71728b1b3e37adf26d0b1cb80ac617f6d50d57d8e93fd8f34e5a568cd7e9e3cf",
+          "sha256": "7f1900f02696b111083232de4b3170072110c6cb079d10392b54927bbc4b861a"
+        },
+        "docs/rust-engineering-standards.md": {
+          "source_sha256": "65cb7d75e035b0a6ed9336fd7021970815ac37c2e34be5c49858212568d5f25a",
+          "sha256": "98d99dbb85385a5ccdcefa3dff3487c0a4438a5b06ebb6b08c8824e77230e6fd"
+        },
+        "practices/rust-standards-authority-map.md": {
+          "source_sha256": "07865fbf5cdcf437ecb542eb64d540a8f32eddaf167ffb94f8096beb3645f82d",
+          "sha256": "338b39332140f8616c47d6843cc02298085a939f413e8386795ae1ae15e80393"
+        }
+      }
+    },
+    "tools": {
+      "revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+      "catalog_sha256": "cfacf725ab01dd5c5215ed590e86e440c701ff28dcb7fb05db1336f5218e697b",
+      "description": "Tool adoption guidance and reference tool pins; assets do not change project CI",
+      "requires": [
+        "standards"
+      ],
+      "files": {
+        "practices/development-tool-adoption.md": {
+          "source_sha256": "9c7fff180f4ee5bc4b87ad2dce0cdb12b5e43e08a3104e2b8dfd0f6ca8e3f8cf",
+          "sha256": "0f63f83b1bd0399bdd24add1bbe660d36cb2c11dfe65dc2b93e0ff60b496f3f8"
+        },
+        "tooling/README.md": {
+          "source_sha256": "fa66c88ff136fe51fead5e78b400116e7235ea7de189b4e5df702832f789d015",
+          "sha256": "2f42f241d27b90042b4ec6bbf462a57f647d1dd57cb7a852cb7840de838da051"
+        },
+        "tooling/tools.json": {
+          "source_sha256": "816e0cc30c3009475bf79c1ace1a9242ed8bcf94984ba8c7af4509d066a07962",
+          "sha256": "816e0cc30c3009475bf79c1ace1a9242ed8bcf94984ba8c7af4509d066a07962"
+        }
+      }
+    },
+    "verification": {
+      "revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+      "catalog_sha256": "cfacf725ab01dd5c5215ed590e86e440c701ff28dcb7fb05db1336f5218e697b",
+      "description": "Test strength, coverage, mutation, and fuzzing adoption",
+      "requires": [
+        "standards"
+      ],
+      "files": {
+        "practices/fuzzing-boundaries.md": {
+          "source_sha256": "518da99fe9251ff2e6bb7f1ceb30a2acca192004b28eab1ffba56d0b0381b4f5",
+          "sha256": "26a7d6c6b9b433f4f5212989fad8f95d97a9e5fd3f5b0be7d5cc864bf1dba136"
+        },
+        "practices/verification-strength.md": {
+          "source_sha256": "81000495bd554d6d2499a79c9b61465ccad12841924e352047cbe140f8db7326",
+          "sha256": "2ebe4139f13492926f9f461b885e480c669c523f8243487c48e8d44ccd0a73e2"
+        }
+      }
+    }
+  },
+  "files": {
+    "INDEX.md": "f1f7aa08c487511c3b108c1962549cab425e1449e86a1aca14c671cb42beabb7",
+    "bundles/agents/distribution/agent-guidance.md": "a37c7f6bf5f93a5b4dd1e81a42f08ee881065482efd44450fda627f60068deea",
+    "bundles/agents/docs/practice-adoption.md": "bc22c179d30250409f1c6c64411260c1e3dbcda70a5f5c6b170ede37c5700202",
+    "bundles/api/practices/rust-api-semantic-boundaries.md": "5c421d499ecce441da2569bf195211a202999a5fd312161d128b6255c3330304",
+    "bundles/cli/practices/cli-failure-reporting.md": "a1fc8d36c95881e78558c414498ab13a8586e0ef272ba7eca72aa11e8e50217a",
+    "bundles/cli/practices/untrusted-input-boundaries.md": "f6ba1772a2c721bded617689a88df90bbc29269e85fe979aaa439c84851d3a2c",
+    "bundles/dependencies/practices/cargo-ci-control-selection.md": "57e43ce9432c82945bdd80b9006763928dbf440a117e2b69acd52565b272ce52",
+    "bundles/dependencies/practices/dependency-audit-policy.md": "887a4b835ae3012177ca33c18ab88f51762ae3949315095d6a793acb033e3af4",
+    "bundles/observability/practices/performance-observability.md": "e9f3b1cc4027c035d25dbf97a94d98a28263554f8fecb49bc0422fb017bd9e1c",
+    "bundles/standards/docs/practice-adoption.md": "7f1900f02696b111083232de4b3170072110c6cb079d10392b54927bbc4b861a",
+    "bundles/standards/docs/rust-engineering-standards.md": "98d99dbb85385a5ccdcefa3dff3487c0a4438a5b06ebb6b08c8824e77230e6fd",
+    "bundles/standards/practices/rust-standards-authority-map.md": "338b39332140f8616c47d6843cc02298085a939f413e8386795ae1ae15e80393",
+    "bundles/tools/practices/development-tool-adoption.md": "0f63f83b1bd0399bdd24add1bbe660d36cb2c11dfe65dc2b93e0ff60b496f3f8",
+    "bundles/tools/tooling/README.md": "2f42f241d27b90042b4ec6bbf462a57f647d1dd57cb7a852cb7840de838da051",
+    "bundles/tools/tooling/tools.json": "816e0cc30c3009475bf79c1ace1a9242ed8bcf94984ba8c7af4509d066a07962",
+    "bundles/verification/practices/fuzzing-boundaries.md": "26a7d6c6b9b433f4f5212989fad8f95d97a9e5fd3f5b0be7d5cc864bf1dba136",
+    "bundles/verification/practices/verification-strength.md": "2ebe4139f13492926f9f461b885e480c669c523f8243487c48e8d44ccd0a73e2"
+  },
+  "agent": {
+    "path": "AGENTS.md",
+    "sha256": "d20efc8325757d7b5ff1243679e0eb65030399c4021e0819f49e26948f567ff7"
+  }
+}

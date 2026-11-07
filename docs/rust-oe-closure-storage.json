@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "reviewed": "2026-11-04",
+  "owner": "alm",
+  "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+  "measurement": "du -sk for each selected project-local output category; allocated blocks, not exact logical file sizes",
+  "categories": [
+    {
+      "path": "target/debug",
+      "allocated_kib": 4792340
+    },
+    {
+      "path": "target/release",
+      "allocated_kib": 406560
+    },
+    {
+      "path": "target/llvm-cov-target",
+      "allocated_kib": 919980
+    },
+    {
+      "path": "target/tooling",
+      "allocated_kib": 1539596
+    },
+    {
+      "path": "target/package",
+      "allocated_kib": 2068
+    },
+    {
+      "path": "fuzz/target",
+      "allocated_kib": 1122396
+    }
+  ],
+  "selected_category_total_kib": 8782940,
+  "advisory_project_review_threshold_gib": 12,
+  "enforcement": "Manual measurement before extending campaigns or adding compiler/target/profile variation; report/review threshold crossing and choose cleanup/rebuild cost explicitly. No automated deletion or CI denial.",
+  "composition": "One dirty working tree; Rust 1.92.0/1.98.1 and nightly-2026-06-20, normal/debug/release, LLVM coverage, disposable control copies and three sanitizer targets. target/debug contains mixed compiler intermediates; fingerprints are not a reliable per-toolchain allocation bill. Some obsolete native objects remain cached.",
+  "limits": "Categories may grow during final builds and omit small target/doc/tmp files; not a complete machine/global cache inventory. No shared/global layout change or reproducibility claim.",
+  "procedure": "docs/maintainer-runbook.md#evidence-and-development-storage"
+}

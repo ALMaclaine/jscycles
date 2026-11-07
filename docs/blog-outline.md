@@ -1,3 +1,6 @@
+> Editorial draft: timing comparisons below are unverified historical placeholders.
+> Do not publish them without retained workloads, commands, versions, and measurements.
+
 # jscycles Blog Post Outline
 
 ## Working Title

@@ -1,0 +1,49 @@
+{
+  "_rust_ci": {
+    "source": "35b1025b06f26938ce91f39d97cb2f83bbd324bc",
+    "catalog_sha256": "2a317cb60b2aa83de8e3f8e81d6bcf2c39875e085ab9a0d6b664a3c65c3c1a36",
+    "schema_version": 1
+  },
+  "nightly": "nightly-2026-10-19",
+  "tools": {
+    "deny": {
+      "package": "cargo-deny",
+      "command": "deny",
+      "version": "0.19.8"
+    },
+    "vet": {
+      "package": "cargo-vet",
+      "command": "vet",
+      "version": "0.10.2"
+    },
+    "mutants": {
+      "package": "cargo-mutants",
+      "command": "mutants",
+      "version": "27.1.0"
+    },
+    "coverage": {
+      "package": "cargo-llvm-cov",
+      "command": "llvm-cov",
+      "version": "0.9.1"
+    },
+    "crap": {
+      "package": "cargo-crap",
+      "command": "crap",
+      "version": "0.9.0"
+    },
+    "fuzz": {
+      "package": "cargo-fuzz",
+      "command": "fuzz",
+      "version": "0.13.2"
+    },
+    "semver": {
+      "package": "cargo-semver-checks",
+      "command": "semver-checks",
+      "version": "0.51.0"
+    }
+  },
+  "hotpath": {
+    "version": "0.28.6",
+    "feature": "profiling"
+  }
+}

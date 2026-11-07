@@ -1,0 +1,77 @@
+{
+  "tool": "cargo-mutants 27.1.0",
+  "files": [
+    "src/**"
+  ],
+  "timeouts": {
+    "7cdb6bfb3b29669f402663a555ce60f19cd5c7449a975d73ad60351db64539e0": {
+      "name": "src/syntax.rs:129:24: replace += with -= in jsonc",
+      "reason": "The mutated scanner cursor or loop guard stops making progress; the same diff timed out at 60 seconds in the baseline campaign.",
+      "reproduced_at_60_seconds": true
+    },
+    "7699e807cea4fbfcfd0a0d9a74d0892534bb8ee101ff5a963ca9f04b86e44964": {
+      "name": "src/syntax.rs:133:30: replace < with == in jsonc",
+      "reason": "The mutated scanner cursor or loop guard stops making progress; the same diff timed out at 60 seconds in the baseline campaign.",
+      "reproduced_at_60_seconds": true
+    },
+    "112fd685cccda0baef804d3063b75d2c99d694a58b1cfcbc1cb101bb11a02a5f": {
+      "name": "src/syntax.rs:133:30: replace < with > in jsonc",
+      "reason": "The mutated scanner cursor or loop guard stops making progress; the same diff timed out at 60 seconds in the baseline campaign.",
+      "reproduced_at_60_seconds": true
+    },
+    "2efc991c05395205fe78faf8aecb8175237175ee3621c63c9956ba2685255f96": {
+      "name": "src/syntax.rs:133:47: delete ! in jsonc",
+      "reason": "The mutated scanner cursor or loop guard stops making progress; the same diff timed out at 60 seconds in the baseline campaign.",
+      "reproduced_at_60_seconds": true
+    },
+    "3f90aed5b98fd5e8082c893ea1391f61d4281b92f41bb09a04cfc92425e04390": {
+      "name": "src/syntax.rs:135:28: replace += with *= in jsonc",
+      "reason": "The mutated scanner cursor or loop guard stops making progress; the same diff timed out at 60 seconds in the baseline campaign.",
+      "reproduced_at_60_seconds": true
+    },
+    "f86fdfe3cf534ca6fb09ec73b0be888483fddb220d563bf0fd22a7c98c789d9a": {
+      "name": "src/syntax.rs:157:28: replace += with *= in jsonc",
+      "reason": "The mutated scanner cursor or loop guard stops making progress; the same diff timed out at 60 seconds in the baseline campaign.",
+      "reproduced_at_60_seconds": true
+    },
+    "2ffe3e24c0d57bf33a8c3060bef96bb28508e49637399919281be5428ab2b620": {
+      "name": "src/syntax.rs:166:16: replace += with *= in jsonc",
+      "reason": "The mutated scanner cursor or loop guard stops making progress; the same diff timed out at 60 seconds in the baseline campaign.",
+      "reproduced_at_60_seconds": true
+    },
+    "5a7d24914727331c4e630fb8149a2b240271d2e1c964de7cee9965694014b661": {
+      "name": "src/syntax.rs:175:24: replace += with -= in jsonc",
+      "reason": "The mutated scanner cursor or loop guard stops making progress; the same diff timed out at 60 seconds in the baseline campaign.",
+      "reproduced_at_60_seconds": true
+    },
+    "74f3e702113f7500afbe442420e761c4414c5ce6a8ade951a3a4660581837548": {
+      "name": "src/budget.rs:64:13: delete match arm 7 in Resource::from_code",
+      "reason": "Removing the cycle exhaustion sentinel makes dense enumeration bypass its cycle quota. The before/after function body is identical; Clippy added const qualification.",
+      "reproduced_at_60_seconds": true
+    },
+    "5971b507a6987e3c176c210e40daf734545d634cff7c62b94b3497fbcb5f3ff2": {
+      "name": "src/analysis.rs:364:24: replace += with *= in representative",
+      "reason": "The iterative graph cursor stops advancing; reproduced in the isolated 60-second replay with a passing unmutated baseline.",
+      "reproduced_at_60_seconds": true
+    },
+    "67b1f89d4a18a38b5148c68f016572f4f76a56866915df361f2ab1949f0de658": {
+      "name": "src/analysis.rs:285:28: replace += with *= in components",
+      "reason": "The iterative graph cursor stops advancing; reproduced in the isolated 60-second replay with a passing unmutated baseline.",
+      "reproduced_at_60_seconds": true
+    },
+    "680a18bbd496cca2a2367a41b5932b0f47db701c08fb9c77c4454699e54b29e1": {
+      "name": "src/analysis.rs:433:24: replace += with *= in circuit",
+      "reason": "The iterative graph cursor stops advancing; reproduced in the isolated 60-second replay with a passing unmutated baseline.",
+      "reproduced_at_60_seconds": true
+    },
+    "f93a158c7ba4b6c438a715d4aa15f4e01196dea5e1c9c19ccfca60d8fc040585": {
+      "name": "src/syntax.rs:194:16: replace += with *= in jsonc",
+      "reason": "The cursor multiplies by one from zero and cannot advance. Re-anchored from the previous diff: the mutation and all context through the end of jsonc are identical; only the following declaration changed. The fresh case timed out at 60 seconds after a passing baseline.",
+      "reproduced_at_60_seconds": true,
+      "previous_diff_sha256": "7296eb0c18049f1c099b8630f759ab4da654e0902be05645942a0a19f19e9c1d"
+    }
+  },
+  "equivalent_exclusions": 7,
+  "optimization_exclusions": 1,
+  "schema": 2
+}

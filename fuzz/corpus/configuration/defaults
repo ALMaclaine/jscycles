@@ -1,0 +1,4 @@
+scan:
+  include: ['.']
+limits:
+  max_cycles: 1

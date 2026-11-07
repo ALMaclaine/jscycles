@@ -1,0 +1,61 @@
+{
+  "schema": 3,
+  "workload": "monorepo",
+  "files": 1024,
+  "packages": 16,
+  "aliases": 512,
+  "analysis_work_limit": 64000000,
+  "corpus_sha256": "bb73de842f967dc1e00ed1bca8599f9ef4f70184c63eba416842413c3ee46246",
+  "warmups": 1,
+  "samples_seconds": [
+    0.03430475000000002,
+    0.033540875000000026,
+    0.03445166700000002,
+    0.034816457999999995,
+    0.03525979100000004,
+    0.03276370799999995,
+    0.03400183300000004,
+    0.034409625,
+    0.03409895800000007,
+    0.033743291000000064,
+    0.03533645800000007,
+    0.030815666999999936,
+    0.03330004099999995,
+    0.030802333999999876,
+    0.03400954199999995
+  ],
+  "median_seconds": 0.03400954199999995,
+  "min_seconds": 0.030802333999999876,
+  "max_seconds": 0.03533645800000007,
+  "host": "macOS-15.7.4-arm64-arm-64bit",
+  "processor": "arm",
+  "rayon_num_threads": "default",
+  "binary_sha256": "71ea518b5e962c61e43fa47851c656d68c80754c631a6e74e0790663a6df4766",
+  "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+  "baseline": {
+    "binary_sha256": "026e1b41a5910afd9ae8b7c17d3e483a2d49505261c9ce40779773ad643e54d6",
+    "samples_seconds": [
+      0.033285333,
+      0.03363258400000002,
+      0.03308962500000001,
+      0.034413375000000024,
+      0.03366583299999998,
+      0.03313691699999999,
+      0.03633674999999992,
+      0.03541395800000002,
+      0.031817541999999976,
+      0.03523504200000005,
+      0.03232554099999996,
+      0.033500333999999965,
+      0.03250741699999993,
+      0.03664520799999993,
+      0.033708458
+    ],
+    "median_seconds": 0.03363258400000002
+  },
+  "comparison": {
+    "order": "alternating on the same corpus, one warm-up per binary",
+    "outputs_equal": true,
+    "baseline_median_over_candidate": 0.9889161106609454
+  }
+}

@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 
 use crate::cycles::{Cycle, PackageCycle, PackageCycleWithFiles};
+use crate::terminal::label;
 
 /// Results for a single package.
 #[derive(Debug, Clone)]
@@ -33,7 +34,8 @@ pub struct Results {
 impl Results {
     /// Create empty results.
     #[inline]
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             packages: Vec::new(),
         }
@@ -41,18 +43,21 @@ impl Results {
 
     /// Check if any cycles were found.
     #[inline]
+    #[must_use]
     pub fn has_cycles(&self) -> bool {
         self.packages.iter().any(|p| !p.cycles.is_empty())
     }
 
     /// Get total number of cycles across all packages.
     #[inline]
+    #[must_use]
     pub fn total_cycles(&self) -> usize {
         self.packages.iter().map(|p| p.cycles.len()).sum()
     }
 
     /// Get number of packages with cycles.
     #[inline]
+    #[must_use]
     pub fn packages_with_cycles(&self) -> usize {
         self.packages
             .iter()
@@ -96,36 +101,42 @@ pub struct UnifiedResults {
 impl UnifiedResults {
     /// Create empty unified results.
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Check if any file-level cycles were found.
     #[inline]
+    #[must_use]
     pub fn has_file_cycles(&self) -> bool {
         self.file_results.iter().any(|p| !p.cycles.is_empty())
     }
 
     /// Check if any package-level cycles were found.
     #[inline]
-    pub fn has_package_cycles(&self) -> bool {
+    #[must_use]
+    pub const fn has_package_cycles(&self) -> bool {
         !self.package_cycles.is_empty() || !self.package_cycles_with_files.is_empty()
     }
 
     /// Check if any cycles were found (file or package level).
     #[inline]
+    #[must_use]
     pub fn has_any_cycles(&self) -> bool {
         self.has_file_cycles() || self.has_package_cycles()
     }
 
     /// Get total number of file-level cycles.
     #[inline]
+    #[must_use]
     pub fn total_file_cycles(&self) -> usize {
         self.file_results.iter().map(|p| p.cycles.len()).sum()
     }
 
     /// Get number of packages with file-level cycles.
     #[inline]
+    #[must_use]
     pub fn packages_with_cycles(&self) -> usize {
         self.file_results
             .iter()
@@ -169,9 +180,19 @@ pub struct HumanFormatter {
 }
 
 impl HumanFormatter {
+    /// Escape untrusted text for a human-readable label, preserving ordinary
+    /// Unicode and exposing controls, bidi controls and Unicode line separators.
+    /// This is a display representation; retain the original text for paths,
+    /// identity comparisons and machine-readable reports.
+    #[must_use]
+    pub fn escape_label(text: &str) -> String {
+        label(text)
+    }
+
     /// Create a new human formatter.
     #[inline]
-    pub fn new(use_color: bool) -> Self {
+    #[must_use]
+    pub const fn new(use_color: bool) -> Self {
         Self {
             use_color,
             verbose: false,
@@ -181,7 +202,7 @@ impl HumanFormatter {
     /// Set verbose mode (show clean packages).
     #[inline]
     #[must_use]
-    pub fn with_verbose(mut self, verbose: bool) -> Self {
+    pub const fn with_verbose(mut self, verbose: bool) -> Self {
         self.verbose = verbose;
         self
     }
@@ -191,12 +212,7 @@ impl HumanFormatter {
         cycle
             .path
             .iter()
-            .map(|p| {
-                p.strip_prefix(base_path)
-                    .unwrap_or(p)
-                    .to_string_lossy()
-                    .to_string()
-            })
+            .map(|p| label(&p.strip_prefix(base_path).unwrap_or(p).to_string_lossy()))
             .collect::<Vec<_>>()
             .join(" -> ")
     }
@@ -226,9 +242,13 @@ impl HumanFormatter {
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
         if self.use_color {
-            writeln!(writer, "\x1b[32m✓\x1b[0m {}: no cycles", package.name)
+            writeln!(
+                writer,
+                "\x1b[32m✓\x1b[0m {}: no cycles",
+                label(&package.name)
+            )
         } else {
-            writeln!(writer, "✓ {}: no cycles", package.name)
+            writeln!(writer, "✓ {}: no cycles", label(&package.name))
         }
     }
 
@@ -243,7 +263,7 @@ impl HumanFormatter {
         } else {
             "cycles"
         };
-        let name = &package.name;
+        let name = label(&package.name);
         let count = package.cycles.len();
 
         if self.use_color {
@@ -301,7 +321,12 @@ impl HumanFormatter {
                 writeln!(writer, "✗ {count} inter-package {cycle_word}")?;
             }
             for cycle in &results.package_cycles {
-                let formatted = cycle.packages.join(" -> ");
+                let formatted = cycle
+                    .packages
+                    .iter()
+                    .map(|name| label(name))
+                    .collect::<Vec<_>>()
+                    .join(" -> ");
                 writeln!(writer, "  {formatted}")?;
             }
         }
@@ -347,7 +372,12 @@ impl HumanFormatter {
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
         // Print the cycle summary
-        let formatted = cycle.packages.join(" -> ");
+        let formatted = cycle
+            .packages
+            .iter()
+            .map(|name| label(name))
+            .collect::<Vec<_>>()
+            .join(" -> ");
         writeln!(writer, "\n  {formatted}")?;
 
         // Print file details for each edge
@@ -363,7 +393,12 @@ impl HumanFormatter {
         edge: &crate::cycles::PackageCycleEdge,
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
-        writeln!(writer, "    {} -> {}", edge.from_package, edge.to_package)?;
+        writeln!(
+            writer,
+            "    {} -> {}",
+            label(&edge.from_package),
+            label(&edge.to_package)
+        )?;
         for (file, subpath) in &edge.files {
             Self::format_edge_file(file, subpath.as_deref(), writer)?;
         }
@@ -376,8 +411,9 @@ impl HumanFormatter {
         subpath: Option<&str>,
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
-        let file_display = file.to_string_lossy();
-        if let Some(sub) = subpath {
+        let file_display = label(&file.to_string_lossy());
+        if let Some(subpath_value) = subpath {
+            let sub = label(subpath_value);
             writeln!(writer, "      - {file_display} (imports /{sub})")
         } else {
             writeln!(writer, "      - {file_display}")
@@ -414,7 +450,11 @@ impl HumanFormatter {
         let total_pkgs = results.file_results.len();
         let with_file_cycles = results.packages_with_cycles();
         let total_file_cycles = results.total_file_cycles();
-        let pkg_cycles = results.package_cycles.len();
+        let pkg_cycles = if results.package_cycles_with_files.is_empty() {
+            results.package_cycles.len()
+        } else {
+            results.package_cycles_with_files.len()
+        };
 
         match filter {
             CycleFilter::All => writeln!(
@@ -507,7 +547,8 @@ struct JsonPackage {
 impl JsonFormatter {
     /// Create a new JSON formatter.
     #[inline]
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self
     }
 
@@ -597,10 +638,8 @@ impl OutputFormatter for JsonFormatter {
             packages,
         };
 
-        let json = serde_json::to_string_pretty(&output)
-            .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err.to_string()))?;
-
-        writeln!(writer, "{json}")?;
+        serde_json::to_writer_pretty(&mut *writer, &output).map_err(std::io::Error::other)?;
+        writeln!(writer)?;
         Ok(())
     }
 }
@@ -706,10 +745,8 @@ impl UnifiedOutputFormatter for JsonFormatter {
             package_cycles,
         };
 
-        let json = serde_json::to_string_pretty(&output)
-            .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err.to_string()))?;
-
-        writeln!(writer, "{json}")?;
+        serde_json::to_writer_pretty(&mut *writer, &output).map_err(std::io::Error::other)?;
+        writeln!(writer)?;
         Ok(())
     }
 }
@@ -717,6 +754,38 @@ impl UnifiedOutputFormatter for JsonFormatter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn human_reports_expose_every_bidi_control_and_unicode_line_separator() {
+        for character in [
+            '\u{061c}', '\u{200e}', '\u{200f}', '\u{202a}', '\u{202b}', '\u{202c}', '\u{202d}',
+            '\u{202e}', '\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}', '\u{2028}', '\u{2029}',
+        ] {
+            let name = format!("pkg-{character}-λ");
+            let mut results = Results::new();
+            results.packages.push(PackageResult {
+                name: name.clone(),
+                path: PathBuf::from(&name),
+                cycles: vec![Cycle::new(
+                    ["a.ts", "b.ts", "a.ts"].map(PathBuf::from).to_vec(),
+                )],
+            });
+            let mut output = Vec::new();
+            HumanFormatter::new(false)
+                .format(&results, &mut output)
+                .expect("human report");
+            let text = String::from_utf8(output).expect("UTF-8 report");
+            assert!(
+                !text.contains(character),
+                "no invisible directional or line control"
+            );
+            assert!(
+                text.contains(&character.escape_unicode().to_string()),
+                "visible escape"
+            );
+            assert!(text.contains('λ'), "ordinary Unicode is preserved");
+        }
+    }
 
     #[test]
     fn test_empty_results() {
@@ -865,7 +934,6 @@ mod tests {
     }
 
     #[test]
-    #[expect(clippy::too_many_lines, reason = "test requires multiple assertions")]
     fn test_unified_results_totals() {
         let mut results = UnifiedResults::new();
         assert_eq!(
@@ -1368,7 +1436,6 @@ mod tests {
     // =========================================================================
 
     #[test]
-    #[expect(clippy::too_many_lines, reason = "test requires multiple assertions")]
     fn test_human_formatter_cycle_with_files() {
         use crate::cycles::{PackageCycleEdge, PackageCycleWithFiles};
 
@@ -1541,7 +1608,6 @@ mod tests {
     }
 
     #[test]
-    #[expect(clippy::too_many_lines, reason = "test requires multiple assertions")]
     fn test_json_formatter_cycle_with_files() {
         use crate::cycles::{PackageCycleEdge, PackageCycleWithFiles};
 
@@ -1578,7 +1644,7 @@ mod tests {
 
         assert!(
             json.get("has_package_cycles")
-                .and_then(|v| v.as_bool())
+                .and_then(serde_json::Value::as_bool)
                 .unwrap_or(false),
             "has_package_cycles should be true"
         );
@@ -1625,6 +1691,17 @@ mod tests {
             Some("lib"),
             "file subpath should match"
         );
+    }
+
+    #[test]
+    fn json_edge_file_without_subpath_omits_the_key() {
+        // R05: an absent subpath is omitted (not `null`); consumers test presence.
+        let value = serde_json::to_value(JsonEdgeFile {
+            path: "/src/index.ts".to_owned(),
+            subpath: None,
+        })
+        .expect("serializable");
+        assert_eq!(value, serde_json::json!({"path": "/src/index.ts"}));
     }
 
     #[test]

@@ -1,28 +1,25 @@
 //! jscycles - Fast circular dependency detection for JS/TS.
 //!
-//! A drop-in replacement for `madge --circular` with 50-100x performance improvement.
+//! Reports file-level and workspace-package cycles in local checkouts.
 
-use std::collections::{BTreeSet, HashMap};
-use std::io::{self, BufRead as _, IsTerminal as _, Write as _};
+use std::io::{self, IsTerminal as _, Read as _, Write as _};
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use clap::{Arg, ArgAction, Command};
 use rayon::prelude::*;
-use serde::Deserialize;
 
+use jscycles::budget::{AnalysisBudget, BoundedReport, Resource};
 use jscycles::cycles::PackageCycleDetector;
-use jscycles::graph::PackageDependencyGraph;
 use jscycles::imports::{ExtractionMode, Import};
 use jscycles::output::{CycleFilter, UnifiedOutputFormatter as _, UnifiedResults};
 use jscycles::{
-    Config, CycleDetector, DependencyGraph, HumanFormatter, ImportExtractor, JscyclesError,
+    Config, CycleDetector, Discovered, HumanFormatter, ImportExtractor, JscyclesError,
     JsonFormatter, Package, PackageDiscovery, PackageResult, TsConfig, TsConfigCache, Workspace,
 };
 
 /// Build the CLI command.
-#[expect(clippy::too_many_lines, reason = "CLI definition is naturally long")]
 fn build_cli() -> Command {
     Command::new("jscycles")
         .version(env!("CARGO_PKG_VERSION"))
@@ -50,6 +47,10 @@ fn build_cli() -> Command {
                 .long("extensions")
                 .help("File extensions to analyze")
                 .default_value("ts,tsx,js,jsx")
+                .value_parser(|value: &str| {
+                    if !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_alphanumeric()) { Ok(value.to_owned()) }
+                    else { Err("extension must be a nonempty alphanumeric suffix without a leading dot") }
+                })
                 .value_delimiter(','),
         )
         .arg(
@@ -62,6 +63,7 @@ fn build_cli() -> Command {
             Arg::new("no-tsconfig")
                 .long("no-tsconfig")
                 .help("Skip tsconfig.json auto-detection")
+                .conflicts_with("tsconfig")
                 .action(ArgAction::SetTrue),
         )
         .arg(
@@ -74,6 +76,7 @@ fn build_cli() -> Command {
             Arg::new("stdin")
                 .long("stdin")
                 .help("Read paths from stdin")
+                .conflicts_with("paths")
                 .action(ArgAction::SetTrue),
         )
         .arg(
@@ -117,18 +120,22 @@ fn build_cli() -> Command {
 /// Options needed during package processing.
 struct ProcessOptions {
     /// Preloaded explicit tsconfig.json, if provided.
-    explicit_tsconfig: Option<TsConfig>,
+    explicit_tsconfig: Option<Arc<TsConfig>>,
     /// Skip tsconfig.json auto-detection.
     no_tsconfig: bool,
     /// File extensions to analyze.
     extensions: Vec<String>,
+
+    /// An explicit CLI extension selection takes precedence over package settings.
+    extensions_override: bool,
     /// Workspace configuration for inter-package cycle detection.
-    workspace: Option<Workspace>,
+    workspace: Option<Arc<Workspace>>,
     /// Shared tsconfig discovery/load cache.
     tsconfig_cache: Arc<TsConfigCache>,
 
     /// How much work to do while processing each package.
     mode: ProcessMode,
+    budget: AnalysisBudget,
 }
 
 /// Result of processing a package (includes imports for package graph).
@@ -139,20 +146,14 @@ struct ProcessedPackage {
     imports: Vec<Import>,
 }
 
-/// Minimal package.json dependency sections for package-level cycle detection.
-#[derive(Debug, Default, Deserialize)]
-struct PackageManifest {
-    /// Runtime dependencies.
-    dependencies: Option<HashMap<String, String>>,
-    /// Development dependencies.
-    #[serde(rename = "devDependencies")]
-    dev_dependencies: Option<HashMap<String, String>>,
-    /// Peer dependencies.
-    #[serde(rename = "peerDependencies")]
-    peer_dependencies: Option<HashMap<String, String>>,
-    /// Optional dependencies.
-    #[serde(rename = "optionalDependencies")]
-    optional_dependencies: Option<HashMap<String, String>>,
+/// Selected-input context that preserves the parser or read error as its cause.
+#[derive(Debug, thiserror::Error)]
+#[error("{label} {}: {source}", path.display())]
+struct InputContext {
+    label: &'static str,
+    path: PathBuf,
+    #[source]
+    source: Box<dyn std::error::Error + Send + Sync>,
 }
 
 /// Controls how much package processing is required for a given CLI mode.
@@ -164,46 +165,276 @@ enum ProcessMode {
     WorkspaceOnly,
 }
 
-/// Run the cycle detection.
-#[expect(
-    clippy::too_many_lines,
-    reason = "main entry point with necessary setup"
-)]
-fn run(matches: &clap::ArgMatches) -> Result<bool, JscyclesError> {
-    // Extract arguments
+/// Load the selected configuration, preserving its path and typed cause.
+fn load_config(matches: &clap::ArgMatches) -> Result<Config, JscyclesError> {
     let default_config = PathBuf::from("jscycles.yaml");
-    let config_path: &PathBuf = matches.get_one("config").unwrap_or(&default_config);
+    let path = matches
+        .get_one::<PathBuf>("config")
+        .unwrap_or(&default_config);
+    let explicit = matches.value_source("config") == Some(clap::parser::ValueSource::CommandLine);
+    let config = if explicit {
+        Config::load(path)
+    } else {
+        Config::try_load_or_default(path)
+    };
+    config.map_err(|source| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            InputContext {
+                label: "configuration",
+                path: path.clone(),
+                source: Box::new(source),
+            },
+        )
+        .into()
+    })
+}
+
+fn scan_paths(matches: &clap::ArgMatches) -> Result<(Vec<PathBuf>, bool), JscyclesError> {
+    if matches.get_flag("stdin") {
+        return Ok((read_stdin_paths(io::stdin().lock())?, true));
+    }
     let paths: Vec<PathBuf> = matches
         .get_many::<PathBuf>("paths")
-        .map(|v| v.cloned().collect())
+        .map(|values| values.cloned().collect())
         .unwrap_or_default();
+    if paths.is_empty() {
+        Ok((vec![PathBuf::from(".")], false))
+    } else {
+        Ok((paths, true))
+    }
+}
+
+fn discover_workspace(
+    paths: &[PathBuf],
+    filter: CycleFilter,
+    budget: &AnalysisBudget,
+) -> Result<Option<Workspace>, JscyclesError> {
+    if filter == CycleFilter::Inner {
+        return Ok(None);
+    }
+    let canonical_scan_path = |path: &PathBuf| {
+        path.canonicalize().map_err(|source| {
+            io::Error::new(
+                source.kind(),
+                InputContext {
+                    label: "scan path",
+                    path: path.clone(),
+                    source: Box::new(source),
+                },
+            )
+        })
+    };
+    let root = match paths.first() {
+        Some(path) => canonical_scan_path(path)?,
+        None => PathBuf::from("."),
+    };
+    let workspace = Workspace::discover_without_aliases(&root, budget)?;
+    for path in paths.iter().skip(1) {
+        let canonical = canonical_scan_path(path)?;
+        // Membership was expanded once for the first operand; later operands
+        // only need to identify the same root.
+        let candidate = Workspace::discover_root(&canonical, budget)?;
+        if candidate.as_ref() != workspace.as_ref().map(|found| &found.root) {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput,
+                "package analysis supports one workspace per invocation; scan different workspaces separately").into());
+        }
+    }
+    Ok(workspace)
+}
+
+fn processing_options(
+    matches: &clap::ArgMatches,
+    mut workspace: Option<Workspace>,
+    budget: &AnalysisBudget,
+) -> Result<ProcessOptions, JscyclesError> {
+    let no_tsconfig = matches.get_flag("no-tsconfig");
+    let explicit_tsconfig = matches
+        .get_one::<PathBuf>("tsconfig")
+        .map(|path| {
+            TsConfig::load_with_budget(path, budget)
+                .map(Arc::new)
+                .map_err(|source| {
+                    io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        InputContext {
+                            label: "tsconfig",
+                            path: path.clone(),
+                            source: Box::new(source),
+                        },
+                    )
+                })
+        })
+        .transpose()?;
+    if let Some(found) = &mut workspace
+        && !no_tsconfig
+    {
+        found.load_path_aliases(explicit_tsconfig.as_deref(), budget)?;
+    }
+    let extensions = matches.get_many::<String>("extensions").map_or_else(
+        || ["ts", "tsx", "js", "jsx"].map(str::to_owned).to_vec(),
+        |values| values.cloned().collect(),
+    );
+    Ok(ProcessOptions {
+        explicit_tsconfig,
+        no_tsconfig,
+        extensions,
+        extensions_override: matches.value_source("extensions")
+            == Some(clap::parser::ValueSource::CommandLine),
+        workspace: workspace.map(Arc::new),
+        tsconfig_cache: Arc::new(TsConfigCache::new().with_budget(budget.clone())),
+        mode: if matches.get_flag("outer") {
+            ProcessMode::WorkspaceOnly
+        } else {
+            ProcessMode::Full
+        },
+        budget: budget.clone(),
+    })
+}
+
+#[cfg_attr(feature = "profiling", hotpath::measure)]
+
+fn analyze_packages(
+    discovered: &Discovered,
+    opts: &ProcessOptions,
+    verbose: bool,
+) -> Result<UnifiedResults, JscyclesError> {
+    // Each file belongs to its nearest package: a package that contains another
+    // package's directory, or a directory discovery excluded or filtered out,
+    // leaves that subtree alone.
+    let packages = discovered.packages.as_slice();
+    let roots = packages
+        .iter()
+        .map(|package| canonical_package_root(package, &opts.budget))
+        .collect::<Result<Vec<_>, _>>()?;
+    let owners: Arc<[PathBuf]> = roots
+        .iter()
+        .chain(&discovered.boundaries)
+        .cloned()
+        .collect::<Vec<_>>()
+        .into();
+    let processed: Vec<ProcessedPackage> = packages
+        .par_iter()
+        .zip(&roots)
+        .map(|(package, root)| {
+            opts.budget.consume(
+                Resource::Work,
+                u64::try_from(roots.len()).unwrap_or(u64::MAX),
+            )?;
+            opts.budget.consume(
+                Resource::Work,
+                u64::try_from(discovered.boundaries.len()).unwrap_or(u64::MAX),
+            )?;
+            let nested = roots
+                .iter()
+                .chain(&discovered.boundaries)
+                // The walk never prunes its own root, so `root` itself may stay.
+                .filter(|other| other.starts_with(root))
+                .cloned();
+            process_package_with_imports(package, opts, nested, Arc::clone(&owners))
+        })
+        .collect::<Result<Vec<_>, JscyclesError>>()?;
+    let (package_cycles, package_cycles_with_files) = if opts.workspace.is_some() {
+        let groups = processed
+            .iter()
+            .map(|proc| (proc.result.name.as_str(), proc.imports.as_slice()));
+        if verbose {
+            (
+                Vec::new(),
+                PackageCycleDetector::try_detect_imports_with_files(groups, &opts.budget)?,
+            )
+        } else {
+            (
+                PackageCycleDetector::try_detect_imports(groups, &opts.budget)?,
+                Vec::new(),
+            )
+        }
+    } else {
+        (Vec::new(), Vec::new())
+    };
+    Ok(UnifiedResults {
+        file_results: processed.into_iter().map(|proc| proc.result).collect(),
+        package_cycles,
+        package_cycles_with_files,
+    })
+}
+
+/// Automatic tsconfig discovery tolerates bad metadata (R10), but never
+/// silently: the aliases it would have supplied can hide cycles.
+fn warn_rejected_tsconfigs(cache: &TsConfigCache) {
+    let mut stderr = io::stderr().lock();
+    for (path, error) in cache.rejected() {
+        let first_line = error.lines().next().unwrap_or_default();
+        // Debug-quote both so untrusted controls cannot forge terminal output.
+        let shown = path.display().to_string();
+        // A warning that cannot be written does not change the scan result.
+        let _ = writeln!(
+            stderr,
+            "warning: ignored tsconfig {shown:?}: {first_line:?}; its path aliases were not applied (fix it, pass --tsconfig to require it, or --no-tsconfig)"
+        );
+    }
+}
+
+fn canonical_package_root(
+    package: &Package,
+    budget: &AnalysisBudget,
+) -> Result<PathBuf, JscyclesError> {
+    let root =
+        std::fs::canonicalize(&package.path).map_err(|source| jscycles::ExtractError::IoError {
+            path: package.path.clone(),
+            source,
+        })?;
+    budget.consume(
+        Resource::GraphBytes,
+        u64::try_from(root.as_os_str().len()).unwrap_or(u64::MAX),
+    )?;
+    Ok(root)
+}
+
+fn publish_results(
+    unified: &UnifiedResults,
+    filter: CycleFilter,
+    matches: &clap::ArgMatches,
+    budget: &AnalysisBudget,
+) -> Result<bool, JscyclesError> {
+    budget.check()?;
+    let has_cycles = match filter {
+        CycleFilter::All => unified.has_any_cycles(),
+        CycleFilter::Inner => unified.has_file_cycles(),
+        CycleFilter::Outer => unified.has_package_cycles(),
+    };
+    if matches.get_flag("quiet") && !has_cycles {
+        return Ok(false);
+    }
+    let mut report = BoundedReport::new(budget.clone());
+    if matches.get_flag("json") {
+        JsonFormatter::new().format_unified(unified, filter, &mut report)?;
+    } else {
+        HumanFormatter::new(io::stdout().is_terminal())
+            .with_verbose(matches.get_flag("verbose"))
+            .format_unified(unified, filter, &mut report)?;
+    }
+    let bytes = report.finish()?;
+    let mut stdout = io::stdout().lock();
+    stdout.write_all(&bytes)?;
+    stdout.flush()?;
+    Ok(has_cycles)
+}
+
+/// Run the cycle detection with one shared budget through discovery and publication.
+#[cfg_attr(feature = "profiling", hotpath::measure)]
+fn run(matches: &clap::ArgMatches) -> Result<bool, JscyclesError> {
+    let config = load_config(matches)?;
+    let budget = AnalysisBudget::new(config.limits)?;
     let only: Vec<String> = matches
         .get_many::<String>("only")
-        .map(|v| v.cloned().collect())
+        .map(|values| values.cloned().collect())
         .unwrap_or_default();
     let exclude: Vec<String> = matches
         .get_many::<String>("exclude")
-        .map(|v| v.cloned().collect())
+        .map(|values| values.cloned().collect())
         .unwrap_or_default();
-    let extensions: Vec<String> = matches
-        .get_many::<String>("extensions")
-        .map(|v| v.cloned().collect())
-        .unwrap_or_else(|| {
-            vec![
-                "ts".to_owned(),
-                "tsx".to_owned(),
-                "js".to_owned(),
-                "jsx".to_owned(),
-            ]
-        });
-    let tsconfig: Option<PathBuf> = matches.get_one::<PathBuf>("tsconfig").cloned();
-    let no_tsconfig = matches.get_flag("no-tsconfig");
-    let json_output = matches.get_flag("json");
-    let stdin_mode = matches.get_flag("stdin");
-    let quiet = matches.get_flag("quiet");
-    let verbose = matches.get_flag("verbose");
-
-    // Determine cycle filter
+    let discovery = PackageDiscovery::new_with_budget(&config, &only, &exclude, budget.clone())?;
     let filter = if matches.get_flag("inner") {
         CycleFilter::Inner
     } else if matches.get_flag("outer") {
@@ -211,167 +442,54 @@ fn run(matches: &clap::ArgMatches) -> Result<bool, JscyclesError> {
     } else {
         CycleFilter::All
     };
-
-    // Load config
-    let config = Config::load_or_default(config_path);
-
-    // Create package discovery
-    let discovery = PackageDiscovery::new(&config, &only, &exclude)?;
-
-    // Determine paths to scan first (needed for workspace discovery)
-    let explicit_paths = !paths.is_empty();
-    let scan_paths: Vec<PathBuf> = if stdin_mode {
-        // Read paths from stdin
-        io::stdin()
-            .lock()
-            .lines()
-            .map_while(Result::ok)
-            .map(PathBuf::from)
-            .collect()
-    } else if paths.is_empty() {
-        // Use current directory
-        vec![PathBuf::from(".")]
+    let (paths, explicit) = scan_paths(matches)?;
+    let workspace = discover_workspace(&paths, filter, &budget)?;
+    let opts = processing_options(matches, workspace, &budget)?;
+    let discovered = if explicit {
+        discovery.discover_explicit_with_boundaries(&paths)?
     } else {
-        paths
+        discovery.discover_with_boundaries(&PathBuf::from("."))?
     };
-
-    // Discover workspace from scan paths (not current directory)
-    // This allows detecting workspaces when scanning external directories
-    let workspace = if filter == CycleFilter::Inner {
-        None
-    } else {
-        let workspace_root = scan_paths.first().map_or_else(
-            || PathBuf::from("."),
-            |p| {
-                // Canonicalize to get absolute path, fall back to the path itself
-                p.canonicalize().unwrap_or_else(|_| p.clone())
-            },
-        );
-        Workspace::discover(&workspace_root)?
-    };
-
-    let process_mode = if filter == CycleFilter::Outer && workspace.is_some() {
-        ProcessMode::WorkspaceOnly
-    } else {
-        ProcessMode::Full
-    };
-
-    let tsconfig_cache = Arc::new(TsConfigCache::new());
-    let explicit_tsconfig = if no_tsconfig || process_mode == ProcessMode::WorkspaceOnly {
-        None
-    } else {
-        tsconfig
-            .as_deref()
-            .and_then(|path| tsconfig_cache.load(path))
-    };
-
-    // Create processing options
-    let opts = ProcessOptions {
-        explicit_tsconfig,
-        no_tsconfig,
-        extensions,
-        workspace: workspace.clone(),
-        tsconfig_cache,
-        mode: process_mode,
-    };
-
-    // Discover packages
-    let packages = if process_mode == ProcessMode::WorkspaceOnly {
-        workspace
-            .as_ref()
-            .map(|ws| discovery.discover_workspace_packages(ws, &scan_paths))
-            .unwrap_or_default()
-    } else if !explicit_paths && !stdin_mode {
-        discovery.discover(&PathBuf::from("."))?
-    } else {
-        discovery.discover_explicit(&scan_paths)?
-    };
-
-    // Process packages in parallel (returns both file cycles and imports)
-    let processed: Vec<ProcessedPackage> = packages
-        .par_iter()
-        .map(|package| process_package_with_imports(package, &opts))
-        .collect::<Result<Vec<_>, _>>()?;
-
-    // Build package dependency graph and detect package-level cycles
-    let (package_cycles, package_cycles_with_files) = if workspace.is_some() {
-        let mut imports_by_package = HashMap::new();
-        for proc in &processed {
-            let _ = imports_by_package.insert(proc.result.name.clone(), proc.imports.clone());
-        }
-        let pkg_graph = PackageDependencyGraph::from_imports(&imports_by_package);
-        if verbose {
-            // Verbose mode: include file-level details (slower)
-            (
-                Vec::new(),
-                PackageCycleDetector::detect_with_files(&pkg_graph),
-            )
-        } else {
-            // Default: just package names (faster)
-            (PackageCycleDetector::detect(&pkg_graph), Vec::new())
-        }
-    } else {
-        (Vec::new(), Vec::new())
-    };
-
-    // Build unified results
-    let unified = UnifiedResults {
-        file_results: processed.into_iter().map(|p| p.result).collect(),
-        package_cycles,
-        package_cycles_with_files,
-    };
-
-    // Output results
-    let use_color = io::stdout().is_terminal();
-    let mut stdout = io::stdout().lock();
-
-    let has_cycles = match filter {
-        CycleFilter::All => unified.has_any_cycles(),
-        CycleFilter::Inner => unified.has_file_cycles(),
-        CycleFilter::Outer => unified.has_package_cycles(),
-    };
-
-    if quiet && !has_cycles {
-        return Ok(false);
-    }
-
-    if json_output {
-        let formatter = JsonFormatter::new();
-        formatter.format_unified(&unified, filter, &mut stdout)?;
-    } else {
-        let formatter = HumanFormatter::new(use_color).with_verbose(verbose);
-        formatter.format_unified(&unified, filter, &mut stdout)?;
-    }
-
-    stdout.flush()?;
-
-    Ok(has_cycles)
+    let unified = analyze_packages(&discovered, &opts, matches.get_flag("verbose"))?;
+    warn_rejected_tsconfigs(&opts.tsconfig_cache);
+    publish_results(&unified, filter, matches, &budget)
 }
 
 /// Process a single package, returning both file cycles and imports.
+#[cfg_attr(feature = "profiling", hotpath::measure)]
 fn process_package_with_imports(
     package: &Package,
     opts: &ProcessOptions,
+    nested: impl Iterator<Item = PathBuf>,
+    owners: Arc<[PathBuf]>,
 ) -> Result<ProcessedPackage, JscyclesError> {
     // Determine tsconfig
     let tsconfig = if opts.mode == ProcessMode::WorkspaceOnly || opts.no_tsconfig {
         None
     } else if let Some(config) = &opts.explicit_tsconfig {
-        Some(config.clone())
+        Some(Arc::clone(config))
     } else {
-        opts.tsconfig_cache.discover(&package.path)
+        opts.tsconfig_cache.discover_shared(&package.path)
     };
 
     // Get extensions for this package
-    let extensions = package
-        .config
-        .extensions
-        .clone()
-        .unwrap_or_else(|| opts.extensions.clone());
+    let extensions = if opts.extensions_override {
+        opts.extensions.clone()
+    } else {
+        package
+            .config
+            .extensions
+            .clone()
+            .unwrap_or_else(|| opts.extensions.clone())
+    };
 
     // Create import extractor with workspace context
-    let mut extractor = ImportExtractor::new(extensions, tsconfig)
-        .with_workspace(opts.workspace.clone())
+    let mut extractor = ImportExtractor::new(extensions, None)
+        .with_shared_tsconfig(tsconfig)
+        .with_shared_workspace(opts.workspace.as_ref().map(Arc::clone))
+        .with_budget(opts.budget.clone())
+        .with_nested_packages(nested)
+        .with_owners(owners)
         .with_mode(match opts.mode {
             ProcessMode::Full => ExtractionMode::All,
             ProcessMode::WorkspaceOnly => ExtractionMode::WorkspaceOnly,
@@ -380,26 +498,32 @@ fn process_package_with_imports(
         extractor = extractor.with_ignore_patterns(ignore.clone());
     }
 
-    // Extract imports
-    let imports = if opts.mode == ProcessMode::WorkspaceOnly {
-        match opts
-            .workspace
-            .as_ref()
-            .and_then(|workspace| collect_workspace_manifest_imports(package, workspace))
-        {
-            Some(manifest_imports) if !manifest_imports.is_empty() => manifest_imports,
-            _ => extractor.extract(&package.path)?,
-        }
-    } else {
-        extractor.extract(&package.path)?
-    };
+    // Both output modes analyze actual imports. WorkspaceOnly skips file resolution.
+    let imports = extractor.extract(&package.path)?;
 
-    let cycles = if opts.mode == ProcessMode::WorkspaceOnly {
+    let mut cycles = if opts.mode == ProcessMode::WorkspaceOnly {
         Vec::new()
     } else {
-        let graph = DependencyGraph::from_imports(&imports);
-        CycleDetector::detect(&graph)
+        CycleDetector::try_detect_imports(&imports, &opts.budget)?
     };
+
+    // Keep CLI paths in the caller's spelling while analysis uses canonical nodes.
+    let canonical_root = std::fs::canonicalize(&package.path)?;
+    for cycle in &mut cycles {
+        for path in &mut cycle.path {
+            if let Ok(relative) = path.strip_prefix(&canonical_root) {
+                opts.budget.consume(
+                    Resource::CycleBytes,
+                    u64::try_from(package.path.as_os_str().len()).unwrap_or(u64::MAX),
+                )?;
+                opts.budget.consume(
+                    Resource::CycleBytes,
+                    u64::try_from(relative.as_os_str().len()).unwrap_or(u64::MAX),
+                )?;
+                *path = package.path.join(relative);
+            }
+        }
+    }
 
     let result = PackageResult {
         name: package.name.clone(),
@@ -410,52 +534,94 @@ fn process_package_with_imports(
     Ok(ProcessedPackage { result, imports })
 }
 
-/// Read workspace-package edges from a package manifest.
-///
-/// Returns `None` if the package.json cannot be read or parsed, allowing
-/// callers to fall back to source-level import scanning.
-fn collect_workspace_manifest_imports(
-    package: &Package,
-    workspace: &Workspace,
-) -> Option<Vec<Import>> {
-    let package_json_path = package.path.join("package.json");
-    let contents = std::fs::read_to_string(&package_json_path).ok()?;
-    let manifest: PackageManifest = serde_json::from_str(&contents).ok()?;
-
-    let mut deps = BTreeSet::new();
-    for section in [
-        manifest.dependencies,
-        manifest.dev_dependencies,
-        manifest.peer_dependencies,
-        manifest.optional_dependencies,
-    ] {
-        let Some(entries) = section else {
-            continue;
-        };
-        for dependency in entries.into_keys() {
-            if workspace.is_workspace_package(&dependency) {
-                let _ = deps.insert(dependency);
-            }
-        }
+/// Read a bounded UTF-8 path list without discarding a partial read failure.
+fn read_stdin_paths(reader: impl io::Read) -> io::Result<Vec<PathBuf>> {
+    const MAX_BYTES: u64 = 1024 * 1024;
+    const MAX_PATHS: usize = 10_000;
+    let mut text = String::new();
+    let _read_bytes = reader.take(MAX_BYTES + 1).read_to_string(&mut text)?;
+    if u64::try_from(text.len()).unwrap_or(u64::MAX) > MAX_BYTES {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "stdin exceeds 1 MiB",
+        ));
     }
+    // PowerShell and Windows editors may prefix a byte-order mark.
+    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
+    let paths: Vec<_> = text
+        .lines()
+        .filter(|line| !line.is_empty())
+        .take(MAX_PATHS + 1)
+        .map(PathBuf::from)
+        .collect();
+    if paths.is_empty() || paths.len() > MAX_PATHS {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "stdin requires 1 to 10000 paths",
+        ));
+    }
+    Ok(paths)
+}
 
-    Some(
-        deps.into_iter()
-            .map(|dependency| Import {
-                source: package_json_path.clone(),
-                target: jscycles::ImportTarget::WorkspacePackage {
-                    package_name: workspace.resolve_package_name(&dependency).to_owned(),
-                    subpath: None,
-                },
-                specifier: dependency,
-            })
-            .collect(),
-    )
+/// Successful parsing keeps the original native paths. On an error, reparse
+/// visible argument labels so Clap can retain its layout and styles without
+/// inserting raw controls into diagnostics or generated suggestions.
+fn cli_matches(arguments: &[std::ffi::OsString]) -> Result<clap::ArgMatches, clap::Error> {
+    let cli = build_cli();
+    cli.clone()
+        .try_get_matches_from(arguments)
+        .map_err(|original| {
+            let visible = arguments
+                .iter()
+                .map(|value| HumanFormatter::escape_label(&value.to_string_lossy()));
+            match cli.try_get_matches_from(visible) {
+                Err(error) => error,
+                Ok(_) => clap::Error::raw(
+                    original.kind(),
+                    HumanFormatter::escape_label(&original.to_string()),
+                ),
+            }
+        })
 }
 
 fn main() -> ExitCode {
-    let cli = build_cli();
-    let matches = cli.get_matches();
+    #[cfg(feature = "profiling")]
+    let _profile = std::env::var_os("HOTPATH_OUTPUT_PATH").map(|path| {
+        hotpath::HotpathGuardBuilder::new("jscycles")
+            .format(hotpath::Format::JsonPretty)
+            .output_path(path)
+            .functions_limit(100)
+            .build()
+    });
+    let matches = match cli_matches(&std::env::args_os().collect::<Vec<_>>()) {
+        Ok(parsed) => parsed,
+        Err(error) => {
+            let informational = matches!(
+                error.kind(),
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
+            );
+            let printed = error.print().and_then(|()| {
+                if informational {
+                    io::stdout().flush()
+                } else {
+                    io::stderr().flush()
+                }
+            });
+            if let Err(failure) = printed {
+                drop(writeln!(
+                    io::stderr(),
+                    "Error writing command output: {}",
+                    failure.to_string().escape_debug()
+                ));
+                return ExitCode::from(2);
+            }
+            return if informational {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(2)
+            };
+        },
+    };
 
     match run(&matches) {
         Ok(has_cycles) => {
@@ -466,7 +632,11 @@ fn main() -> ExitCode {
             }
         },
         Err(err) => {
-            drop(writeln!(io::stderr(), "Error: {err}"));
+            drop(writeln!(
+                io::stderr(),
+                "Error: {}",
+                err.to_string().escape_debug()
+            ));
             ExitCode::from(2)
         },
     }
@@ -474,59 +644,51 @@ fn main() -> ExitCode {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::fs;
-
-    use tempfile::tempdir;
-
     use super::*;
-    use jscycles::workspace::WorkspaceFormat;
 
     #[test]
-    fn test_collect_workspace_manifest_imports_uses_declared_dependencies() {
-        let temp = tempdir().expect("tempdir should be created");
-        let package_path = temp.path().join("pkg-a");
-        fs::create_dir_all(&package_path).expect("package dir should be created");
-        fs::write(
-            package_path.join("package.json"),
-            r#"{
-  "name": "@demo/a",
-  "dependencies": {
-    "@demo/b": "workspace:*",
-    "react": "^19.0.0"
-  },
-  "devDependencies": {
-    "@demo/c": "workspace:*"
-  }
-}"#,
-        )
-        .expect("package.json should be written");
+    fn stdin_read_error_after_a_valid_path_is_propagated() {
+        struct FailedRead;
+        impl io::Read for FailedRead {
+            fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
+                Err(io::Error::other("injected read failure"))
+            }
+        }
+        let reader = io::Cursor::new(b".\n").chain(FailedRead);
+        assert!(
+            read_stdin_paths(reader).is_err(),
+            "partial input must not become success"
+        );
+    }
 
-        let package = Package {
-            name: "@demo/a".to_owned(),
-            path: package_path,
-            config: jscycles::config::PackageConfig::default(),
-        };
-
-        let mut packages = HashMap::new();
-        let _ = packages.insert("@demo/a".to_owned(), temp.path().join("pkg-a"));
-        let _ = packages.insert("@demo/b".to_owned(), temp.path().join("pkg-b"));
-        let _ = packages.insert("@demo/c".to_owned(), temp.path().join("pkg-c"));
-
-        let workspace = Workspace {
-            root: temp.path().to_path_buf(),
-            format: WorkspaceFormat::Npm,
-            packages,
-            aliases: HashMap::new(),
-        };
-
-        let imports = collect_workspace_manifest_imports(&package, &workspace)
-            .expect("manifest imports should be collected");
-
-        let specifiers: Vec<_> = imports
-            .iter()
-            .map(|import| import.specifier.as_str())
-            .collect();
-        assert_eq!(specifiers, vec!["@demo/b", "@demo/c"]);
+    #[test]
+    fn stdin_byte_and_path_limits_are_checked() {
+        let exact = vec![b'x'; 1024 * 1024];
+        assert_eq!(
+            read_stdin_paths(exact.as_slice())
+                .expect("exact byte limit")
+                .len(),
+            1,
+            "one path at the byte limit is accepted"
+        );
+        assert!(
+            read_stdin_paths(vec![b'x'; 1024 * 1024 + 1].as_slice()).is_err(),
+            "first excessive byte is rejected"
+        );
+        assert_eq!(
+            read_stdin_paths(".\n".repeat(10_000).as_bytes())
+                .expect("exact path limit")
+                .len(),
+            10_000,
+            "exact path limit is accepted"
+        );
+        assert!(
+            read_stdin_paths(".\n".repeat(10_001).as_bytes()).is_err(),
+            "first excessive path is rejected"
+        );
+        assert!(
+            read_stdin_paths(b"".as_slice()).is_err(),
+            "empty stdin is an error"
+        );
     }
 }

@@ -1,3 +1,6 @@
+> Editorial draft: timing comparisons below are unverified historical placeholders.
+> Do not publish them without retained workloads, commands, versions, and measurements.
+
 # Why Circular Dependencies Matter More Than You Think
 
 ## 1. The Bug That Shouldn't Exist
@@ -240,7 +243,7 @@ Where does the difference come from?
 
 **Parallelism.** Madge parses files sequentially. jscycles uses Rayon to parse files in parallel. On an 8-core machine, this is roughly 8x faster for the parsing phase.
 
-**AST extraction.** We use ast-grep for parsing. It's a tree-sitter based parser optimized for code search and extraction. We only extract imports, not the full AST.
+**AST extraction.** We parse with tree-sitter and visit its syntax tree once with a cursor, retaining literal import records. This handles import options and TypeScript import-equals forms without compiling code-search patterns. The complete tree is checked for recovered syntax before any records are accepted.
 
 **Memory allocation.** Rust's ownership model lets us avoid most heap allocations during the hot loop. Strings are borrowed, not copied. The graph is built in place.
 

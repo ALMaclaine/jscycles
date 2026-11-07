@@ -1,0 +1,2427 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-05T21:10:43.719253+00:00",
+  "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+  "rust_oe_revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+  "rules": [
+    "INPUT-003",
+    "INPUT-004",
+    "TEST-003",
+    "TEST-004",
+    "PERF-001",
+    "PERF-003"
+  ],
+  "scope": "Actual alias lookup work, shared lexical module-path normalization and canonical-source copying; local macOS arm64.",
+  "uncommitted_working_tree": true,
+  "changes": [
+    "Move pattern/replacement work admission from every import to actual uncached alias traversal; preserve per-record, payload and sticky-failure accounting.",
+    "Copy already canonical source paths directly.",
+    "Share native-byte-preserving lexical normalization for relative and substituted alias paths before file lookup; preserve Node/TypeScript relative behavior."
+  ],
+  "tests": {
+    "native_target_tests": 498,
+    "doctests": 1,
+    "python_tests": 57,
+    "miri_tests": 72
+  },
+  "commands": [
+    {
+      "command": "cargo +1.98.1 xtask ci",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/ci-final.log",
+        "sha256": "0a732556e30c7b196bfb0cc6c1963f81a6a64e983756f07b24181784c6bfc281"
+      }
+    },
+    {
+      "command": "cargo +1.98.1 xtask crap",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/crap-final.log",
+        "sha256": "fc6a6c2683f923fcf2970934d509df92f2f8fbc8bd9f4086fe0656fa4368339a"
+      }
+    },
+    {
+      "command": "cargo +1.98.1 xtask miri",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/miri-final.log",
+        "sha256": "64d2b0fafbaa5126bec6ef2748130748d5d0fddf33f81fd2262dad8a146e4c36"
+      }
+    },
+    {
+      "command": "cargo +1.92.0 test --workspace --all-targets --all-features --locked",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/msrv-final.log",
+        "sha256": "12657440d3648a5f6f125d97bb49a17a1dfc6618a5737f439006687b93e7ec01"
+      }
+    },
+    {
+      "command": "cargo +1.92.0 test --workspace --doc --all-features --locked",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/msrv-doc-final.log",
+        "sha256": "f69e45287c9745314dc33216806d7489a9977a7fd81e3b3ba3dfe62ab85bc3cd"
+      }
+    },
+    {
+      "command": "uv run --python 3.13 --no-project python -B -m unittest discover -s scripts -p 'test_*.py'",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/python.log",
+        "sha256": "c9d9f2298a46e4c87fa1b65e831d8ad980f12e2138db4e17e0aa78b518443bc6"
+      }
+    },
+    {
+      "command": "uv run --python 3.13 --no-project python -B scripts/check_adoption.py",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/adoption.log",
+        "sha256": "0b2f21daf75504ea5d900d1e71132466d31e4301323fad2ff363acecf9d76c0c"
+      }
+    },
+    {
+      "command": "RUSTUP_TOOLCHAIN=1.98.1 uv run --python 3.13 --no-project python -B scripts/mutation.py --file src/imports.rs --file src/tsconfig.rs --output target/tooling/mutation-resolution-work",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/mutants-final.log",
+        "sha256": "a63a6ad15eeb180b42ff6f6e9d356ef067d30a27db4da5c5cfe9f221217866c1"
+      }
+    },
+    {
+      "command": "RUSTUP_TOOLCHAIN=1.98.1 uv run --python 3.13 --no-project python -B scripts/mutation.py --review-only --output target/tooling/mutation-resolution-work",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/mutation-review.log",
+        "sha256": "ee1d3763fce66103c0f0e026fdc314551db68ffd70abef4f4b3e015c7eb64e4d"
+      }
+    },
+    {
+      "command": "cargo +1.98.1 xtask profile",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/profile-final.log",
+        "sha256": "0ce761368225b87d13103c133e544ee7632b043ca3b158b9fbf827843dc798ad"
+      }
+    },
+    {
+      "command": "uv run --python 3.13 --no-project python -B target/tooling/resolution-work/measure_aliases.py --profile-binary target/release/jscycles",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/profile-alias-table.log",
+        "sha256": "e11452ce4fd5f8cb6cd4d9b67f4805f266f6c05890a7d0e65670236543139d4e"
+      }
+    },
+    {
+      "command": "cargo +1.98.1 package --locked --allow-dirty",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/resolution-work/package-final.log",
+        "sha256": "fd4a86b4dd45f58f86096b5a382271192c897d2494892ba7458f7f5f1d58d521"
+      }
+    }
+  ],
+  "counterexamples": {
+    "artifact": {
+      "path": "target/tooling/resolution-work/repair-probes.json",
+      "sha256": "1b1ae3fdd54f507de734aa7284d60db390eee2587b756373f551fa260ff43fa5"
+    },
+    "record": {
+      "schema": 1,
+      "binaries": {
+        "before": "74f07563fd8d6233f3f09796ceef9e44657aa14d4b3db3eab99a1f8722489cf2",
+        "after": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581"
+      },
+      "normalization_cases": [
+        {
+          "name": "missing-exact",
+          "mappings": {
+            "@local/b": [
+              "src/absent/../b"
+            ]
+          },
+          "relative": "./absent/../b",
+          "alias": "@local/b",
+          "expected_cycle": true,
+          "observed": {
+            "relative": {
+              "before": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            "alias": {
+              "before": {
+                "exit": 0,
+                "has_file_cycles": false,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": []
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              }
+            }
+          }
+        },
+        {
+          "name": "missing-wildcard",
+          "mappings": {
+            "@local/*": [
+              "src/absent/../*"
+            ]
+          },
+          "relative": "./absent/../b",
+          "alias": "@local/b",
+          "expected_cycle": true,
+          "observed": {
+            "relative": {
+              "before": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            "alias": {
+              "before": {
+                "exit": 0,
+                "has_file_cycles": false,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": []
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              }
+            }
+          }
+        },
+        {
+          "name": "wildcard-suffix-parent",
+          "mappings": {
+            "@local/*": [
+              "src/*"
+            ]
+          },
+          "relative": "./absent/../b",
+          "alias": "@local/absent/../b",
+          "expected_cycle": true,
+          "observed": {
+            "relative": {
+              "before": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            "alias": {
+              "before": {
+                "exit": 0,
+                "has_file_cycles": false,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": []
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              }
+            }
+          }
+        },
+        {
+          "name": "symlink-hidden-cycle",
+          "mappings": {
+            "@local/b": [
+              "src/bridge/../b"
+            ]
+          },
+          "relative": "./bridge/../b",
+          "alias": "@local/b",
+          "expected_cycle": true,
+          "observed": {
+            "relative": {
+              "before": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            "alias": {
+              "before": {
+                "exit": 0,
+                "has_file_cycles": false,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": []
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "src/a.ts",
+                        "src/b.ts",
+                        "src/a.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              }
+            }
+          }
+        },
+        {
+          "name": "symlink-invented-cycle",
+          "mappings": {
+            "@local/b": [
+              "src/bridge/../b"
+            ]
+          },
+          "relative": "./bridge/../b",
+          "alias": "@local/b",
+          "expected_cycle": false,
+          "observed": {
+            "relative": {
+              "before": {
+                "exit": 0,
+                "has_file_cycles": false,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": []
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 0,
+                "has_file_cycles": false,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": []
+                  }
+                ],
+                "stderr": ""
+              }
+            },
+            "alias": {
+              "before": {
+                "exit": 1,
+                "has_file_cycles": true,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": [
+                      [
+                        "external/b.ts",
+                        "src/a.ts",
+                        "external/b.ts"
+                      ]
+                    ]
+                  }
+                ],
+                "stderr": ""
+              },
+              "after": {
+                "exit": 0,
+                "has_file_cycles": false,
+                "file_cycles": [
+                  {
+                    "name": "probe",
+                    "path": "<root>",
+                    "cycles": []
+                  }
+                ],
+                "stderr": ""
+              }
+            }
+          }
+        }
+      ],
+      "work_cases": [
+        {
+          "specifier": "./leaf",
+          "aliases": 1025,
+          "references": 96,
+          "work_limit": 50000,
+          "observed": {
+            "before": {
+              "exit": 2,
+              "stdout_bytes": 0,
+              "stderr": "Error: Import extraction error: analysis limit exceeded: analysis work (limit 50000)\n"
+            },
+            "after": {
+              "exit": 0,
+              "stdout_bytes": 295,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "specifier": "@used",
+          "aliases": 1025,
+          "references": 96,
+          "work_limit": 50000,
+          "observed": {
+            "before": {
+              "exit": 2,
+              "stdout_bytes": 0,
+              "stderr": "Error: Import extraction error: analysis limit exceeded: analysis work (limit 50000)\n"
+            },
+            "after": {
+              "exit": 0,
+              "stdout_bytes": 295,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    "hidden_alias_cycles_repaired": 4,
+    "invented_alias_cycles_repaired": 1,
+    "unnecessary_quota_errors_repaired": 2,
+    "relative_semantics_preserved": true
+  },
+  "independent_path_oracle": {
+    "artifact": {
+      "path": "target/tooling/resolution-work/node-oracle.json",
+      "sha256": "5b5eb8ac2698ccf67f76f055b9282057ff003028aeb34cab35d90e3bed0fa5df"
+    },
+    "record": {
+      "schema": 1,
+      "node": "v22.17.0",
+      "operation": "require.resolve; fixture modules are not executed",
+      "cases": [
+        {
+          "specifier": "./absent/../b.js",
+          "resolved": "<root>/src/b.js"
+        },
+        {
+          "specifier": "./bridge/../b.js",
+          "resolved": "<root>/src/b.js"
+        }
+      ]
+    },
+    "script": {
+      "path": "target/tooling/resolution-work/node-oracle.cjs",
+      "sha256": "8965df142aef865981d4448f48ea8b906761db3c4e931c9470aa2aa8457c19af"
+    },
+    "typescript_source": "https://github.com/microsoft/TypeScript/blob/v5.9.3/src/compiler/moduleNameResolver.ts#L3107",
+    "typescript_execution_claimed": false,
+    "discarded_investigation": "Physical filesystem-parent interpretation failed against the Node oracle and TypeScript source. That exploratory change was removed before the final baseline/campaign; its failing test log is not evidence of a product defect."
+  },
+  "mutation": {
+    "tool": "cargo-mutants 27.1.0",
+    "files": [
+      "src/imports.rs",
+      "src/tsconfig.rs"
+    ],
+    "selected": 116,
+    "caught": 86,
+    "unviable": 30,
+    "survivors": 0,
+    "timeouts": 0,
+    "new_exclusions": 0,
+    "new_timeout_reviews": 0,
+    "bound_inputs": 324,
+    "inputs": {
+      ".cargo/config.toml": "77c33876d6611a8a2f4d92dd782f037643545201cd3c9329395f3fe99432b298",
+      ".cargo/mutants.toml": "d190d432753f610efcb50036021a49a759c0be666a6aa2027f51aead0fc4e93d",
+      ".cargo/mutation-review.json": "8084e735e45bec3135419e9498363291ce1633004a4197f7008970324a8084db",
+      "Cargo.lock": "f11d920f1ab6d90edc5dd932e8dc7485eda644bbcf59fd652d07ff80ae1f4549",
+      "Cargo.toml": "19945c47de0a6da04feef5ab758b13bcdcd06ad3717862c951bfdf6fa0e8d4d7",
+      "README.md": "ec7e049087ddf65594cfac2563c070aafb8c226219f05cc8307c93fe640a4e66",
+      "clippy.toml": "58734493534f24434c642acc05bf8f665fb44a5d543d1b13fcb16cf39be579c1",
+      "rust-toolchain.toml": "b36eb8ee6d003e4a655f23628f257dd3e89e13d9dee83eb4901f50dce60b4f10",
+      "rustfmt.toml": "fc53c6ca3c63893a6f9dad3e99a95116a2a699937bbc9744f194d34b8bc26096",
+      "scripts/mutation.py": "6a5161c22ce175c44020a5e2e576105f944eb22671300e0600c64e4d068a61aa",
+      "scripts/test_mutation.py": "c3ef98484e882a728a2d97d06f1acb34144c46b0a26037f6322a6aa561caac0e",
+      "src/analysis.rs": "da971c9d50cd78b8edb7d6f183825ac894fa8864941f0242640b042580229f6b",
+      "src/budget.rs": "ed5b90916fc88d401dc50fb7356d42e76fff4d837a5c3f4f6c7ae97c31e03a17",
+      "src/config.rs": "6f566f2030f8d680625965621d60824a6cbac246e8bf97efcd29067faa864044",
+      "src/cycles.rs": "415d6ca3b6dea8853cc11e190806679a5ea59329dd9029983de2ac5e8a0369cf",
+      "src/discovery.rs": "aee41e7a3fe1d77fa0cf426565bada6310d15b8dd4b74d4e85a6ff1384fc2e0c",
+      "src/graph.rs": "78ed235273c95065e4f10e93938094daae8d564b59bcc0171021735c4d37b5e9",
+      "src/imports.rs": "f9a563a104205b64c4992a87cadcc7ab63177699ba7730393f6e919001753a0d",
+      "src/input.rs": "5900ec3fb2a2bfce48cff315cfa042e1d924d0f2423dc7fcc777ceee27cd5772",
+      "src/lib.rs": "578dc1dd892715bca56a184f1909ecb46c0e254f70e193a92d20a5937c73f8cc",
+      "src/main.rs": "9a5c407508dda79add0e21820f14828bbae14e38eeb47a4a6d530c60d2822ad7",
+      "src/module_syntax.rs": "9bca23a5afb97288f395731ece574dec2d3e7e6b668ff376f259a49b427ceba6",
+      "src/output.rs": "508a5bd9732b192a86ef961b5efa3788e86b870a2ef19400353619c76a49bf14",
+      "src/syntax.rs": "aa927962dd5378ff53833229562c17f7f64a447c0d5b8a0a7cb7cdf178187b95",
+      "src/terminal.rs": "f8a1865eb89cf7d9fcbfcc67c3cad217b78410ded0e07f8365477d3c10aadc9f",
+      "src/tsconfig.rs": "df1ef2401e6c0bbddc3a31295c2244fd3fa159445de78e320bd937814ce09e46",
+      "src/workspace.rs": "8d342233fbd3a27025c9a8db2fa9c340375080f52a985c352093ee88cf3296b7",
+      "tests/adherence.rs": "fcefec7c9dc6bd31a22c73b2996f5eedf3217787270786f4db44f1ed07d966f8",
+      "tests/boundary_closure.rs": "fdc6fb0998c7cc1898289f130998f7fe6afd1e874ca3b2fde02c54c221e9bdfe",
+      "tests/budgets.rs": "c07238edb9cdb6434569591f94a13db8b1d467e11dcf1579b537d62575fa6b1b",
+      "tests/cli.rs": "9a4b8dfb883b6b9e30d7c5a96691b8d6bde7c66177d9365b71ecef7fc083d98e",
+      "tests/fixtures/alias-chain/src/a/index.ts": "d1b98e794ba1c20e801b00156e9270d4dce519793cab4e3850d438f54a2cd652",
+      "tests/fixtures/alias-chain/src/b/index.ts": "05d745af3515099107317deff61cd9fe793f6fe863c9c61d2daefc78d49d86d5",
+      "tests/fixtures/alias-chain/src/c/index.ts": "3870682765454dc534002a627276209bd65b32c72742a6199b73c9e3771c8ad8",
+      "tests/fixtures/alias-chain/tsconfig.json": "834a15d9ec20e12dbf872a2d5753915718b0a074a787046dbcff5ec7e3103c35",
+      "tests/fixtures/circular-type-only/src/a.ts": "2e1438c17f3a25a9dfee59132ef8ab481402a50a3469317bbd2339d9e2b725fe",
+      "tests/fixtures/circular-type-only/src/b.ts": "10010f91664bfc4223ad1e88e9e355377289cfb96aa5d9eef6a1d6dd356a3256",
+      "tests/fixtures/comments-in-imports/src/a.ts": "fe5457b5eb785b3e5ac8c9b48cc4fe7ef0b20434cee6e90e9b24d3c918945f59",
+      "tests/fixtures/comments-in-imports/src/b.ts": "90528a5581c934b569f6287a84bbee336e3ab01574f5fb143198ddd0bf71ade6",
+      "tests/fixtures/comments-in-imports/src/c.ts": "ed4bb4c0bc7ccab44172e179c86670529f7b76f593ec9865c554f0255da6b656",
+      "tests/fixtures/comments-in-imports/src/main.ts": "4b8258993bce72f1e0aab510cf9ab79fcfb01b7b4910a67293cc40fbaa678f04",
+      "tests/fixtures/complex-cycles/package.json": "6f66c18c4a9d1ec1f82447073c92fa00bc61a62f05e5195778cc73a804c58cfd",
+      "tests/fixtures/complex-cycles/src/a.ts": "4a98bd5381962581f2177ec6ffada29462e15cffebb0c0d674c862e605969a54",
+      "tests/fixtures/complex-cycles/src/b.ts": "01110355fd7790462b1326af07e3ae58fcbbafd51374fb14b98a698aaa67523a",
+      "tests/fixtures/complex-cycles/src/c.ts": "6fa8bc62238a1323d507dd148e43ff7e929d45a1fad091a4488bf6f115aadb6d",
+      "tests/fixtures/complex-cycles/src/d.ts": "ed535484792fa1912651c2accaa1e06476ff53c2311f3ebd7e19b98bcdc6125b",
+      "tests/fixtures/complex-cycles/src/e.ts": "dd4f832bbc86657ab9e3948f4c6439877e20516adc5df5546e91bebbd6cb8334",
+      "tests/fixtures/deep-nesting/src/index.ts": "e0ec666d88469ea01d527b3e262cd84ce2958915cb3f9ffcdfed0ac10deb3813",
+      "tests/fixtures/deep-nesting/src/level1/a.ts": "94c0a664d77ce25e52aea2d306b10096cbf2cc73ae650907245a56d9f4c037ae",
+      "tests/fixtures/deep-nesting/src/level1/level2/b.ts": "e56789a193fcaf2135af0785d1bc018654431f7c68b26ffe72340390de10855b",
+      "tests/fixtures/deep-nesting/src/level1/level2/level3/c.ts": "93e9b23022f18db2143f35405a0cbe749362a748ded9fd8e6b59bee88b0df675",
+      "tests/fixtures/deep-nesting/src/level1/level2/level3/deep.ts": "2ad4141fe1c3e029aef95b16f0b2e08e62a583445822e2b5d0f430ba0f03bab2",
+      "tests/fixtures/default-exports-cycle/src/a.ts": "9c90561e222e2e8e602fee26c0b837c82645104c3c2e6df67d37d680239996a1",
+      "tests/fixtures/default-exports-cycle/src/b.ts": "4a70df12396089245aee5f5ba9f445f1bac6d5c6edb1264131d2887d2b180c51",
+      "tests/fixtures/diamond/package.json": "1a41afac88434ab04042dbbc033c6a2ef34fbb52573463946f1d7ed959dd12b9",
+      "tests/fixtures/diamond/src/bottom.ts": "1adecca3311ab2972a861aa80f502b47549d8f631f7ea1b3e583f330dfac9b9c",
+      "tests/fixtures/diamond/src/left.ts": "3ffd43fb5bd034861cbf75b8770e6778ead12a7ee91d686ce6a709e7bbf6e88b",
+      "tests/fixtures/diamond/src/right.ts": "f55a74df7db6e2dc0feb001a5830b7923a091b4ef1ed5dbe3ba417a164dce0f9",
+      "tests/fixtures/diamond/src/top.ts": "4ec737fe6a5817a0eb85bd5ae518036655fc6fb83294f1c25e76d3bb41b8de68",
+      "tests/fixtures/dynamic-cycle/package.json": "56445a5d62ed105e35cde2dc7b5de61b5400011e84655941ec98a4896b990cfb",
+      "tests/fixtures/dynamic-cycle/src/a.ts": "93d96f4c3b31cd4b7b826806479b789bb1338b590a23d3134d610c0d9ab44c05",
+      "tests/fixtures/dynamic-cycle/src/b.ts": "8aeb1fef7dbc35666a184f85d81d70c28de9393a7232d49c01ef7d7c7ccf3df8",
+      "tests/fixtures/hub-and-spoke/src/hub.ts": "d1c8735d71fdde4479b550fa56563f8b96c317e28727897e1005469efdb7a43a",
+      "tests/fixtures/hub-and-spoke/src/spoke1.ts": "c81be618bf207693085e99984e8ca5f097819b105ac8edef6798e97e78dcbfe2",
+      "tests/fixtures/hub-and-spoke/src/spoke2.ts": "a40fac5c42f1cfef140307a0f2bde379c8966af6e6789d716025f864b78a5412",
+      "tests/fixtures/hub-and-spoke/src/spoke3.ts": "1dc8774f0e6ef8d179ad7747bba5bcb4a0afa7876fe4001a570d981388e75d53",
+      "tests/fixtures/hub-and-spoke/src/spoke4.ts": "cdfc5593e1f10b6bb65f7d81051c75a694ec022dcfa9cd41147f87685e8ac76d",
+      "tests/fixtures/hub-and-spoke/src/spoke5.ts": "5923be368a2fbadc4f9c1c1825e60a57ef77e099c5a507cdb3392f40295c849a",
+      "tests/fixtures/import-styles/package.json": "8b66a0465d8e65c36d7daa23ded92e7115e822a663e0c23444cbd15b94a4f779",
+      "tests/fixtures/import-styles/src/dynamic-import.ts": "d5f6d6db9d54710311b1f9954e82016045eaa49441361574c78690984fadbabf",
+      "tests/fixtures/import-styles/src/helper.ts": "13821760455c40ba7dbf00314b8d7674a15357effa1019c8fca34a92b2fc79c1",
+      "tests/fixtures/import-styles/src/reexport.ts": "0515651b8595759951835a15a689f344be19574a4e69a2788bb811d4a112856d",
+      "tests/fixtures/import-styles/src/require-call.ts": "8804aa3d8921768c7a9bab70d5126b7d8670c3ad4c19a05f72065f1bc231e3b0",
+      "tests/fixtures/import-styles/src/static-import.ts": "08797b8bd92a80279794f3b9b0e0f8780fde322862007b85204ec2c156eb7681",
+      "tests/fixtures/import-styles/src/utils.ts": "91921e549456241027965fc7937a5a8d8fe3ab162c9a09b1d6c3bf9233803e4b",
+      "tests/fixtures/index-file-cycle/index.ts": "11df17d4679d08997ad31558a87f717732cdbd594b8f0663bc5998786f18ee58",
+      "tests/fixtures/index-file-cycle/moduleA.ts": "eea3ec2741187300f28cd7b1a648e44b365c16165363cf7b36044d9d2c61101b",
+      "tests/fixtures/index-file-cycle/moduleB.ts": "7efef35f96afaded0734a2319546298c919ff17e70d1d56c333f7bc94a287aa6",
+      "tests/fixtures/inter-package-cycle/package.json": "2637beed4453a07c659c9bc01a402395688af0e1ed56897be677629273ab9d25",
+      "tests/fixtures/inter-package-cycle/packages/pkg-a/package.json": "3224cba62f2bf2ca45867ddada7a1344a171a200c659ece7a5af0cf9e11f94d7",
+      "tests/fixtures/inter-package-cycle/packages/pkg-a/src/index.ts": "171325019568ca523b43db802b7c4e8a0af7f58ded95dffe2aaebb83b6e6de47",
+      "tests/fixtures/inter-package-cycle/packages/pkg-b/package.json": "91d7f019968eddce4301c7a655beeb6b25e4275b0edb07d79b4351ade3d727a6",
+      "tests/fixtures/inter-package-cycle/packages/pkg-b/src/index.ts": "85c2f7e68423faf4d7df97249ad886f3af61ca322f5408dd6e633f2aef3e09c5",
+      "tests/fixtures/inter-package-cycle/packages/pkg-c/package.json": "fb99501dea1cef615aae11fd2715dbd6a1503bf92c37dda9bc51549f14077b24",
+      "tests/fixtures/inter-package-cycle/packages/pkg-c/src/index.ts": "83b90c0977e84daf9c051841e1dd8f8fe94647668717f36d60a574156d3adb4b",
+      "tests/fixtures/inter-package-no-cycle/package.json": "e7612e4621c4cc87e1038f35ab9544dae0520a368533d961d41326453d2665ad",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-a/package.json": "93534fdf5aa1b054a40312053d0e8d3c7601e4773e2da9281cbef7f5e1e349f5",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-a/src/index.ts": "acd154913efd0900ffa1d03b4a70ea9fccbd505ca39af3294b07b76746ecd16a",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-b/package.json": "18c17abda4988d1237fb09dd9a6b8b54668fb6d9e454f70fb129fcf48ee4eefb",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-b/src/index.ts": "86497dff742ebbae98d48b056d3f102877761abf011e412a7eebf82d77c34e0f",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-c/package.json": "4928d707500fff43465d2c6f1a4e9a40b8d6a1da0ae466c0a5eade64a0a8f15b",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-c/src/index.ts": "7f2c26aa4a8b18feae8ec044cb6bc13c050fc70c69b8525d9ab8c9fda1b41195",
+      "tests/fixtures/inter-package-simple/package.json": "35b2bfe4dddb6bf56c899198c47dba37a815d26499e21ba8d6fd46775de51fbf",
+      "tests/fixtures/inter-package-simple/packages/pkg-a/package.json": "4cb4549c7c723d2cba6a74f219e815fb5b2048058a1e99240ca523a928f60536",
+      "tests/fixtures/inter-package-simple/packages/pkg-a/src/index.ts": "9ad8221ce697eb6b8da22a486efb8b170d302b852b1014178ebac3a10f2391e8",
+      "tests/fixtures/inter-package-simple/packages/pkg-b/package.json": "ac50b1eb759628075c1d5befc54b3b029ab6fbfc31e47644bbe27c58a5534501",
+      "tests/fixtures/inter-package-simple/packages/pkg-b/src/index.ts": "be438e4ff7e81cd64d1c3df1aa1098f744dff65248f3ce5e1062f26ba5ee9361",
+      "tests/fixtures/jsx-imports/src/App.tsx": "cfb1c727b7e60b3000e4776e1ff3f6fb128aa1abd5e7c00ea97328d8fd365d7f",
+      "tests/fixtures/jsx-imports/src/Button.tsx": "00657b578629a5618ef577c45f87e3dc5bb1d4e8f0ebc9c2e9cf56811d667708",
+      "tests/fixtures/jsx-imports/src/Header.tsx": "94798a1c5cd514ee39f9b200cb15ce343e45617f3a60d20e41b1b0251727c7bf",
+      "tests/fixtures/long-cycle/package.json": "50308cadb7e1599c420a6bfc075ceebff97548ee61022a159f87076b0366d8d0",
+      "tests/fixtures/long-cycle/src/a.ts": "013b3c16f4c5b159fce6b5be2efc078597649c735ed85f62eebbcd475f90ea9f",
+      "tests/fixtures/long-cycle/src/b.ts": "01110355fd7790462b1326af07e3ae58fcbbafd51374fb14b98a698aaa67523a",
+      "tests/fixtures/long-cycle/src/c.ts": "1095e0a6881f52efde598ef12b92da963857531a176c41d21c598b8e5dd248c8",
+      "tests/fixtures/long-cycle/src/d.ts": "ed535484792fa1912651c2accaa1e06476ff53c2311f3ebd7e19b98bcdc6125b",
+      "tests/fixtures/long-cycle/src/e.ts": "ee9824095c5274234c48ab7d3af94ac367a387d970cb764030b9defcaee04263",
+      "tests/fixtures/mixed-import-cycle/dynamic.ts": "f0410b2d7ef05101a1eb598985596437b57d4644865485244642dc4f7d7a9146",
+      "tests/fixtures/mixed-import-cycle/require.ts": "e948d8dd8a6c0f2f9a3e5b1318554a1f4e1062e556c6669ad195aa56a27db777",
+      "tests/fixtures/mixed-import-cycle/static.ts": "fc735ab7a04997d42daa8851bae8cdf609931798377a4d14bd30320c3808d8db",
+      "tests/fixtures/mjs-cjs-imports/src/helper.cjs": "f8e7ac2cee9edbd15a8f7d0ffd9fa5891f8f47e5699753b5ecbd5079af4e2dab",
+      "tests/fixtures/mjs-cjs-imports/src/main.mjs": "b326817dad4be98473b5ca34efbb5739bbf9a0d48e820ba441420ce9f2ed7fca",
+      "tests/fixtures/mjs-cjs-imports/src/util.mjs": "564194b381d764ab9c9461136b195c45638fcc7b93e45805c82ce9f8b166ae01",
+      "tests/fixtures/monorepo-mock/package.json": "079bcc46ff3f0f9711eda502f8167d792f9597b152ba97d5a970a69723bf353a",
+      "tests/fixtures/monorepo-mock/packages/pkg-a/package.json": "3224cba62f2bf2ca45867ddada7a1344a171a200c659ece7a5af0cf9e11f94d7",
+      "tests/fixtures/monorepo-mock/packages/pkg-a/src/helper.ts": "5261c9ebbda3e18ef969ec5e86a93229c7d237301dd8f2e1d995eb250be9bbc0",
+      "tests/fixtures/monorepo-mock/packages/pkg-a/src/index.ts": "9965b4ec00c85f4d8014f51e9db3a85a65f9c23e340f17bdf2792fddadd196e7",
+      "tests/fixtures/monorepo-mock/packages/pkg-b/package.json": "91d7f019968eddce4301c7a655beeb6b25e4275b0edb07d79b4351ade3d727a6",
+      "tests/fixtures/monorepo-mock/packages/pkg-b/src/index.ts": "5621d270339df02128ba5d21d2dbe27b24596f2b465cd68e1f409bb0706ddd1f",
+      "tests/fixtures/multiline-imports/src/main.ts": "4a2c3950faccdb028a9261776fe43bfc5bb3bb972471ad820048bf5241a3ab48",
+      "tests/fixtures/multiline-imports/src/module.ts": "404e6b3deb00a3e5fbdc63fe938db43c1f26f0301fe8aadfaa6110ff52dc0416",
+      "tests/fixtures/multiline-imports/src/other.ts": "020fa1947294a789bdb1f5aa66d57121f46120cfc9ff1c113035e5b9c7ad6f3f",
+      "tests/fixtures/multiple-entry-points/src/entry1.ts": "4db91028a78981bdbd78bcc895632e0c20a1f37d2a7a7e1cb679dbeb77b77325",
+      "tests/fixtures/multiple-entry-points/src/entry2.ts": "f91c6675b9b072d1222e52754a62d8c02a4d93685680a49570ba3bc59ef6fe5e",
+      "tests/fixtures/multiple-entry-points/src/helper.ts": "d2cf2e1230cbbe0c81dd4d93d5648dc11e5c537fcdf4ade67b6d42a5355a0ae5",
+      "tests/fixtures/multiple-entry-points/src/shared.ts": "56a26a08debc0c02cc1b4c8f60f1f3cfc173492d2428135b6c80b228e8c3e418",
+      "tests/fixtures/multiple-entry-points/src/util.ts": "3ed4a5ed011ebdef9950e2b171f8293a4c21d203db816734cb102a00c4c8bf69",
+      "tests/fixtures/mutual-recursion/src/even.ts": "629744f8ee002df71396462da888c969282c4973c74f3a6988e7186c14284a95",
+      "tests/fixtures/mutual-recursion/src/main.ts": "a50a826840385b09b760c339f0d16df0b5519627793f53ef9a1a659f75a182bf",
+      "tests/fixtures/mutual-recursion/src/odd.ts": "c8ebc0718262fa06f3afce9589971cbaa45eddd43127b9b2b0bdd8a0b7198d04",
+      "tests/fixtures/namespace-imports/src/helpers.ts": "1e782e437ee59363bec880775cb6489bf704e7cd78f334e162b224f33a37e643",
+      "tests/fixtures/namespace-imports/src/main.ts": "d5105d823dfd478377326f2d72d76be7e9bd2589f42e342f4a271145348c365f",
+      "tests/fixtures/namespace-imports/src/utils.ts": "2af9e59122a63affb1928451cce104165acd34cb3f9148bf7585f1f66dcaeb75",
+      "tests/fixtures/nested-cycles/a.ts": "1a307cdcb4a732e137e6cba91099cc4f0354804d1a88adbdc98a4249e25710e0",
+      "tests/fixtures/nested-cycles/b.ts": "7cb3dacd9d1462b042b959dea467e0f2a0855fc017ada123072ebf361c4a2c0e",
+      "tests/fixtures/nested-cycles/c.ts": "db2b54f87652f6f20cfe094ad54848149ffcfe6f15ab835b43bca5751c46555b",
+      "tests/fixtures/nested-cycles/d.ts": "6b2bad816c546759b121ac379d74564b77f1197fc2bb449a018f1bdf0bf94ca2",
+      "tests/fixtures/no-cycles/package.json": "7e659e31b3e12abce005fbcec8876af8cbd60b5769dfb329948ee8525764b5db",
+      "tests/fixtures/no-cycles/src/a.ts": "4a98bd5381962581f2177ec6ffada29462e15cffebb0c0d674c862e605969a54",
+      "tests/fixtures/no-cycles/src/b.ts": "01110355fd7790462b1326af07e3ae58fcbbafd51374fb14b98a698aaa67523a",
+      "tests/fixtures/no-cycles/src/c.ts": "303280c8f0a8b89d050d214038ff4a3daf64bf20efd8e9339bc89884d3eebee8",
+      "tests/fixtures/pnpm-catalog/packages/app/package.json": "096ff33d14cb43958a8d0ef7be4b9006ef852882adf3115b04ba6ad452a73188",
+      "tests/fixtures/pnpm-catalog/packages/app/src/index.ts": "c588e43b587953cbb399906da9ce3038b7765afa51a700c5166f35d365a14f47",
+      "tests/fixtures/pnpm-catalog/packages/lib/package.json": "bc2f2bfcc66736b4122faf4c79327b21c37a92b1814e27f4e9eab9a4e54434ff",
+      "tests/fixtures/pnpm-catalog/packages/lib/src/index.ts": "329aca78f46eebb302e5e53e684fd12d5f9eec94b4571c1a1c1ed9abc69828ab",
+      "tests/fixtures/pnpm-catalog/pnpm-workspace.yaml": "0fb360452b0231d114d0b0ad6cc76bb48fe528382f55827cf93739bf64ec79e1",
+      "tests/fixtures/pnpm-workspace/packages/pkg-a/package.json": "ed4b55be55527d47331273e7555dd3f9197a4c5e44923e42a471d09d3c52fdb1",
+      "tests/fixtures/pnpm-workspace/packages/pkg-a/src/index.ts": "f852ceab905f297c2c4f6b9f42c747495d6ca0e840a673c009233d940f95e87b",
+      "tests/fixtures/pnpm-workspace/packages/pkg-b/package.json": "988706060ecbe4e975aee16a185711ec024dd2960e48f64cfe4c4956c07fbcba",
+      "tests/fixtures/pnpm-workspace/packages/pkg-b/src/index.ts": "a71deef61f0ba2bd343fb6a0cc2a1fe7525d096f6f959c06abc050ad22fa936e",
+      "tests/fixtures/pnpm-workspace/pnpm-workspace.yaml": "477e6c5f8b033a1ecb7f8919ad2726e4328c7893c4ad6228d62471425b22dbe7",
+      "tests/fixtures/pnpm-workspace-complex/package.json": "c4f9f059af4dc96c07df77c0c30c0fd8cc56e9954f64779c46f5c92be69afe14",
+      "tests/fixtures/pnpm-workspace-complex/packages/core/package.json": "58f70dba2434ab931d0e083f447c3486353282eb8f5cd4736fd2a8477afbf019",
+      "tests/fixtures/pnpm-workspace-complex/packages/core/src/index.ts": "bb04d6df77ed0eb612c01ee73d888e8540428e06df2a1edbad2f3a675b0bfa03",
+      "tests/fixtures/pnpm-workspace-complex/packages/ignored/package.json": "36329b5c592facca04b8fcb04ba9db5a06e075d9b47d25f27396c5aef4076a85",
+      "tests/fixtures/pnpm-workspace-complex/packages/ignored/src/index.ts": "ce50890add716bcf682bdb5f1bad4a4811d2dac13cdfb9142df346408a3dc95d",
+      "tests/fixtures/pnpm-workspace-complex/packages/utils/package.json": "96420bc8eb33be7f962266a57251adb1ad80c4341967730195bdacaf3ba87221",
+      "tests/fixtures/pnpm-workspace-complex/packages/utils/src/index.ts": "6541bf3781c88e84cd6ec1f6f96955778be8360c549181fe573093f964d4d9cc",
+      "tests/fixtures/pnpm-workspace-complex/pnpm-workspace.yaml": "2925d0a50ad4ca70552ab9583ad28c87448cf32c3efe4aed06f26d98790014f3",
+      "tests/fixtures/re-export-cycle/index.ts": "219998d1f9e54feea18016732c46d3f26ac0ba17546bf64d9da3047c00da75f1",
+      "tests/fixtures/re-export-cycle/main.ts": "4a81024f74eea148f1120283d5cad7ff714f6fa3dde68b7f9e314be4a47cb500",
+      "tests/fixtures/re-export-cycle/utils.ts": "c18fcc206ce107cd1c4811d787644410107fe7f762b44cc083abb2524fa59d7e",
+      "tests/fixtures/self-loop/package.json": "e91f9a30e9401021f3a60c5b5242471c2bc7d85b639272eebb89ffb1af8f178a",
+      "tests/fixtures/self-loop/src/self.ts": "6108c3a837d78833becea8511578e272cdc724e26bdd8166cd56277875ed1963",
+      "tests/fixtures/side-effect-imports/src/app.ts": "0cb8c9a2ef1375140b6e75dbc4c6145b7a274128cb645611304970819b2046cf",
+      "tests/fixtures/side-effect-imports/src/main.ts": "4e85cde76b9738a67968ccd1f33aeee7654d45924ba7bcce8afa3c42892f49a7",
+      "tests/fixtures/side-effect-imports/src/polyfill.ts": "b3398fcede11954b0ef3ab249ed1b6f148f8071bd39956353cf27de64f4ef276",
+      "tests/fixtures/side-effect-imports/src/setup.ts": "38ba45b54782fa5ff23fb2496c113c3a67060c452a046555526d3e48a74f6988",
+      "tests/fixtures/simple-cycle/package.json": "11b965968e8aaabce4157109690b30397ddae467988b29a6f1f8b29d0364a870",
+      "tests/fixtures/simple-cycle/src/a.ts": "4a98bd5381962581f2177ec6ffada29462e15cffebb0c0d674c862e605969a54",
+      "tests/fixtures/simple-cycle/src/b.ts": "97b89936029b9bdc3cd3e6dad7a2d2264b09c76f0b4be22bc82aac3c1470bb6f",
+      "tests/fixtures/star-exports/src/a.ts": "fc8861840c3fee0427972630167a8943294dfc951283894d635f05c1d50f4aab",
+      "tests/fixtures/star-exports/src/b.ts": "9c164cfcd5425acb875a0175f29e14338d2f3ae76cf4c0ee6664ec9f4b8cac43",
+      "tests/fixtures/star-exports/src/index.ts": "754750f4d26a17e855ade2f6fb33b92101ff79700130b15417246d852692a477",
+      "tests/fixtures/string-escapes/src/a.ts": "fe5457b5eb785b3e5ac8c9b48cc4fe7ef0b20434cee6e90e9b24d3c918945f59",
+      "tests/fixtures/string-escapes/src/b.ts": "7f770e73d7381e2bde83fa9bac95335c62feb5e24263cc67fd3b3d2b55e392a3",
+      "tests/fixtures/string-escapes/src/main.ts": "b5d08f6d1c57ad858406b7190cfdc079df20914939b2fce998f8aea69b642a88",
+      "tests/fixtures/tsconfig-aliases/packages/pkg-a/package.json": "e2f6d7883dd3d651227c783e446549d69d55628a4cb29f6a2dc68843f9b39a1f",
+      "tests/fixtures/tsconfig-aliases/packages/pkg-b/package.json": "cb213eeb17408dc11beb99d73a771cc254bf491fb1966ea0b22061cc2419f2ab",
+      "tests/fixtures/tsconfig-aliases/pnpm-workspace.yaml": "477e6c5f8b033a1ecb7f8919ad2726e4328c7893c4ad6228d62471425b22dbe7",
+      "tests/fixtures/tsconfig-aliases/tsconfig.base.json": "3a297b3b733337ecf1201107668d432e98ece7474ed8cfe15450bb5813951757",
+      "tests/fixtures/tsconfig-complex/package.json": "47c4352d13ecdaae758b1b72d986a852631b52f59ac6c010fad5f07e838fe4b5",
+      "tests/fixtures/tsconfig-complex/src/components/Button.ts": "ca66a7c4c73b7637715779c29ca5ece2d8bcabd6275e0d923a7f040f28cbb789",
+      "tests/fixtures/tsconfig-complex/src/config.ts": "3cb2756cbbd59153b651508c486367285cc96652bd334faf5ed0aef72c18a612",
+      "tests/fixtures/tsconfig-complex/src/index.ts": "2881f56878600675c0e1a2b27a5127517d6f0d709c0ce7f6bc111417a310b51a",
+      "tests/fixtures/tsconfig-complex/src/utils/format.ts": "e0fe90849c245c725727a58289730137c0710a0fba8b5430581b3b1f8a39a816",
+      "tests/fixtures/tsconfig-complex/src/utils/helper.ts": "769304054680131fc00e41acd7d3a5a5f550e5b12444f5ef88c81b1dd31ffc6a",
+      "tests/fixtures/tsconfig-complex/tsconfig.json": "0c2eb8b648c35b76b6e7f83c17f3d172a4d383efb6885ce74e57934ff4e19a0f",
+      "tests/fixtures/tsconfig-extends/src/app/config.ts": "1727e421801406a0a9799097722d7c3ca7a7b16ab830bf29c7ec095f3d6fa73e",
+      "tests/fixtures/tsconfig-extends/src/base/utils.ts": "255cfe308bbfa6699d1885fc3147a54eaac99cac653aaa3af9d69f0c2202b99b",
+      "tests/fixtures/tsconfig-extends/src/shared/helpers.ts": "1b3d30e85bf310d36feac948dab0fba4c141cd2baa20078b33c1aca61ab65964",
+      "tests/fixtures/tsconfig-extends/tsconfig.base.json": "e7acc33f43397e688fa2b6b870118dbb37a21d9433107b934f232b458f1b0bb0",
+      "tests/fixtures/tsconfig-extends/tsconfig.json": "675d51eb09b3357259bae9136581c01d477da535b24b133dfd0bfe0f4f04345e",
+      "tests/fixtures/tsconfig-extends/tsconfig.shared.json": "d52874ab4014613536ee44062fdec95da7937826347bbd507e71677acf4274e0",
+      "tests/fixtures/tsconfig-extends-pkg/node_modules/@company/tsconfig/src/util.ts": "cdbd2ec08d9899c7340d45acd035348930f858c909cc3a6cff968cd293e35465",
+      "tests/fixtures/tsconfig-extends-pkg/node_modules/@company/tsconfig/tsconfig.json": "5c3f184a94bf2893d77cc1271ae23145546caa6f9745eb8d89719a017786af06",
+      "tests/fixtures/tsconfig-extends-pkg/src/helper.ts": "fe160ab552757636e06083a30d98d0df057b34a52edf9d22eb4994c2a3dfbf0c",
+      "tests/fixtures/tsconfig-extends-pkg/src/index.ts": "2a74d086575230d14ffd7a15388b3838a34dfc867308e1ea257fa69cab7ce439",
+      "tests/fixtures/tsconfig-extends-pkg/tsconfig.json": "d1b1214b0c8fa97052e05adae147c4bfbd79b4ad67f90286cb66b8a9797b9b3d",
+      "tests/fixtures/very-long-cycle/src/m1.ts": "8ccdb2c8779358db02de613a6dddfb8c04b133bf3e31be318268cc92d9de9186",
+      "tests/fixtures/very-long-cycle/src/m10.ts": "71886992b97bac514cdcd5bf42212ddd6386ef6106f071dd48e3208d83d2487f",
+      "tests/fixtures/very-long-cycle/src/m11.ts": "1ec0f3b5732938e0a9ac259a07be0185e44af497aa6c46abdad827d16ea95a1c",
+      "tests/fixtures/very-long-cycle/src/m12.ts": "7299e4c1e5600f10284ed4481cbb190bc6eb0ebef9cd7553d9c4e7dd730e23d3",
+      "tests/fixtures/very-long-cycle/src/m13.ts": "08475cb0777ab5ef3aeb3e79eca554b3ec5144ec0be0e67792635c7afe70ff28",
+      "tests/fixtures/very-long-cycle/src/m14.ts": "7a9e98da3e594c808cc54249a519fb4b020808586a335d723b81f29bfc04f63d",
+      "tests/fixtures/very-long-cycle/src/m15.ts": "1377c02ba1b01154628bb659f4d3e2a427838d9acb5aa64bb1272ce14c89cbef",
+      "tests/fixtures/very-long-cycle/src/m2.ts": "c26ad47e52b90a4ae6cf14618ff62f898e5704d0b4805147bf4bd8f70853c319",
+      "tests/fixtures/very-long-cycle/src/m3.ts": "fb95e07e6bd05e8083ce4ca45c9aecc80d6f4fc2dffb8af1aab52312ac076294",
+      "tests/fixtures/very-long-cycle/src/m4.ts": "64d2828fbf578f230d0666190dd6b0dc907ae11219fc8a45b287c5347a315e5e",
+      "tests/fixtures/very-long-cycle/src/m5.ts": "a8edb5650eaa0f701f42ae645f1169624227f332689f44a682fea23ec024fd0c",
+      "tests/fixtures/very-long-cycle/src/m6.ts": "34062e0151b1c04003ebac01311f4c8600ad95cfebf6950798c106f5fa948430",
+      "tests/fixtures/very-long-cycle/src/m7.ts": "6f1e17df2835c791b92af1ef2da61135e13afee2392e3d02fbe35b29a99ad988",
+      "tests/fixtures/very-long-cycle/src/m8.ts": "75609deafbcf915f498935127da5dd2dab3ad565fb0afa6434fb7ce74d957a68",
+      "tests/fixtures/very-long-cycle/src/m9.ts": "672b527a1e8b04a3ae96f52e97a7265a51211a49abbe85faf39e086d76c35304",
+      "tests/fixtures/wide-graph/src/a1.ts": "995666814890625c519790b0b06a9edbcd08e9022ce8ff4d9806a6e4faa6d7e2",
+      "tests/fixtures/wide-graph/src/a2.ts": "12d2a49a694f0e24a22064027df5dc7a2d3077b306a18ead8696a476517dd4b1",
+      "tests/fixtures/wide-graph/src/a3.ts": "5a2855dde8a37de7269be0a490b27b12199a2c7b414d20342959784b5a884f49",
+      "tests/fixtures/wide-graph/src/a4.ts": "1ee3e2e63c441a6dafd1856aa20e3d5f0e086bfb591f72061703d6ca67f28e5f",
+      "tests/fixtures/wide-graph/src/a5.ts": "64da6502abfd99eb20ec25470e4ecfafefb138dd58bec5f120b747488f314a1d",
+      "tests/fixtures/wide-graph/src/a6.ts": "fc36f436c6aa463966638bbf35156f5423c31a3d9204292ad06c64b21bd7f339",
+      "tests/fixtures/wide-graph/src/a7.ts": "7a118bac81540bca627b6f82ca01194eef6b015192790238140c126322c26c68",
+      "tests/fixtures/wide-graph/src/a8.ts": "57026af4abec2271c8ebc1e4b04caae8a3dbcd17d916e9416bafee51b28beef4",
+      "tests/fixtures/wide-graph/src/hub.ts": "246cccbec71e27f2b9be09e35e2112e72349e9d9bc5b245550a91a22377e68bc",
+      "tests/fixtures/with-tsconfig/package.json": "3f8cedf9ad2cebb5068026e7bb18f54e352ec9c9717ff0c02893d884074f26c3",
+      "tests/fixtures/with-tsconfig/src/a.ts": "fbeabd301f5cf65f3a8cb18303e94bd91f38733a6496627114af96d0558a9ecf",
+      "tests/fixtures/with-tsconfig/src/b.ts": "a7d735486de8cab828cf13bb49e23fd3afad867acac74fba1771d9ade68bb582",
+      "tests/fixtures/with-tsconfig/tsconfig.json": "c02933a0435e4608a4f0b53037627eaf4f5ae653b61768e6d18788ac7d0526a5",
+      "tests/fixtures/workspace-diamond/package.json": "20a84c50233207d2f30d22207b1f292597288194c3637e4322ac6fc5a1d9ab58",
+      "tests/fixtures/workspace-diamond/packages/bottom/package.json": "9cc0f2dfac2bab975660f0ab5deb363d2ecd3040122697e22f2fc10085a6d0cc",
+      "tests/fixtures/workspace-diamond/packages/bottom/src/index.ts": "0074ccb7cb0b7cbc0d18cff4bdf0a7d3a707afc0e8c2e1ca85b616cb0e3eb490",
+      "tests/fixtures/workspace-diamond/packages/core/package.json": "e28e72050477063071282543f42d72cca135e094f69c87edba0101249aa6c89e",
+      "tests/fixtures/workspace-diamond/packages/core/src/index.ts": "e0a46cf1aa41a002d6bd342cf141ede47daded78fc8f385aff4ac2cb154cabe2",
+      "tests/fixtures/workspace-diamond/packages/left/package.json": "25eecb4ad5d307072b0428b3f7e69d5e5bc1e36e678b32274711840476f3a83b",
+      "tests/fixtures/workspace-diamond/packages/left/src/index.ts": "78ee25c79f9b469c8efab2d1dfb7e549be7596a3763a1213197036180497c3cf",
+      "tests/fixtures/workspace-diamond/packages/right/package.json": "67eb63103da238e205382af4212c1abc5a256db22b0a4436428c08ac4dd7dc96",
+      "tests/fixtures/workspace-diamond/packages/right/src/index.ts": "09d4605167fe17714201cf589b94913eeb0c823b24142daf048e459c85e0cc28",
+      "tests/fixtures/workspace-five-packages/package.json": "da99e555cd33380154512123aee994fe71065357cd3cf2dcf81192531db96fad",
+      "tests/fixtures/workspace-five-packages/packages/a/package.json": "1841633847f55a0098d3a27a6940a4e0db83a38d105c3a7459106f51023a42be",
+      "tests/fixtures/workspace-five-packages/packages/a/src/index.ts": "f5f02cd09661f6b53a04a378496be62e47b7f835ab960c85172ee5910ad44aee",
+      "tests/fixtures/workspace-five-packages/packages/b/package.json": "911dca453a2eb2bd530df70ab4426bd23f3f0ef5912ca213f3da0ea0d64a0808",
+      "tests/fixtures/workspace-five-packages/packages/b/src/index.ts": "2d6a3b09a614f6c09a728ec3694934042c2cfe8427fe678d947a7752e208cb24",
+      "tests/fixtures/workspace-five-packages/packages/c/package.json": "76b70cb08fd130310d72573223d33da8bf552ca5c86653cf24dc52577a7d731b",
+      "tests/fixtures/workspace-five-packages/packages/c/src/index.ts": "4d69c5a7150ccc36f8dcaa6d9ee796a192ec59215deab61a5f9a93661600545b",
+      "tests/fixtures/workspace-five-packages/packages/d/package.json": "b4dcf3f3a4ca3ba2867af7c06f90efec96063ed21ef3b7b6c8194737b51a9f73",
+      "tests/fixtures/workspace-five-packages/packages/d/src/index.ts": "7be4caaedb2e75498eea37ffa2e598f9775f925e37738eb8451e373269b68bcd",
+      "tests/fixtures/workspace-five-packages/packages/e/package.json": "c56eb7da6e72f24a228179434a6b1cf00716655798c1bd7cc076bc758f9d0148",
+      "tests/fixtures/workspace-five-packages/packages/e/src/index.ts": "2fc7eebaefa08ab8ea5f987f177d8abb171000eaecdd48ba1e7439404f36a7d3",
+      "tests/fixtures/workspace-shared-cycle/package.json": "c237883a22f17cb78c0b0c968a877c20f1fde36fea7811de139833323174fb2f",
+      "tests/fixtures/workspace-shared-cycle/packages/app/package.json": "4dd74346c4da3609d5ad8e037dbe14e6426cbab07f6c1f94ee06dfe4b035e00f",
+      "tests/fixtures/workspace-shared-cycle/packages/app/src/index.ts": "b49fe4bf0d0bb713d928d27e71064308b5d81f4ac7ef05a51319137bee04bb31",
+      "tests/fixtures/workspace-shared-cycle/packages/shared/package.json": "4877a5213fb05d5b02b477e5f05baaa9346045442c2df35b9f26b22c029ed4fb",
+      "tests/fixtures/workspace-shared-cycle/packages/shared/src/index.ts": "93a625d97accc18f92d3e784d04f7b9605255828580399fa5c64fb0b598632be",
+      "tests/fixtures/workspace-shared-cycle/packages/utils/package.json": "7828f14d6cf7259a6efc4219bfb944f8211130d7a63ee17be8421e2465279a5e",
+      "tests/fixtures/workspace-shared-cycle/packages/utils/src/index.ts": "c9be85b0a76399ae168b527821fdfece6e65c968ab10d520e16b2159d90b29bb",
+      "tests/fixtures/workspace-with-shared-dep/package.json": "40a0b22bc6bbc0047cb2b8d02947b8e5ae888f16a45053b58a27ebdb81a22f18",
+      "tests/fixtures/workspace-with-shared-dep/packages/app/package.json": "e1fe434fa9ac627379c6a5fe037a1388476fccb84b0ce36595925643c93bfe58",
+      "tests/fixtures/workspace-with-shared-dep/packages/app/src/index.ts": "0bafd95a2248ff435eb3e2b40ebbb0b3b3841595dd9923ccf66d8de417fa1056",
+      "tests/fixtures/workspace-with-shared-dep/packages/lib/package.json": "3f618c0dc620d33d65734d797d7db3970bd3cf44779dbfaf3039836ac0411180",
+      "tests/fixtures/workspace-with-shared-dep/packages/lib/src/index.ts": "da1fddf962375079f5b5187da8b89fc794928a98562ca344144d8ff5ede2d866",
+      "tests/fixtures/workspace-with-shared-dep/packages/shared/package.json": "14c0d516fa9bedac4a791af113f019f7e4e43f242a49e54f137dbdd8663c60ee",
+      "tests/fixtures/workspace-with-shared-dep/packages/shared/src/index.ts": "b57589905bc0eee990d1b667cd048aa33cff25266deda17100eea42abbd212fe",
+      "tests/import_forms.rs": "8c2499edc9688cfaf9c45573064a5a5bafe73f742b18ba00e998145675c786f1",
+      "tests/integration.rs": "df3f73d2b8a9e9f34907c98baa277ace390bc9fd156667ff21df5234af808deb",
+      "tests/miri.rs": "322da48c5dfdf5d874afb7e24f64bc110bf1bdf14e1464159308a15a2e25be0c",
+      "tests/mutation_contracts.rs": "7d42123cae57addc5950e25de3d0f59feb0fb5a11a90290b5cea6ace575f95ed",
+      "tests/resolution.rs": "3a10cbc4c4cf67e3a2be9e0acbb9c242371fd61600b5e953c67ee61d8451b770",
+      "tests/snapshots/integration__alias_chain_detection.snap": "a58880153e4bde3f60102341e833028d98222eac2e1d0b819048464e54602a4d",
+      "tests/snapshots/integration__circular_type_only_detection.snap": "8fb6f1f804aed28204ba2b784b342e7d36c0b03e21fe4336413413b4259051dd",
+      "tests/snapshots/integration__comments_in_imports_detection.snap": "8500519bf3d32421dd7187be4d60f0dddd2437b84247caf4bac2e86068ff67f9",
+      "tests/snapshots/integration__complex_cycles_import_extraction.snap": "3150d9958c48a551d48e0d00d5b4cb2e3a6cff83edde793cf05926acb8bd8fb2",
+      "tests/snapshots/integration__deep_nesting_cycle_detection.snap": "4dc9f1f92a4fd7c8f71f606d2248a0ced9eb0ce52cb7bd2dbc7ffca0bb039dbc",
+      "tests/snapshots/integration__deep_nesting_imports.snap": "79269798c0c462fb9cf6eee5bf5fe8444f7fa69ee7b83f393cd38d2e66c1956e",
+      "tests/snapshots/integration__default_exports_cycle_detection.snap": "17ac7be3f4d99f60c0712cb0081cddb70cbc3a690ff5f63c38e2b5c8dc4f933a",
+      "tests/snapshots/integration__diamond_import_extraction.snap": "4e5e101189a6b8686fe733328c63ccff9b52139f0645b1fa4c26145e581daa8b",
+      "tests/snapshots/integration__dynamic_cycle_detects_dynamic_imports.snap": "e626da28b5c2aa6ebe998551a0db11f1d07e70c75fafd1f3fbc62ceb19383ffc",
+      "tests/snapshots/integration__fixture_complex_cycles.snap": "365f571b7d6a0a9a96c37ac3316c851448707e6f702dc821ace8fac1db2bcc9a",
+      "tests/snapshots/integration__fixture_dynamic_import_cycle.snap": "62e9e4e6c9ae4b7e5ca61cc0ce8da097dd8434ef156b450a2a2df3723e4ccc27",
+      "tests/snapshots/integration__fixture_import_styles.snap": "5f8de3ccb8973a05156a60f87374f4176f03434f02a9afc5452cacb5b00b3771",
+      "tests/snapshots/integration__fixture_import_styles_cycles.snap": "c4e3821fd1ea18b0f50a6def786e4d2a06c24244eaa8579cffc40929f0a16266",
+      "tests/snapshots/integration__fixture_long_cycle.snap": "d65782c77f8c568d1a8b81504e91a67e1f7269245fea71e2a1287194d3b41321",
+      "tests/snapshots/integration__fixture_monorepo_discovery.snap": "cb0717fbf8b5d9836f33402d4785f35aafee1a2475da93b1639e392835c4486c",
+      "tests/snapshots/integration__fixture_self_loop.snap": "8fd2fb605a05758147721fa7cd36fb4e0f2deced9ed5a40fdc2e71cbc7a7b218",
+      "tests/snapshots/integration__fixture_simple_cycle.snap": "8f0924be5c723a041973ea75abb0189958e58536ad33b93f77055cd32d454b95",
+      "tests/snapshots/integration__fixture_tsconfig_complex_imports.snap": "3e45af3b560e20c91bcb15c7522c82eef0256ac3f0c7516efc946527520aa278",
+      "tests/snapshots/integration__fixture_tsconfig_complex_paths.snap": "7c1c3bd9f8715010fd0ec207848e43988f0d93059c62393ac619b5e4c5b1e4ac",
+      "tests/snapshots/integration__fixture_tsconfig_extends_chain.snap": "9d335585da8299ebac5b41e965473e24e52d5281d36c8e438c29e9e5d2c89e85",
+      "tests/snapshots/integration__fixture_tsconfig_extends_imports.snap": "89c1efc0ff15e96493e23aa54caf43e1f8ce7a42f01fd3788535f1cdbaa12c66",
+      "tests/snapshots/integration__fixture_tsconfig_extends_pkg.snap": "87bb9da3761bc0391c71334fe84efadc301ad78bc32524e37cbd455d6502b925",
+      "tests/snapshots/integration__fixture_tsconfig_extends_pkg_cycles.snap": "0991de8db94e332c861d279718a43e5941ee8942400282427e36859a4c2d572a",
+      "tests/snapshots/integration__fixture_with_tsconfig.snap": "6103ca09e1df24e9fb1daa2de38ed0e9ddac985e6083d23010c4fc422875934b",
+      "tests/snapshots/integration__hub_and_spoke_detection.snap": "f26f5bcc90897e6c8319699f4fb2abe93a42946d2b82cd0617f04d12034b1cc9",
+      "tests/snapshots/integration__index_file_cycle_detection.snap": "365cd224cf86347098552dde24db2fd3c93ad2aa461dc272f58446d49c890a6e",
+      "tests/snapshots/integration__index_file_cycle_imports.snap": "1a286694d43856ff19ae3475669e00d6058aaddd35a902aca6c6ab2672a7d9a6",
+      "tests/snapshots/integration__inter_package_simple_cycle.snap": "c5f0631ef827471c742f804023a2e47b782cfbe1771d72004c4dcfbe1d258724",
+      "tests/snapshots/integration__inter_package_three_way_cycle.snap": "a41ce671610f1589aaeac91a1cacf1e5b9ff4c05cea52067ee2f5dc9db0dabc4",
+      "tests/snapshots/integration__jsx_imports_detection.snap": "7a9110e85d864e5600d57997aaf9a6e4c65ff3a391b58e9b25c6aed2919ecbb9",
+      "tests/snapshots/integration__long_cycle_import_extraction.snap": "ef438b4358e76129edc0bb9d0f63bc09d502c6a4162e50260c821edc47c4e6a6",
+      "tests/snapshots/integration__mixed_import_cycle_detection.snap": "2f0f525e18f5225277c6824f8a71010a078b60601cc833904e95b5d4b1957e90",
+      "tests/snapshots/integration__mixed_import_cycle_imports.snap": "2a8634cbf72ecd4655854beaca49a897b4074311d91ca53aa45e152048e782d1",
+      "tests/snapshots/integration__mjs_cjs_imports_detection.snap": "ca4b6baf98a976724467f7f4be0bd1f1a8a9b80f061f5681dc1ed55b8a3d1648",
+      "tests/snapshots/integration__monorepo_per_package_cycles.snap": "9aef8f6b8844d1a325a113a9fad5fe6a9df583ab4d0410bb752cc1054c9c38f4",
+      "tests/snapshots/integration__multiline_imports_detection.snap": "7c90d4c9b446482c84ad2def839f834da68a5904f234488f697f6898e39a6f84",
+      "tests/snapshots/integration__multiple_entry_points_detection.snap": "384df7b6ce28faf24cac86b755692484daaf2161d6d29d81c3f4929dddb38c6a",
+      "tests/snapshots/integration__multiple_entry_points_imports.snap": "70c1512c745e9df4f9ece79a78e981d52f1a4f4896bd4587cde9a7cee0caab65",
+      "tests/snapshots/integration__mutual_recursion_detection.snap": "f75bbd2942f8e3246d99feea9a2edc3a32ec0ddf50bbabcaf652f87725327f90",
+      "tests/snapshots/integration__namespace_imports_detection.snap": "50a61202beeb64253f24b4d7670dc1cf5f1ebac68c33debf995a0499bcc56b8c",
+      "tests/snapshots/integration__nested_cycles_detection.snap": "dcedfddd5f0a462988b6e719af794fbbf5b96f461fe0a1d275d3287ef09282ea",
+      "tests/snapshots/integration__nested_cycles_imports.snap": "f49f1a634223e2508855cc79739e0340e7b33076d5504497095c6308660de69b",
+      "tests/snapshots/integration__no_cycles_import_extraction.snap": "a35c3e666497bb69332f468356964781670f51a405be3075083df235e31d1fd4",
+      "tests/snapshots/integration__pnpm_catalog_cycle.snap": "a62e5da9adedceca4afa3ed2ea085c7236be86d8d6e2ac3e2e79a3704f35c8ec",
+      "tests/snapshots/integration__pnpm_workspace_complex_cycle.snap": "e5dae49d0b0ecb9bf5e72340e430df869899acfde556b1bd17774a83bade8980",
+      "tests/snapshots/integration__pnpm_workspace_cycle.snap": "9f01860398aff8e70824df10af06b6c1db966407fa3817e23ab5743f1157da1e",
+      "tests/snapshots/integration__re_export_cycle_detection.snap": "6b1be5751f3086e1b00b364fe9d7cd77e1a562de3ba1fd6b189f2f1e163bebf8",
+      "tests/snapshots/integration__re_export_cycle_imports.snap": "0556bc8e476de79482410510826e5d625c7856f9835df66395ffb0094f5ac7c6",
+      "tests/snapshots/integration__self_loop_import_extraction.snap": "8d5c24068244cb487bef2d4dea4d0d549973069b68e849e585bab0c8596e7cfa",
+      "tests/snapshots/integration__side_effect_imports_detection.snap": "2d9a2b63daa6b3f3386bcd1d4198f8ebbeeb0dd9b26edb7f442986b32c3fb3ad",
+      "tests/snapshots/integration__simple_cycle_import_extraction.snap": "74c8e348e9644644f71a34d487f7f4a312eaadf89fe083ea8e1a924c5a6034ed",
+      "tests/snapshots/integration__star_exports_detection.snap": "feb1c207d893739eb1db41f1431c910284fc53003254e3459652ee9e83c0b815",
+      "tests/snapshots/integration__star_exports_imports.snap": "6774c30aef0c91f3d389da0e695fb7e52390ad6eb5eeb820d19317262176ef2c",
+      "tests/snapshots/integration__very_long_cycle_detection.snap": "c86f2d9ae6dd323f00ce4b5a9f756b6d4db15b3862a70c702cb4547ac5fe3168",
+      "tests/snapshots/integration__workspace_five_packages_cycle.snap": "39038ff7894c93814b80a17cefad7f6b5deba971577310fd8505840054ab870e",
+      "tests/snapshots/integration__workspace_shared_cycle_detection.snap": "497685df530ef34b0eee36b67941c8510e02bced7a589f1f004e71e064451934",
+      "tests/source_boundaries.rs": "5f97cee04ad59af6ba4e06864a1007bcc7b1ccd870b436da47f88134ce55ac5c",
+      "xtask/Cargo.toml": "9a90b3a4d9e18e8339df514116d0664444d4669d35ae522171a8fe7151b7bd1b",
+      "xtask/src/main.rs": "0e3106d4f719fa9e332e4cbc672656ebe8ce913a776cac2fb68837d95cceed8c"
+    },
+    "selection_sha256": "36f54560e91e87c7355849f7d2b0b211dd9897301338f78d969c7d35f69cf8a8",
+    "manifest": {
+      "path": "target/tooling/mutation-resolution-work/mutants.out/campaign.json",
+      "sha256": "7efd256c23abad6243e5da2c832208580bbb54860d6b73aa587c9bc6a6e3af89"
+    },
+    "outcomes": {
+      "path": "target/tooling/mutation-resolution-work/mutants.out/outcomes.json",
+      "sha256": "e28df4c6bf07a8d81ea848428d8e76ab2f3c847d6fde9ebdbab89240470d1447"
+    },
+    "cases": [
+      {
+        "name": "src/imports.rs:114:9: replace ImportExtractor::with_workspace -> Self with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "4652d307f64a4195eb0162c8dffc6299d7d801eeab1d3659c39188b498bc4574"
+      },
+      {
+        "name": "src/imports.rs:128:9: replace ImportExtractor::with_shared_workspace -> Self with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "4fc79bf2ef557c026aa44bbc8812b88d2d7152d5076bac0838171020cdde3b80"
+      },
+      {
+        "name": "src/imports.rs:135:9: replace ImportExtractor::with_shared_tsconfig -> Self with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "40b8f3c6f8309ae06e313696cb12beb5509a1aa0af9b5761cbea09b3e1fa9c63"
+      },
+      {
+        "name": "src/imports.rs:143:9: replace ImportExtractor::with_mode -> Self with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "67a59ab2cefd36b08da05b2ae4406626b0d4b935f94446b5dd1764bce121c575"
+      },
+      {
+        "name": "src/imports.rs:152:9: replace ImportExtractor::with_ignore_patterns -> Self with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "f79406d857667f1b9ac2d0d199d01c28f58caf042c454d8a1768656a971bbab8"
+      },
+      {
+        "name": "src/imports.rs:188:9: replace ImportExtractor::extract -> Result<Vec<Import>, ExtractError> with Ok(vec![])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7331640ce26b8ac73e4568760252227458d8ba58dcb183f05173971770531486"
+      },
+      {
+        "name": "src/imports.rs:188:9: replace ImportExtractor::extract -> Result<Vec<Import>, ExtractError> with Ok(vec![Default::default()])",
+        "outcome": "Unviable",
+        "diff_sha256": "4df738da266f13ad1fb0030d212fa450edb74c88398cf6642a276803afe87220"
+      },
+      {
+        "name": "src/imports.rs:121:9: replace ImportExtractor::with_budget -> Self with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "00f93312f4d163ef758d20c9142cd43c48d14066f8d78bfb35cb45d056bc98df"
+      },
+      {
+        "name": "src/imports.rs:209:17: replace && with || in ImportExtractor::extract",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b495d8e9f35f65371265656f489a820d8ccff8138faaa5fbd3ed74310a3a566c"
+      },
+      {
+        "name": "src/imports.rs:213:87: replace == with != in ImportExtractor::extract",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "ca371588d8ffb0fcb0615c743456bdc088694498d1a89bc9f92d46e9139c1123"
+      },
+      {
+        "name": "src/imports.rs:208:16: delete ! in ImportExtractor::extract",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "bf7c92b7a002e1ac8ad65a520bd84b1fec11159dbdefe2b5311d1a990340298d"
+      },
+      {
+        "name": "src/imports.rs:254:9: replace ImportExtractor::should_skip -> bool with true",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "d921893999758ac7bbe63f07aabdbfaa0d409dee3a8ef70e08d05b8c700ecfa0"
+      },
+      {
+        "name": "src/imports.rs:280:9: replace ImportExtractor::extract_from_file -> Result<Vec<Import>, ExtractError> with Ok(vec![])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "e99bde55e7a8e97626364e323763839514a1fd55b88929adbb6825665adbf991"
+      },
+      {
+        "name": "src/imports.rs:280:9: replace ImportExtractor::extract_from_file -> Result<Vec<Import>, ExtractError> with Ok(vec![Default::default()])",
+        "outcome": "Unviable",
+        "diff_sha256": "0a0478c4db5d4c2f9cf36fa26e48e0b198a1cc72c7c0fa72c2309b167ed6d32a"
+      },
+      {
+        "name": "src/imports.rs:254:9: replace ImportExtractor::should_skip -> bool with false",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "a6497cb8246d04532787f8f84766306821d679b683cb8dbda8f79ba09bc8f305"
+      },
+      {
+        "name": "src/imports.rs:303:9: replace ImportExtractor::extract_source -> Result<Vec<Import>, ExtractError> with Ok(vec![Default::default()])",
+        "outcome": "Unviable",
+        "diff_sha256": "4886625ac105aeefa5337dac88f0d0137ab7e78bdb05bbf00e1f01a29dc71e24"
+      },
+      {
+        "name": "src/imports.rs:303:9: replace ImportExtractor::extract_source -> Result<Vec<Import>, ExtractError> with Ok(vec![])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "d613fd5fbb48c7e7a1a6e65388c7c05f998f1010395222d0a0e3d5aabbd8c86d"
+      },
+      {
+        "name": "src/imports.rs:326:9: replace ImportExtractor::create_import_from_specifier_text -> Result<Option<Import>, ExtractError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "6937faff495602e3ecfc48fb5861e3290750d79ebe446e4338b819dbf5f820f3"
+      },
+      {
+        "name": "src/imports.rs:326:9: replace ImportExtractor::create_import_from_specifier_text -> Result<Option<Import>, ExtractError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7df30d8b98cdac8a169416b2e6f44d2175b4cfdba048cac1def0f3ea5f821af8"
+      },
+      {
+        "name": "src/imports.rs:349:22: replace == with != in ImportExtractor::create_import_from_specifier_text",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7b240eef8aab7308b64bbd3c3e6f7ece03c0d791080a568228bc0cac22661094"
+      },
+      {
+        "name": "src/imports.rs:366:9: replace ImportExtractor::create_workspace_import -> Option<Import> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "c4558a88ec981ce0045792a267a4b1f84557b92d8f29314e0b7c8d45e1252b98"
+      },
+      {
+        "name": "src/imports.rs:366:9: replace ImportExtractor::create_workspace_import -> Option<Import> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "c7015e41de72f32e82bdaf34de9e762b40ba29ccb6d2a4d844aea6be07d5a9d3"
+      },
+      {
+        "name": "src/imports.rs:371:12: delete ! in ImportExtractor::create_workspace_import",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7aea4ee21a5becfb3236c7ab0c62669e51ffaffbc21e23fa0030aeb75c42747e"
+      },
+      {
+        "name": "src/imports.rs:407:9: replace ImportExtractor::reserve_import -> Result<(), crate::budget::LimitError> with Ok(())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4b92ca5f8c9115f79bd8320f47993feb8e124a8727ac4a4f6db2c5205f09ee7a"
+      },
+      {
+        "name": "src/imports.rs:366:39: replace || with && in ImportExtractor::create_workspace_import",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "08dd0c2cf932dcb91b199ca423868b864dc2a510e917d3a576bf43bea30b17aa"
+      },
+      {
+        "name": "src/imports.rs:455:9: replace ImportExtractor::resolve_import -> Result<ImportTarget, crate::budget::LimitError> with Ok(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "e8bd309074cf159d3a12382f47bee479b8a48631283b6ea165b5ced22fbaa169"
+      },
+      {
+        "name": "src/imports.rs:456:39: replace || with && in ImportExtractor::resolve_import",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "f261db2e03b59727dc213f860b4d2fd9ce1b25f22fdf02c4ac6b35bfa5eee4ff"
+      },
+      {
+        "name": "src/imports.rs:472:9: replace ImportExtractor::resolve_external_or_alias -> Result<ImportTarget, crate::budget::LimitError> with Ok(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "7d438cfd4137e235afa6ecda53178b71481cac99ae48ec14a874ee057e510b09"
+      },
+      {
+        "name": "src/imports.rs:473:13: replace && with || in ImportExtractor::resolve_external_or_alias",
+        "outcome": "Unviable",
+        "diff_sha256": "50926d7f50ff0d0c623479187589ba44caff3a6e15aaec0dedf0625910e1ece2"
+      },
+      {
+        "name": "src/imports.rs:486:13: replace && with || in ImportExtractor::resolve_external_or_alias",
+        "outcome": "Unviable",
+        "diff_sha256": "08fc87ada210eeb25595c63a7a584f9dc12b4c13a60bdc2cb384a74e0abdc122"
+      },
+      {
+        "name": "src/imports.rs:502:9: replace ImportExtractor::resolve_alias_cached -> Result<Option<ImportTarget>, crate::budget::LimitError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "f7b996fa1c4ceb7bfe87adc97c95180c3a55f351d6052d7740d2440a99e05528"
+      },
+      {
+        "name": "src/imports.rs:502:9: replace ImportExtractor::resolve_alias_cached -> Result<Option<ImportTarget>, crate::budget::LimitError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "e6727dc6243b151f82d60dbb2538fe2a0951c38555573148057146e5f026e8bf"
+      },
+      {
+        "name": "src/imports.rs:553:9: replace ImportExtractor::resolve_relative_import -> ImportTarget with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "0bd1cbc35927b5cfeb34e4856eae879b08058f6b2ed459535d7cc6c2da28af34"
+      },
+      {
+        "name": "src/imports.rs:431:9: replace ImportExtractor::admit_target -> Result<(), crate::budget::LimitError> with Ok(())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0e79f5e718eef30b877ada611c60d42b5c52e7bca7612fdbeeea0768fce17c30"
+      },
+      {
+        "name": "src/imports.rs:572:9: replace ImportExtractor::try_resolve_with_ext_cached -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "8d5dcb02cf5719282d4f59fd18586510c7647acb4bcdc895c4ecb67bfef2495a"
+      },
+      {
+        "name": "src/imports.rs:572:9: replace ImportExtractor::try_resolve_with_ext_cached -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "9f229291f1af6af7d17be93f71c8e01a0b104b9aa98ece7f29825fdc1a8bc3f2"
+      },
+      {
+        "name": "src/imports.rs:609:9: replace ImportExtractor::try_resolve_with_ext -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2b1772c76ae3153174280f5601acbd69a47f865b82bffc16eac4d8d50da44fee"
+      },
+      {
+        "name": "src/imports.rs:609:9: replace ImportExtractor::try_resolve_with_ext -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b5329b8ad3899ead31ee6551841903c7a9f7553ac0abbf9b34ca81d78222ba1e"
+      },
+      {
+        "name": "src/imports.rs:615:9: replace ImportExtractor::try_resolve_index_cached -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "d6905025a2fd91032c5b2bb7c8707a9662584e6de8b2e3cced18a05199851c11"
+      },
+      {
+        "name": "src/imports.rs:615:9: replace ImportExtractor::try_resolve_index_cached -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "41d76138a32f2d8a4133a1c8faa5e69d3e0b9e911d2a6ed177bd41c06239185b"
+      },
+      {
+        "name": "src/imports.rs:652:9: replace ImportExtractor::try_resolve_index -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2799306b476923ee1381ec9b9eb7aac8eebf2e3a31330008ee0c1b7b3561e9f3"
+      },
+      {
+        "name": "src/imports.rs:652:9: replace ImportExtractor::try_resolve_index -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "21a3843e6f9d26423e42706175f53c8120c6f583f76f563d3fd9987537363ad5"
+      },
+      {
+        "name": "src/tsconfig.rs:41:9: replace CompilerOptions::merge_with_parent -> Self with Default::default()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2bbfdc8960f250cf4b420d9c744026484b3a6a43241117efdb5cf148ee2cc1f9"
+      },
+      {
+        "name": "src/tsconfig.rs:102:5: replace normalize_module_path -> PathBuf with Default::default()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b97b36006a14a19458c2e374e4ae76b3e2a3c1887d2e5578a5718adb6f905b92"
+      },
+      {
+        "name": "src/imports.rs:652:12: delete ! in ImportExtractor::try_resolve_index",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "9c5d62fbc2e8816753ba2f75a10550d6edb750f3d54166bda62245e550a32399"
+      },
+      {
+        "name": "src/tsconfig.rs:107:37: replace match guard matches!(components.last(), Some(Component::Normal(_))) with true in normalize_module_path",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "22b59f09f06f7addb46596ebd88f5dda1c63262c2138ee65b62f0f3ae2d52d48"
+      },
+      {
+        "name": "src/tsconfig.rs:107:37: replace match guard matches!(components.last(), Some(Component::Normal(_))) with false in normalize_module_path",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "cdc04fef45ba152b5e0decd7e1ad1c47995d0396611ae1641f3d8ce5697a8333"
+      },
+      {
+        "name": "src/tsconfig.rs:110:37: replace match guard matches!(components.last(), Some(Component::RootDir)) with true in normalize_module_path",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "a7fc7660ef7a5c126306d6b88478305f7b304c2d27089c8b63b3798f5557c1b1"
+      },
+      {
+        "name": "src/tsconfig.rs:130:9: replace TsConfig::load -> Result<Self, TsConfigError> with Ok(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "4620c8e84f88c8c5dc04ea325fd031401cef4461cb8c6097b5958ab3264902e5"
+      },
+      {
+        "name": "src/tsconfig.rs:110:37: replace match guard matches!(components.last(), Some(Component::RootDir)) with false in normalize_module_path",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "3bea16285ea382f990bf154f515aa2835a9752353a913847d19753b6c8890642"
+      },
+      {
+        "name": "src/tsconfig.rs:141:9: replace TsConfig::load_with_budget -> Result<Self, TsConfigError> with Ok(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "8a629c1d5508d12166083f0c338a12f72fc7c888d57e1771a110abbc366603d4"
+      },
+      {
+        "name": "src/tsconfig.rs:162:21: replace && with || in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "9b4984fa123d2a2be66bef51bb21f5da6db09e3e7d1e526ef8c89b5f5f6b3f62"
+      },
+      {
+        "name": "src/tsconfig.rs:163:21: replace || with && in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "eb83217911b56d443c8dd285d2f9f10db7805f865653467fb491b60d057d5368"
+      },
+      {
+        "name": "src/tsconfig.rs:162:49: replace || with && in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0bb0afe2bdd510ac938b9a437bab5f59da89c879056ae65020537854d180a45e"
+      },
+      {
+        "name": "src/tsconfig.rs:162:25: delete ! in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "9966f9ea620a15dcaed4c63831b64d2572800118e31f5660275751584035f1be"
+      },
+      {
+        "name": "src/tsconfig.rs:162:81: replace != with == in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "c7e4921a1c835875589e3bc723f1aeef9b49ece16c1bc7777690b8c210d206b5"
+      },
+      {
+        "name": "src/tsconfig.rs:172:25: replace || with && in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "269b4f87464a7d04c912ad51b3e734a994166bf364f9ecca69c849dfadbb6e71"
+      },
+      {
+        "name": "src/tsconfig.rs:171:25: replace || with && in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "9534dd028698e606408ea833b267fe2de33993f8bad0f28e08c78ccfa98aa1dc"
+      },
+      {
+        "name": "src/tsconfig.rs:170:30: replace > with == in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "865f3d9c5c26c2a953ddf7a2a3429aac12e4b76098568bfb6d1d167ecb590307"
+      },
+      {
+        "name": "src/tsconfig.rs:170:30: replace > with < in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "acca62cf892a7e82636a4311dd63c0171b7543f593d17a48c36c9707d9e359cd"
+      },
+      {
+        "name": "src/tsconfig.rs:170:30: replace > with >= in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "46b627e23cd9e237ff9336998a1ab188034b9b315d1a318c13979c2a607a0227"
+      },
+      {
+        "name": "src/tsconfig.rs:171:52: replace && with || in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7de4433f4843d9a62710f3602783070d75b80938333ddb98b490993ff5d83b5c"
+      },
+      {
+        "name": "src/tsconfig.rs:171:61: replace != with == in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "d288bfd8527a368a6c874e9d5f58c0844fb9641bb204b3dd57e75617714b36b6"
+      },
+      {
+        "name": "src/tsconfig.rs:172:53: replace && with || in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4a836eb913c24ca891227a9ec489ad42f0a46e1afead1cd1e55159e75831176b"
+      },
+      {
+        "name": "src/tsconfig.rs:172:29: delete ! in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7732c5539195a8f20c64c97b8ddd29c1e379e893cdb95a3c70d011e06b0d39c2"
+      },
+      {
+        "name": "src/tsconfig.rs:172:62: replace != with == in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "a4da2559e2e5b235c17f6d8391f15078fbb5af25596f33cc5c407eea67e7ce42"
+      },
+      {
+        "name": "src/tsconfig.rs:196:9: replace TsConfig::load_merged_options -> Result<CompilerOptions, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "85e871fee66bf5d4704080344b882e7c2056bcfe7f7d7b9735b86b13ef9580dd"
+      },
+      {
+        "name": "src/tsconfig.rs:204:9: replace TsConfig::load_options_at -> Result<CompilerOptions, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2c9d0aea1e20cf67e217f8098f60172d5e5b3d73af5737ddf49e3d0ebb383062"
+      },
+      {
+        "name": "src/tsconfig.rs:204:18: replace >= with < in TsConfig::load_options_at",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "782ccbd1e35f2b171665a41dade6695b227b0ae77dea7824d3076b0465f6dc4e"
+      },
+      {
+        "name": "src/tsconfig.rs:240:9: replace TsConfig::load_parent_options -> Result<CompilerOptions, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "011c3f710a0a3784f629751867b45fc039cc183f20a359991eda1d006681482a"
+      },
+      {
+        "name": "src/tsconfig.rs:252:9: replace TsConfig::resolve_extends_path -> Result<PathBuf, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "46067ee96afb9abbc541807d08420d2c8572b178049f052dda369037f974a83b"
+      },
+      {
+        "name": "src/tsconfig.rs:279:9: replace TsConfig::resolve_tsconfig_file -> Result<PathBuf, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "681f1ce56d23b90a15f4b87e5a440854599e376e2a2856295033356634102e8e"
+      },
+      {
+        "name": "src/tsconfig.rs:308:9: replace TsConfig::compile_path_mappings -> Vec<PathAlias> with vec![Default::default()]",
+        "outcome": "Unviable",
+        "diff_sha256": "11f295851023faaaca36267bad9eb822d811f637a0fe914e1a352a929f153892"
+      },
+      {
+        "name": "src/tsconfig.rs:325:9: replace TsConfig::compile_alias -> PathAlias with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "5ca0765c5c5ffe66b6a28875b3635f1a8dbc23e3c930123afe9a07958245724a"
+      },
+      {
+        "name": "src/tsconfig.rs:308:9: replace TsConfig::compile_path_mappings -> Vec<PathAlias> with vec![]",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "dadec2375c8a8f80667aa5093614ba8da1b51990603f9a8815bc8f69fb1f8b40"
+      },
+      {
+        "name": "src/tsconfig.rs:337:9: replace TsConfig::parse_pattern -> (String, bool) with (String::new(), true)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "8021ed694e58a031d6e005105c1be1c0e624c6e61e785e57c4b7d8c1f7a56cb1"
+      },
+      {
+        "name": "src/tsconfig.rs:337:9: replace TsConfig::parse_pattern -> (String, bool) with (String::new(), false)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "46ccb1466a6661018c57a57d36bde344a06361d3bb219fd2860b921c1d952fb7"
+      },
+      {
+        "name": "src/tsconfig.rs:337:9: replace TsConfig::parse_pattern -> (String, bool) with (\"xyzzy\".into(), true)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "ad7a7c7c6ecfbdf05888e505e5839426093d5e86bae492408c6ae7f5500ffef2"
+      },
+      {
+        "name": "src/tsconfig.rs:337:9: replace TsConfig::parse_pattern -> (String, bool) with (\"xyzzy\".into(), false)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "034e867dd478f59db98ab169203ffe6ef176da6359c9d6a5773f7b0a695e38e6"
+      },
+      {
+        "name": "src/tsconfig.rs:349:9: replace TsConfig::resolve_replacements -> Vec<PathBuf> with vec![]",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "24947b5d740e4af588f9f170710f484c90a7933c7f149d1a048e60c09eae84a3"
+      },
+      {
+        "name": "src/tsconfig.rs:349:9: replace TsConfig::resolve_replacements -> Vec<PathBuf> with vec![Default::default()]",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "c914663445eaa59c9d3f6fc999e293581eb5a319fbb1db66f471d32a9e90883d"
+      },
+      {
+        "name": "src/tsconfig.rs:357:9: replace TsConfig::discover -> Option<Self> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "9f353bbb1372804f45106b8912c281aced52082442e3003c19c8117bcf71fed2"
+      },
+      {
+        "name": "src/tsconfig.rs:357:9: replace TsConfig::discover -> Option<Self> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "118204dc7451693c9ef28df46a3754a4940a47e2b4800bc2c1f0818492ba69be"
+      },
+      {
+        "name": "src/tsconfig.rs:382:9: replace TsConfig::resolve_alias -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7587d332c615bf02dd2fa1309e0fbf0d7f0b92d615828e25e35ddbf879ba6be5"
+      },
+      {
+        "name": "src/tsconfig.rs:382:9: replace TsConfig::resolve_alias -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "60f76b5beedc13160d067bc277d733e59d4e2cdee88eca02c8011a6d4703dac5"
+      },
+      {
+        "name": "src/tsconfig.rs:392:9: replace TsConfig::try_resolve_with_alias -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "643eaedf8597c3fc6265297c559234a40f5c1faaa364170ca2659ab61c8c73a2"
+      },
+      {
+        "name": "src/tsconfig.rs:392:9: replace TsConfig::try_resolve_with_alias -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "9311e6d6efcd0fa4e5ce17f8c3105fd815695817017fd4d8ea50d8aad58483d9"
+      },
+      {
+        "name": "src/tsconfig.rs:402:17: replace && with || in TsConfig::try_resolve_with_alias",
+        "outcome": "Unviable",
+        "diff_sha256": "e0eb9e791f1f0a114bf6003418fb00e7cc1e9576c3d6daa4913d064dd0628e78"
+      },
+      {
+        "name": "src/tsconfig.rs:394:29: replace == with != in TsConfig::try_resolve_with_alias",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b2d820810fb78f5b9cfdf4e65ee46dbf624919e26b7da8d4024af171fb397fb1"
+      },
+      {
+        "name": "src/tsconfig.rs:427:9: replace TsConfig::substitute_wildcard -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "e76a694424682c79cda3e94f6700a97e4bc00dbae91956392c5b743d5f93ef9b"
+      },
+      {
+        "name": "src/tsconfig.rs:427:9: replace TsConfig::substitute_wildcard -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "89eb0e0933be8d2a9dec03fc2053a75bdcbf4ad0cab152b2b9d13af6cabfb067"
+      },
+      {
+        "name": "src/tsconfig.rs:452:9: replace TsConfig::try_resolve_with_extensions -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "1430160a4d27f40271274f1a36214548bcf7d5edcfc65262952e96b0a2a9aa79"
+      },
+      {
+        "name": "src/tsconfig.rs:440:16: delete ! in TsConfig::substitute_wildcard",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "13a472a83391be8e0c5ae34fe11cc7722ebc8c857e42d25d2eced8ac51231180"
+      },
+      {
+        "name": "src/tsconfig.rs:452:9: replace TsConfig::try_resolve_with_extensions -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "36c0d3ad878134e83b548b8b10de51b16a1be8815d5ffd236272720d3b3f1a01"
+      },
+      {
+        "name": "src/tsconfig.rs:454:13: delete match arm Some(\"mjs\" | \"mts\") in TsConfig::try_resolve_with_extensions",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "1269a382e86f7edcd50983a71f701236092707e66a514b7d556be6871bee0264"
+      },
+      {
+        "name": "src/tsconfig.rs:455:13: delete match arm Some(\"cjs\" | \"cts\") in TsConfig::try_resolve_with_extensions",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "23a0a43e9dccfb5437e5715dafff6b2163578705198dfd9ea75c7ec6bb6e5121"
+      },
+      {
+        "name": "src/tsconfig.rs:484:9: replace TsConfig::try_resolve_as_directory -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2340363886043133d64babdbf95f21d2635891a5058a83bd718ae6327608c750"
+      },
+      {
+        "name": "src/tsconfig.rs:484:9: replace TsConfig::try_resolve_as_directory -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "1a738984b61825a0258960113a86da84816828b83ba907fa9c69716d70031af1"
+      },
+      {
+        "name": "src/tsconfig.rs:484:12: delete ! in TsConfig::try_resolve_as_directory",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0660419dff6a15b2541163809285599a6ec15ec888f2f89d5d7bf2d58f584c29"
+      },
+      {
+        "name": "src/tsconfig.rs:508:9: replace TsConfigCache::with_budget -> Self with Default::default()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "9100c70c75c1c14c9fb3873a7d25e5aa6e4d44a105f7dfe7af464ca2d2f1c8e8"
+      },
+      {
+        "name": "src/tsconfig.rs:519:9: replace TsConfigCache::discover -> Option<TsConfig> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "3bd8dbf08ad35913f0fe72e7485bcf11c97efc5b6812cfe77f31993d583dbb56"
+      },
+      {
+        "name": "src/tsconfig.rs:519:9: replace TsConfigCache::discover -> Option<TsConfig> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "24599c8cd92db9d8d403ac09230e84d19374ae02132d85c9c0241f5b44dca398"
+      },
+      {
+        "name": "src/tsconfig.rs:527:9: replace TsConfigCache::discover_shared -> Option<Arc<TsConfig>> with Some(Arc::new(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "1f75419715e2edf97db4b2d5bf5d36ea1a09f9c671c690a10c21032f133d70b2"
+      },
+      {
+        "name": "src/tsconfig.rs:527:9: replace TsConfigCache::discover_shared -> Option<Arc<TsConfig>> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "66ec9b9269423b11ca595b9b4c21af06308eed34bf888e412783cf84e4f9670d"
+      },
+      {
+        "name": "src/tsconfig.rs:566:9: replace TsConfigCache::load -> Option<TsConfig> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "5130d5509c28df793efb9a3432bfba2c1211ea6cff8deca573de7a6d9451d502"
+      },
+      {
+        "name": "src/tsconfig.rs:566:9: replace TsConfigCache::load -> Option<TsConfig> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "519ee9b665175192662cb25f35ca0ecce16f9ca56b497bf0b94da0d0d9447d46"
+      },
+      {
+        "name": "src/tsconfig.rs:573:9: replace TsConfigCache::clone_snapshot -> Option<TsConfig> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "b0b65ae8e3047de252cbdf25ddd12ba41341b180c0549c52277b3ce97b7f3d99"
+      },
+      {
+        "name": "src/tsconfig.rs:573:9: replace TsConfigCache::clone_snapshot -> Option<TsConfig> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "c4de9ccdebe58330da880d32a302feacd681b74ca6ce4df53afb2bf7be0ba151"
+      },
+      {
+        "name": "src/tsconfig.rs:605:9: replace TsConfigCache::cached_dir_result -> Option<CachedDirResult> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "41a4a4c68e11702a52b16a9b7ca90221e277d1b78913f798de132addc7ff9187"
+      },
+      {
+        "name": "src/tsconfig.rs:614:9: replace TsConfigCache::cache_dir_results -> Option<()> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "73e2da44c8e16fd73cecd03b96a7e36c3a78e418f9923882bf7e751558ad4cde"
+      },
+      {
+        "name": "src/tsconfig.rs:605:9: replace TsConfigCache::cached_dir_result -> Option<CachedDirResult> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "83cb7735a93a8da39a53c14b4544466ebcc085c44f812ff2c800fc7d1d2bc6bf"
+      },
+      {
+        "name": "src/tsconfig.rs:638:9: replace TsConfigCache::load_cached -> Option<Arc<TsConfig>> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "991dec82e96a2b200a3aed449d9bfd10cf35ebbe1a27c74df1173bbf6742c9de"
+      },
+      {
+        "name": "src/tsconfig.rs:638:9: replace TsConfigCache::load_cached -> Option<Arc<TsConfig>> with Some(Arc::new(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "570e742b16ef561d348d02be32b00fa9b1b00198ba3ab0cc240a9c497e133cfe"
+      },
+      {
+        "name": "src/tsconfig.rs:614:9: replace TsConfigCache::cache_dir_results -> Option<()> with Some(())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "43cf95aa33da1e3503429acb9ac93f1814bc5911b841c7d8707d779d65e88c53"
+      },
+      {
+        "name": "src/tsconfig.rs:665:9: replace CachedDirResult::path -> Option<&Path> with Some(Box::leak(Box::new(Default::default())))",
+        "outcome": "Unviable",
+        "diff_sha256": "d424e5c4c0b4fe5a97821ffdf1cc660d9971c5548fc09ded5b0f335ca19655f5"
+      },
+      {
+        "name": "src/tsconfig.rs:665:9: replace CachedDirResult::path -> Option<&Path> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "c3dd7acde07e799fe7a427f37d65c0e15b9772e2b6d8331cea557269b47dd213"
+      }
+    ],
+    "scope_limit": "Fresh execution selects imports/tsconfig only. Older broader campaigns retain their earlier source bindings."
+  },
+  "crap": {
+    "artifact": {
+      "path": "target/tooling/resolution-work/crap-report.json",
+      "sha256": "8cbf3cffda78848090ddcbc1feb200e6cb87733b14e08c364438abd99f55162e"
+    },
+    "maximum": 28,
+    "functions": 303,
+    "functions_above_30": 0,
+    "changed_helpers": [
+      {
+        "file": "src/imports.rs",
+        "function": "ImportExtractor::create_import_from_specifier_text",
+        "line": 321,
+        "cyclomatic": 13.0,
+        "coverage": 80.0,
+        "crap": 14.351999999999999,
+        "crate": "jscycles",
+        "uncovered": [
+          {
+            "start": 336,
+            "end": 338
+          },
+          {
+            "start": 341,
+            "end": 344
+          },
+          {
+            "start": 347,
+            "end": 347
+          }
+        ]
+      },
+      {
+        "file": "src/imports.rs",
+        "function": "ImportExtractor::resolve_alias_cached",
+        "line": 497,
+        "cyclomatic": 8.0,
+        "coverage": 97.5609756097561,
+        "crap": 8.00092859941092,
+        "crate": "jscycles",
+        "uncovered": [
+          {
+            "start": 540,
+            "end": 540
+          }
+        ]
+      },
+      {
+        "file": "src/tsconfig.rs",
+        "function": "normalize_module_path",
+        "line": 101,
+        "cyclomatic": 6.0,
+        "coverage": 92.3076923076923,
+        "crap": 6.0163859808830225,
+        "crate": "jscycles",
+        "uncovered": [
+          {
+            "start": 106,
+            "end": 106
+          }
+        ]
+      }
+    ],
+    "limit": "Default-feature LLVM line coverage, not branch coverage or correctness proof. Leading CurDir arm remains uncovered."
+  },
+  "performance": {
+    "cache_only_monorepo_pilot": {
+      "schema": 3,
+      "workload": "monorepo",
+      "files": 10000,
+      "packages": 64,
+      "aliases": 4096,
+      "analysis_work_limit": 64000000,
+      "corpus_sha256": "d32d79859c33324532aabd57f77bb0b8a0a0d943dd869850f51d773209f669c4",
+      "warmups": 1,
+      "samples_seconds": [
+        0.2494876659475267,
+        0.2490294580347836,
+        0.2485743327997625,
+        0.24940079194493592,
+        0.24717258289456367,
+        0.24929770804010332,
+        0.25219354196451604,
+        0.24979320890270174,
+        0.2487767080310732
+      ],
+      "median_seconds": 0.24929770804010332,
+      "min_seconds": 0.24717258289456367,
+      "max_seconds": 0.25219354196451604,
+      "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+      "processor": "arm",
+      "rayon_num_threads": "default",
+      "binary_sha256": "7aa617c3800eaef95dc208ff790c52a8adc38a7d8c35682daf3b321aa45b89a2",
+      "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+      "baseline": {
+        "binary_sha256": "74f07563fd8d6233f3f09796ceef9e44657aa14d4b3db3eab99a1f8722489cf2",
+        "samples_seconds": [
+          0.27468466595746577,
+          0.2780947501305491,
+          0.27782495808787644,
+          0.2807962920051068,
+          0.2711234998423606,
+          0.2733778750989586,
+          0.27820145804435015,
+          0.2789087078999728,
+          0.2805590000934899
+        ],
+        "median_seconds": 0.2780947501305491
+      },
+      "comparison": {
+        "order": "alternating on the same corpus, one warm-up per binary",
+        "outputs_equal": true,
+        "baseline_median_over_candidate": 1.1155126628192398
+      }
+    },
+    "alias_table": {
+      "artifact": {
+        "path": "target/tooling/resolution-work/alias-table-comparison.json",
+        "sha256": "a9ada0b1e55d212d041e5793e428b46a404cfc5d092e4a04cd6fe7c941198945"
+      },
+      "record": {
+        "schema": 1,
+        "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "files": 1000,
+        "path_aliases": 4097,
+        "work_limit": 20000000,
+        "corpus_sha256": "7100bef82624ed44311be9b4ebdde900393edade5d75dad0ae37c5156099ab12",
+        "outputs_equal": true,
+        "warmups": 1,
+        "samples": 21,
+        "order": "rotating and reversing three binaries on one corpus",
+        "binaries": {
+          "before": {
+            "sha256": "74f07563fd8d6233f3f09796ceef9e44657aa14d4b3db3eab99a1f8722489cf2",
+            "samples_seconds": [
+              0.326205792138353,
+              0.16304754093289375,
+              0.49949170905165374,
+              0.6588201660197228,
+              0.6615531668066978,
+              0.8060167920775712,
+              0.7867358331568539,
+              0.7613666250836104,
+              0.7534428751096129,
+              0.7988692079670727,
+              0.8066156250424683,
+              0.7767832919489592,
+              0.7609089999459684,
+              0.7999561671167612,
+              0.7797047498170286,
+              0.7921871249563992,
+              0.7714857908431441,
+              0.7670953748747706,
+              0.7721047499217093,
+              0.7765780831687152,
+              0.6901998750399798
+            ],
+            "median_seconds": 0.7714857908431441
+          },
+          "cache-pilot": {
+            "sha256": "7aa617c3800eaef95dc208ff790c52a8adc38a7d8c35682daf3b321aa45b89a2",
+            "samples_seconds": [
+              0.018887459067627788,
+              0.01766558294184506,
+              0.018006208119913936,
+              0.02132516587153077,
+              0.048869790975004435,
+              0.021584833972156048,
+              0.022978750057518482,
+              0.019631209084764123,
+              0.022549709072336555,
+              0.015799500048160553,
+              0.02169183292426169,
+              0.021911374991759658,
+              0.0202240829821676,
+              0.01518829190172255,
+              0.014891250059008598,
+              0.023459375137463212,
+              0.021536750020459294,
+              0.015166958793997765,
+              0.014987166970968246,
+              0.018250000197440386,
+              0.020815375028178096
+            ],
+            "median_seconds": 0.0202240829821676
+          },
+          "after": {
+            "sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+            "samples_seconds": [
+              0.01815170794725418,
+              0.018559959018602967,
+              0.025720749981701374,
+              0.021488667000085115,
+              0.021921957843005657,
+              0.02193966694176197,
+              0.021379124838858843,
+              0.022304000100120902,
+              0.020593499997630715,
+              0.014894249849021435,
+              0.02282983297482133,
+              0.022974207997322083,
+              0.014651124831289053,
+              0.022630791878327727,
+              0.021898250095546246,
+              0.020330458879470825,
+              0.014681332977488637,
+              0.016128124902024865,
+              0.014864790951833129,
+              0.0152041248511523,
+              0.022657375084236264
+            ],
+            "median_seconds": 0.021379124838858843
+          }
+        },
+        "limits": "Warm local synthetic alias-table workload; no timing gate, significance or representative-customer claim."
+      },
+      "script": {
+        "path": "target/tooling/resolution-work/measure_aliases.py",
+        "sha256": "2e5b10a15b97eccaca48f1b73fa194c65f82ecae6f846ae75da7080f56a26e4b"
+      },
+      "script_source": "\"\"\"Compare normal binaries on a single package with a large paths table.\"\"\"\nimport argparse\nimport hashlib\nimport json\nimport os\nfrom pathlib import Path\nimport platform\nimport statistics\nimport subprocess\nimport tempfile\nimport time\n\nparser = argparse.ArgumentParser(description=__doc__)\nparser.add_argument('--samples', type=int, default=21)\nparser.add_argument('--profile-binary', type=Path)\nargs = parser.parse_args()\ndestination = Path(__file__).resolve().parent\nbinaries = {name: destination / f'{name}-jscycles' for name in ['before', 'cache-pilot', 'after']}\ntimings = {name: [] for name in binaries}\nfiles, unused = 1000, 4096\ncorpus = hashlib.sha256()\nwith tempfile.TemporaryDirectory(prefix='jscycles-alias-table-') as temporary:\n    root = Path(temporary).resolve()\n\n    def write(relative, text):\n        (root / relative).write_text(text)\n        corpus.update(relative.encode() + b'\\0' + text.encode())\n\n    write('package.json', '{\"name\":\"alias-benchmark\"}')\n    write('jscycles.yaml', 'limits:\\n  max_work: 20000000\\n')\n    paths = {f'@unused/{number:04}': ['missing'] for number in range(unused)}\n    paths['@local/*'] = ['*']\n    write('tsconfig.json', json.dumps({'compilerOptions': {'paths': paths}}, sort_keys=True))\n    for number in range(files):\n        neighbor = 0 if number == 1 else 1\n        write(f'module{number}.ts', f\"import '@local/module{neighbor}';\\nexport const local = {number};\\n\")\n    arguments = [str(root), '--inner', '--json', '--config', str(root / 'jscycles.yaml')]\n    expected = None\n\n    def scan(binary, environment=None):\n        result = subprocess.run([str(binary), *arguments], capture_output=True, timeout=60, env=environment)\n        if result.returncode != 1 or result.stderr:\n            raise RuntimeError(f'{binary}: exit={result.returncode}, stderr={result.stderr!r}')\n        report = json.loads(result.stdout)\n        assert report['has_file_cycles'] is True and report['has_package_cycles'] is False\n        assert sum(len(entry['cycles']) for entry in report['file_cycles']) == 1\n        return result.stdout\n\n    if args.profile_binary:\n        profile_path = destination / 'alias-table-hotpath.json'\n        profile_path.unlink(missing_ok=True)\n        scan(args.profile_binary.resolve(), dict(os.environ, HOTPATH_OUTPUT_PATH=str(profile_path)))\n        profile = json.loads(profile_path.read_text())\n        assert any(item['name'].endswith('extract_from_file') for item in profile['functions_timing']['data'])\n        print('Fresh alias-table Hotpath report verified')\n        raise SystemExit(0)\n\n    for sample in range(args.samples + 1):\n        order = list(binaries)\n        offset = sample % len(order)\n        order = order[offset:] + order[:offset]\n        if sample % 2:\n            order.reverse()\n        for name in order:\n            start = time.perf_counter()\n            stdout = scan(binaries[name])\n            elapsed = time.perf_counter() - start\n            if expected is None:\n                expected = stdout\n            assert stdout == expected, 'identical complete machine reports'\n            if sample:\n                timings[name].append(elapsed)\n\nreport = {'schema': 1, 'host': platform.platform(), 'files': files, 'path_aliases': unused + 1,\n          'work_limit': 20000000, 'corpus_sha256': corpus.hexdigest(), 'outputs_equal': True,\n          'warmups': 1, 'samples': args.samples, 'order': 'rotating and reversing three binaries on one corpus',\n          'binaries': {name: {'sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),\n                             'samples_seconds': timings[name], 'median_seconds': statistics.median(timings[name])}\n                       for name, binary in binaries.items()},\n          'limits': 'Warm local synthetic alias-table workload; no timing gate, significance or representative-customer claim.'}\n(destination / 'alias-table-comparison.json').write_text(json.dumps(report, indent=2) + '\\n')\nprint({name: values['median_seconds'] for name, values in report['binaries'].items()})\n"
+    },
+    "final_comparisons": [
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/final-fan-in.json",
+          "sha256": "5bb0cf443003805c562a912ad9e8e92e9edd75ef9bc2d0b4247dab06fd5578bf"
+        },
+        "record": {
+          "schema": 3,
+          "workload": "fan-in",
+          "files": 10000,
+          "packages": 1,
+          "aliases": 0,
+          "analysis_work_limit": 20000000,
+          "corpus_sha256": "70c5f039569adb689ed4ab30dfb2e7acf197718932e9b3c5c40a43a4b761047d",
+          "warmups": 1,
+          "samples_seconds": [
+            0.1311277498025447,
+            0.12484916602261364,
+            0.1249602499883622,
+            0.1270487499423325,
+            0.1294443749357015,
+            0.1263489171396941,
+            0.1269113749731332,
+            0.13042445899918675,
+            0.1271763751283288,
+            0.12765687494538724,
+            0.1256586250383407,
+            0.12721854192204773,
+            0.12918058293871582,
+            0.12910583289340138,
+            0.12820641603320837,
+            0.12882529105991125,
+            0.1271558329463005,
+            0.13360908278264105,
+            0.12456333311274648,
+            0.12287345784716308,
+            0.12484070798382163
+          ],
+          "median_seconds": 0.1271763751283288,
+          "min_seconds": 0.12287345784716308,
+          "max_seconds": 0.13360908278264105,
+          "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+          "processor": "arm",
+          "rayon_num_threads": "default",
+          "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+          "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+          "baseline": {
+            "binary_sha256": "74f07563fd8d6233f3f09796ceef9e44657aa14d4b3db3eab99a1f8722489cf2",
+            "samples_seconds": [
+              0.12962087499909103,
+              0.12548183416947722,
+              0.12713233288377523,
+              0.12209316692315042,
+              0.13128854078240693,
+              0.13486554101109505,
+              0.13004166702739894,
+              0.12364429188892245,
+              0.12834329204633832,
+              0.12990962504409254,
+              0.12731699994765222,
+              0.1256707499269396,
+              0.12694916711188853,
+              0.12481904216110706,
+              0.12496908404864371,
+              0.12781908293254673,
+              0.1280825410503894,
+              0.12973258295096457,
+              0.12593637499958277,
+              0.12861000001430511,
+              0.13109475001692772
+            ],
+            "median_seconds": 0.12781908293254673
+          },
+          "comparison": {
+            "order": "alternating on the same corpus, one warm-up per binary",
+            "outputs_equal": true,
+            "baseline_median_over_candidate": 1.0050536729291852
+          }
+        }
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/final-call-heavy.json",
+          "sha256": "fca9ccb12f2310826eeb0f2fc7c8ad6659cc34cd2211dee2048a7ec0b1469c0f"
+        },
+        "record": {
+          "schema": 3,
+          "workload": "call-heavy",
+          "files": 10000,
+          "packages": 1,
+          "aliases": 0,
+          "analysis_work_limit": 20000000,
+          "corpus_sha256": "3f60a74b9c74e109f076fe2afedce067ce96d2e98e2a61f27ab566decf80c31d",
+          "warmups": 1,
+          "samples_seconds": [
+            0.14865941600874066,
+            0.14897333295084536,
+            0.1437906250357628,
+            0.14598133298568428,
+            0.14555804198607802,
+            0.14488754188641906,
+            0.1456831251271069,
+            0.14542079204693437,
+            0.14482212509028614,
+            0.14935912494547665,
+            0.14608666603453457,
+            0.14431995805352926,
+            0.14607208291999996,
+            0.14699099981226027,
+            0.14425645885057747,
+            0.14517095894552767,
+            0.14522583317011595,
+            0.14510624995455146,
+            0.1466936250217259,
+            0.14512533391825855,
+            0.14472049986943603
+          ],
+          "median_seconds": 0.14542079204693437,
+          "min_seconds": 0.1437906250357628,
+          "max_seconds": 0.14935912494547665,
+          "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+          "processor": "arm",
+          "rayon_num_threads": "default",
+          "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+          "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+          "baseline": {
+            "binary_sha256": "74f07563fd8d6233f3f09796ceef9e44657aa14d4b3db3eab99a1f8722489cf2",
+            "samples_seconds": [
+              0.1468110829591751,
+              0.14757262519560754,
+              0.15379579202271998,
+              0.14554662513546646,
+              0.1446737500373274,
+              0.1441531670279801,
+              0.14374125003814697,
+              0.1456610420718789,
+              0.14347474998794496,
+              0.14491537492722273,
+              0.14390937518328428,
+              0.15075158304534853,
+              0.14530016691423953,
+              0.14526587491855025,
+              0.14597487496212125,
+              0.14653312508016825,
+              0.14561954094097018,
+              0.14943433389998972,
+              0.14473479194566607,
+              0.1455026250332594,
+              0.14446450001560152
+            ],
+            "median_seconds": 0.1455026250332594
+          },
+          "comparison": {
+            "order": "alternating on the same corpus, one warm-up per binary",
+            "outputs_equal": true,
+            "baseline_median_over_candidate": 1.000562732365662
+          }
+        }
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/final-monorepo.json",
+          "sha256": "c47ffc40bd0e24dba4d2dd326a9c50b6024a0678586e4269681aa54e3d78799b"
+        },
+        "record": {
+          "schema": 3,
+          "workload": "monorepo",
+          "files": 10000,
+          "packages": 64,
+          "aliases": 4096,
+          "analysis_work_limit": 64000000,
+          "corpus_sha256": "d32d79859c33324532aabd57f77bb0b8a0a0d943dd869850f51d773209f669c4",
+          "warmups": 1,
+          "samples_seconds": [
+            0.251863915938884,
+            0.25376708386465907,
+            0.25426158402115107,
+            0.24736066698096693,
+            0.25252154213376343,
+            0.25343429180793464,
+            0.25089116720482707,
+            0.25093224993906915,
+            0.2513488749973476,
+            0.25508183310739696,
+            0.39927762490697205,
+            0.43747970811091363,
+            0.2501210840418935,
+            0.25169266597367823,
+            0.2506904168985784,
+            0.2534573331940919,
+            0.2553633328061551,
+            0.2531962499488145,
+            0.2556355001870543,
+            0.2532160410191864,
+            0.2540449579246342
+          ],
+          "median_seconds": 0.2532160410191864,
+          "min_seconds": 0.24736066698096693,
+          "max_seconds": 0.43747970811091363,
+          "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+          "processor": "arm",
+          "rayon_num_threads": "default",
+          "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+          "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+          "baseline": {
+            "binary_sha256": "74f07563fd8d6233f3f09796ceef9e44657aa14d4b3db3eab99a1f8722489cf2",
+            "samples_seconds": [
+              0.2734826661180705,
+              0.2787042499985546,
+              0.2762694167904556,
+              0.2718764580786228,
+              0.2793927090242505,
+              0.27746549993753433,
+              0.271171584026888,
+              0.2801231660414487,
+              0.2787276247981936,
+              0.2773462920449674,
+              0.273965209024027,
+              0.3230982911773026,
+              0.27962179109454155,
+              0.2752889159601182,
+              0.2766745421104133,
+              0.2770128750707954,
+              0.27475533401593566,
+              0.27908145915716887,
+              0.27832816704176366,
+              0.27400370803661644,
+              0.27485020901076496
+            ],
+            "median_seconds": 0.2770128750707954
+          },
+          "comparison": {
+            "order": "alternating on the same corpus, one warm-up per binary",
+            "outputs_equal": true,
+            "baseline_median_over_candidate": 1.0939783828695353
+          }
+        }
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/final-directory-index.json",
+          "sha256": "b54e787d9489cd1371f22c26fa59e72a4a68b560c82dc4abb8de151b129d13c2"
+        },
+        "record": {
+          "schema": 3,
+          "workload": "directory-index",
+          "files": 10000,
+          "packages": 1,
+          "aliases": 0,
+          "analysis_work_limit": 20000000,
+          "corpus_sha256": "b8b8d1a4dcefce146a859c74c873aca3189a7d972b17bf7c2e5ce98050c6a637",
+          "warmups": 1,
+          "samples_seconds": [
+            0.5115631248336285,
+            0.5163850418757647,
+            0.5113113750703633,
+            0.5111455828882754,
+            0.5055488748475909,
+            0.5140267498791218,
+            0.5129324160516262,
+            0.5077647080179304,
+            0.5187310420442373,
+            0.5190427079796791,
+            0.5131250841077417,
+            0.5101598328910768,
+            0.5172945000231266,
+            0.5056419169995934,
+            0.5145608328748494,
+            0.5058350418694317,
+            0.5151973750907928,
+            0.5142378751188517,
+            0.5082142499741167,
+            0.5122675420716405,
+            0.5135139159392565
+          ],
+          "median_seconds": 0.5129324160516262,
+          "min_seconds": 0.5055488748475909,
+          "max_seconds": 0.5190427079796791,
+          "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+          "processor": "arm",
+          "rayon_num_threads": "default",
+          "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+          "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+          "baseline": {
+            "binary_sha256": "74f07563fd8d6233f3f09796ceef9e44657aa14d4b3db3eab99a1f8722489cf2",
+            "samples_seconds": [
+              0.5183565840125084,
+              0.5199924579355866,
+              0.5085416249930859,
+              0.5088975420221686,
+              0.513552000047639,
+              0.5083732919301838,
+              0.5080463329795748,
+              0.511812207987532,
+              0.5159248330164701,
+              0.5101092499680817,
+              0.5091223330236971,
+              0.5110664998646826,
+              0.5133737078867853,
+              0.5191198750399053,
+              0.5114094170276076,
+              0.5150172498542815,
+              0.5132018749136478,
+              0.5087396251037717,
+              0.5111365420743823,
+              0.5179289157968014,
+              0.5117101659998298
+            ],
+            "median_seconds": 0.5117101659998298
+          },
+          "comparison": {
+            "order": "alternating on the same corpus, one warm-up per binary",
+            "outputs_equal": true,
+            "baseline_median_over_candidate": 0.9976171323676424
+          }
+        }
+      }
+    ],
+    "hotpath_reports": [
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/hotpath/fan-in.json",
+          "sha256": "0be6f22401337e4071b297c67b7341b0793e004255f621f7d78127a4a5d3d6ad"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T21:07:55Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 11155416,
+        "calls": [
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 1003
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/hotpath/call-heavy.json",
+          "sha256": "c2415194493b66bf9d37bce575617c2f1fc600de9cf6a1347ef9bd459b0aa789"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T21:07:55Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 13967333,
+        "calls": [
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 2000
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 1003
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/hotpath/monorepo.json",
+          "sha256": "ba7b1ee13967d729db6a2caeaec2a347bf2cc699182603c97bdf44d1b93b6b06"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T21:07:55Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 23231791,
+        "calls": [
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 16
+          },
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1024
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 16
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::workspace::map_aliases",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::tsconfig::discover_shared",
+            "calls": 16
+          },
+          {
+            "function": "jscycles::tsconfig::load_with_budget",
+            "calls": 17
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 1040
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 16
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 1088
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::elementary",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/hotpath/directory-index.json",
+          "sha256": "2860e40b9defb2e24c6c6818f24c5f68cbf5dd10f6f1d40a4be6b2b8337b7230"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T21:07:56Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 46013333,
+        "calls": [
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 2003
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/resolution-work/alias-table-hotpath.json",
+          "sha256": "30b35206497e76d03795d1d9df0504849e260e7fc3bf13b2e4f3a54e8ad80304"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T21:08:15Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 16846916,
+        "calls": [
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::tsconfig::discover_shared",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::tsconfig::load_with_budget",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 1004
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          }
+        ]
+      }
+    ],
+    "method": "Saved default-feature release binaries, one warmup each, equal JSON. Twenty-one quiet alternating samples for the four controls; the directory-index attempt overlapping a profiling build is archived and excluded. Twenty-one rotating/reversing samples for the three-binary alias-table comparison.",
+    "limits": "Warm local synthetic results; no customer budget, universal speedup, cold-cache or significance claim. Final combined change includes alias correctness and direct canonical-source copying."
+  },
+  "unchanged": {
+    "root_lock_sha256": "f11d920f1ab6d90edc5dd932e8dc7485eda644bbcf59fd652d07ff80ae1f4549",
+    "fuzz_lock_sha256": "bee9c0da0213d611ffdf80b2a58ef6c6eb8381102ba3315f4b187f9e1180ef66",
+    "manifest_sha256": "19945c47de0a6da04feef5ab758b13bcdcd06ad3717862c951bfdf6fa0e8d4d7",
+    "parser_sha256": "9bca23a5afb97288f395731ece574dec2d3e7e6b668ff376f259a49b427ceba6",
+    "note": "No dependency, feature, manifest, compiler/check-command, public doctest or parser/FFI changes. Prior control and sanitizer campaigns retain their own scope."
+  },
+  "limitations": [
+    "Symlink counterexamples execute on Unix only; this Mac does not verify Windows path behavior.",
+    "The local Node oracle executes require.resolve on synthetic empty modules; TypeScript behavior is checked against versioned primary source.",
+    "Hosted platform execution and GitHub enforcement remain unverified. No full Rust-OE certification, commit, push or publication.",
+    "Raw target/ artifacts stay local; this record retains source bindings, exact cases, reproduction code, timing samples and artifact hashes."
+  ],
+  "generator": {
+    "path": "target/tooling/resolution-work/write_evidence.py",
+    "sha256": "053936e548492f39978d36cdb3c92989fa6a1a497700794a8851ad624e555241"
+  }
+}

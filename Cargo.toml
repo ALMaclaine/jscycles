@@ -4,11 +4,12 @@ resolver = "3"
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.92"
+rust-version = "1.93.0"
 license = "MIT OR Apache-2.0"
 
 [workspace.lints.rust]
-# Rust compiler lints - FORBID EVERYTHING
+missing-docs = "warn"
+# Existing compiler policy; unsafe code and implicit unsafe operations remain forbidden.
 absolute-paths-not-starting-with-crate = "forbid"
 elided-lifetimes-in-paths = "forbid"
 explicit-outlives-requirements = "forbid"
@@ -35,183 +36,92 @@ unreachable-pub = "forbid"
 unsafe-code = "forbid"
 unsafe-op-in-unsafe-fn = "forbid"
 unstable-features = "forbid"
-unused-extern-crates = "deny"           # serde/dioxus macros trigger this
-unused-import-braces = "deny"           # dioxus component macro uses #[allow(unused)]
-unused-lifetimes = "deny"               # dioxus component macro uses #[allow(unused)]
-unused-macro-rules = "deny"             # dioxus component macro uses #[allow(unused)]
-unused-qualifications = "deny"          # serde/dioxus macros trigger this
-unused-results = "deny"                 # dioxus component macro uses #[allow(unused)]
+unused-extern-crates = "deny"           # derive macros trigger this
+unused-import-braces = "deny"           # derive compatibility
+unused-lifetimes = "deny"               # derive compatibility
+unused-macro-rules = "deny"             # derive compatibility
+unused-qualifications = "deny"          # derive macros trigger this
+unused-results = "deny"                 # derive compatibility
 variant-size-differences = "forbid"
+
+[workspace.lints.rustdoc]
+broken-intra-doc-links = "deny"
+private-intra-doc-links = "deny"
 
 [workspace.lints.clippy]
 # ============================================================================
-# CLIPPY LINT GROUPS - FORBID EVERYTHING
+# CLIPPY LINT GROUPS
 # ============================================================================
 
-# Lint groups need lower priority so individual lints can override them
-all = { level = "deny", priority = -1 }       # deny for derive macro compat
-correctness = { level = "deny", priority = -1 } # deny for serde derive compat
-suspicious = { level = "forbid", priority = -1 }
-style = { level = "deny", priority = -1 }     # deny for flexibility
-complexity = { level = "deny", priority = -1 }      # deny to allow individual overrides
-perf = { level = "forbid", priority = -1 }
-pedantic = { level = "deny", priority = -1 }   # deny for derive macro compat
-nursery = { level = "deny", priority = -1 }  # deny not forbid - nursery has false positives
-cargo = { level = "deny", priority = -1 }     # deny for flexibility
+# Groups at deny (not forbid) so individual lints and macros can override
+all = { level = "deny", priority = -1 }
+correctness = { level = "deny", priority = -1 }
+suspicious = { level = "deny", priority = -1 }
+style = { level = "deny", priority = -1 }
+complexity = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+cargo = { level = "deny", priority = -1 }
+# Conflicts with the compiler's forbid(unreachable_pub): private module items
+# deliberately retain crate visibility rather than advertising a public API.
+redundant_pub_crate = "allow"
 
 # ============================================================================
-# RESTRICTION LINTS - ALL 130 restriction lints (minus mutually exclusive ones)
-# These are allow-by-default - we FORBID them all
+# RESTRICTION LINTS - all allow-by-default, we leave them that way
 # ============================================================================
+# Restriction lints are opinionated style lints. Instead of enabling all 130+
+# and then fighting them, we only enable the ones that catch real bugs.
 
-alloc-instead-of-core = "forbid"
-allow-attributes = "forbid"
-allow-attributes-without-reason = "forbid"
-arithmetic-side-effects = "warn"        # useful but too noisy at higher levels
-as-conversions = "forbid"
-as-pointer-underscore = "forbid"
-as-underscore = "forbid"
-big-endian-bytes = "forbid"
-cfg-not-test = "forbid"
-clone-on-ref-ptr = "forbid"
-dbg-macro = "forbid"
-default-union-representation = "forbid"
-deref-by-slicing = "forbid"
-disallowed-script-idents = "forbid"
-doc-include-without-cfg = "forbid"
-else-if-without-else = "forbid"
-empty-drop = "forbid"
-empty-enum-variants-with-brackets = "forbid"
-empty-structs-with-brackets = "forbid"
-error-impl-error = "forbid"
-exit = "deny"                          # CLI examples may need std::process::exit
-expect-used = "deny"                   # allow in tests with #[allow(clippy::expect_used)]
-field-scoped-visibility-modifiers = "forbid"
-filetype-is-file = "forbid"
-float-cmp-const = "forbid"
-fn-to-numeric-cast-any = "forbid"
-format-push-string = "forbid"
-get-unwrap = "forbid"
-host-endian-bytes = "forbid"
-if-then-some-else-none = "forbid"
-indexing-slicing = "deny"            # examples/benches may need direct indexing
-infinite-loop = "forbid"
-inline-asm-x86-att-syntax = "forbid"
-inline-asm-x86-intel-syntax = "forbid"
-integer-division = "deny"              # math in examples
-integer-division-remainder-used = "forbid"
-iter-over-hash-type = "deny"           # benchmarks may iterate over hash types
-large-include-file = "forbid"
-let-underscore-must-use = "forbid"
-let-underscore-untyped = "allow"        # intentionally ignoring return values
-little-endian-bytes = "forbid"
-lossy-float-literal = "forbid"
-map-err-ignore = "forbid"
-map-with-unused-argument-over-ranges = "forbid"
-mem-forget = "forbid"
-min-ident-chars = "allow"               # standard Rust uses short names like fs, io
-missing-assert-message = "forbid"
-missing-asserts-for-indexing = "forbid"
-mixed-read-write-in-expression = "forbid"
-multiple-inherent-impl = "forbid"
-multiple-unsafe-ops-per-block = "forbid"
-mutex-atomic = "forbid"
-mutex-integer = "forbid"
-non-ascii-literal = "allow"             # needed for UI symbols like checkmarks
-non-zero-suggestions = "forbid"
-panic = "deny"                         # allow in tests via clippy.toml
-panic-in-result-fn = "forbid"
-partial-pub-fields = "forbid"
-pathbuf-init-then-push = "forbid"
-pointer-format = "forbid"
-precedence-bits = "forbid"
-print-stderr = "deny"                  # examples may need stderr output
-print-stdout = "deny"                # examples/benches need stdout output
-pub-without-shorthand = "forbid"
-rc-buffer = "forbid"
-rc-mutex = "forbid"
-ref-patterns = "deny"                  # deny not forbid - needed for pattern matching with pattern_type_mismatch
-renamed-function-params = "forbid"
-rest-pat-in-fully-bound-structs = "forbid"
-return-and-then = "forbid"
-same-name-method = "forbid"
-self-named-module-files = "forbid"
-semicolon-inside-block = "forbid"
-semicolon-outside-block = "allow"       # allow semicolon outside block
-separated-literal-suffix = "forbid"
-shadow-reuse = "deny"                  # idiomatic Rust pattern
-shadow-same = "deny"                   # idiomatic Rust pattern
-shadow-unrelated = "forbid"
-single-char-lifetime-names = "forbid"
-string-add = "deny"                    # examples may use string concatenation
-string-lit-chars-any = "forbid"
-string-slice = "deny"                  # string truncation sometimes needed
-suspicious-xor-used-as-pow = "forbid"
-todo = "forbid"
-try-err = "forbid"
-undocumented-unsafe-blocks = "forbid"
-unimplemented = "forbid"
-unnecessary-safety-comment = "forbid"
-unnecessary-safety-doc = "forbid"
-unnecessary-self-imports = "forbid"
-unneeded-field-pattern = "forbid"
-unreachable = "forbid"
-unused-trait-names = "forbid"
-unwrap-in-result = "forbid"
-unwrap-used = "deny"                   # allow in tests with #[allow(clippy::unwrap_used)]
-use-debug = "deny"                   # examples may need debug output
-verbose-file-reads = "forbid"
-wildcard-enum-match-arm = "forbid"
+# Catch real bugs
+error_impl_error = "deny"
+float_cmp_const = "deny"
+get_unwrap = "deny"
+infinite_loop = "deny"
+lossy_float_literal = "deny"
+map_err_ignore = "deny"
+mem_forget = "deny"
+mixed_read_write_in_expression = "deny"
+panic_in_result_fn = "deny"
+rc_mutex = "deny"
+shadow_unrelated = "deny"
+string_slice = "deny"
+suspicious_xor_used_as_pow = "deny"
+unwrap_in_result = "deny"
 
-# ============================================================================
-# ALLOW SPECIFIC LINTS - Override group-level deny/forbid
-# ============================================================================
+# Agent guardrails - prevent common shortcuts
+allow_attributes_without_reason = "deny"  # justified allow/expect attributes need a reason
+as_conversions = "deny"                   # use From/TryFrom/into() instead of `as`
+clone_on_ref_ptr = "deny"                 # use Arc::clone() not .clone()
+format_push_string = "deny"              # use write!/push_str not format! in loops
+indexing_slicing = "deny"                 # use .get() and handle None (tests override)
+verbose_file_reads = "deny"              # use fs::read_to_string
+wildcard_enum_match_arm = "deny"         # handle all variants explicitly
 
-# Cargo (group is deny)
-multiple-crate-versions = "allow"       # often unavoidable with dependencies
-cargo-common-metadata = "allow"         # not all projects need full metadata
+# Good discipline (tests override via clippy.toml)
+expect_used = "deny"
+missing_assert_message = "deny"
+panic = "deny"
+print_stderr = "deny"
+print_stdout = "deny"
+unwrap_used = "deny"
 
-# Nursery (group is deny)
-missing-const-for-fn = "allow"          # false positive on main()
-
-# Serde derive macro compatibility - macros use #[allow(...)] internally
-# Must be "deny" not "forbid" to allow serde derives to work
-useless-attribute = "deny"              # serde uses #[allow] internally
-
-# Pedantic overrides (group is deny)
-used-underscore-binding = "deny"        # thiserror derive needs #[expect]
-doc-markdown = "allow"                  # backticks in docs are formatting, not quality
-missing-panics-doc = "allow"            # real fix is not panicking (enforced elsewhere)
-cast-possible-truncation = "allow"      # as_conversions already handles this
-cast-precision-loss = "allow"           # as_conversions already handles this
-cast-sign-loss = "allow"                # as_conversions already handles this
-unnecessary-wraps = "allow"             # sometimes wrapping is intentional for API
-ptr-arg = "allow"                       # sometimes &Vec/&String is intentional
-wildcard-imports = "allow"              # prelude-style imports are common
-similar-names = "allow"                 # similar names often make sense
-semicolon-if-nothing-returned = "allow" # style preference
-single-match-else = "allow"             # sometimes clearer than if-else
-must-use-candidate = "allow"            # too noisy for this codebase
-map-unwrap-or = "allow"                 # map().unwrap_or() is readable
-redundant-closure-for-method-calls = "allow" # sometimes more readable with closure
-needless-pass-by-value = "allow"        # sometimes ownership transfer is intentional
-
-# Style overrides (group is deny)
-single-match = "allow"                  # sometimes clearer than if-let
-
-# Complexity overrides (group is deny)
-type-complexity = "allow"               # sometimes complex types are needed
-useless-format = "allow"                # sometimes format! is clearer
-too-many-arguments = "allow"            # refactoring functions requires design decisions
+# Don't commit debug/incomplete code
+dbg_macro = "deny"
+todo = "deny"
+undocumented_unsafe_blocks = "deny"
+unimplemented = "deny"
 
 [package]
 name = "jscycles"
+publish = ["crates-io"]
 version = "0.1.1"
 edition.workspace = true
 rust-version.workspace = true
 description = "Fast circular dependency detection for JS/TS"
 readme = "README.md"
-repository = "https://github.com/example/jscycles"
+include = ["src/**", "tests/**", "/README.md", "LICENSE-*", "clippy.toml", "rustfmt.toml", "Cargo.toml", "Cargo.lock"]
+repository = "https://github.com/EnderHub/jscycles"
 license.workspace = true
 keywords = ["javascript", "typescript", "circular-dependencies", "static-analysis"]
 categories = ["development-tools", "command-line-utilities"]
@@ -226,29 +136,37 @@ strip = "symbols"
 name = "jscycles"
 path = "src/main.rs"
 
+[features]
+default = []
+# Local timing reports are opt-in; normal builds contain no profiler.
+profiling = ["dep:hotpath"]
+
 [dependencies]
+hotpath = { version = "=0.28.6", optional = true, default-features = false, features = ["hotpath"] }
 # CLI
-clap = { version = "4", features = ["derive"] }
+clap = "4"
 
 # Config parsing
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
+serde-saphyr = { version = "2.1.1", default-features = false, features = ["deserialize"] }
 
 # Glob matching for package filters
 glob = "0.3"
-glob-match = "0.2"
 
 # File walking
 walkdir = "2"
-ignore = "0.4"
 
 # Error handling
 thiserror = "2"
 
 # AST parsing
-ast-grep-core = "0.35"
-ast-grep-language = "0.35"
+# WillBooster forks: the upstream 0.23 grammars reject valid tagged templates
+# and `typeof import()` type arguments; see docs/analysis-limits.md. Pinned
+# exactly because the forks ship breaking grammar changes in major bumps.
+tree-sitter = { package = "willbooster-tree-sitter", version = "=18.0.2" }
+tree-sitter-javascript = { package = "willbooster-tree-sitter-javascript", version = "=22.0.1" }
+tree-sitter-typescript = { package = "willbooster-tree-sitter-typescript", version = "=26.0.1" }
 
 # Parallelism
 rayon = "1.10"

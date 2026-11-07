@@ -1,0 +1,79 @@
+name: Compatibility maintenance
+
+on:
+  schedule:
+    - cron: '23 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      coverage:
+        description: Generate advisory workspace line coverage
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    name: Current stable, ${{ matrix.resolution }} dependencies
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    continue-on-error: true
+    env:
+      # Override rust-toolchain.toml so this lane really tests current stable.
+      RUSTUP_TOOLCHAIN: stable
+    strategy:
+      fail-fast: false
+      matrix:
+        resolution: [locked, latest]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: stable
+      - run: rustc --version
+      - name: Resolve latest allowed dependencies
+        if: matrix.resolution == 'latest'
+        run: cargo update
+        env:
+          CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: allow
+      - run: cargo test --workspace --all-targets --all-features --locked
+      - run: cargo test --workspace --doc --all-features --locked
+
+  coverage:
+    if: github.event_name == 'workflow_dispatch' && inputs.coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: "1.98.1"
+      - run: cargo xtask install-tools coverage
+      - run: cargo xtask coverage
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: coverage
+          path: target/tooling/coverage/lcov.info
+          retention-days: 7
+
+  mutation:
+    name: All production Rust mutations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: "1.98.1"
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: cargo xtask install-tools mutants
+      - run: cargo xtask mutants
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: mutation-results
+          path: target/tooling/mutation/mutants.out/
+          retention-days: 7

@@ -3,13 +3,12 @@
 //! Supports npm/yarn workspaces, pnpm workspaces, and TypeScript project references.
 
 use std::collections::HashMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
-use walkdir::WalkDir;
 
 use crate::WorkspaceError;
+use crate::budget::{AnalysisBudget, Resource, units};
 
 /// Workspace configuration format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -20,6 +19,13 @@ pub enum WorkspaceFormat {
     Pnpm,
     /// TypeScript: tsconfig.json "references" field.
     TypeScript,
+}
+
+/// Whether discovery expands package membership or only identifies the root.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Membership {
+    Expand,
+    RootOnly,
 }
 
 /// A detected monorepo workspace.
@@ -84,34 +90,93 @@ struct MinimalPackageJson {
     name: Option<String>,
 }
 
-/// tsconfig.json with paths for alias detection.
-#[derive(Debug, Deserialize)]
-struct TsConfigWithPaths {
-    /// Compiler options containing paths.
-    #[serde(rename = "compilerOptions")]
-    compiler_options: Option<TsCompilerOptionsWithPaths>,
-}
-
-/// Compiler options with paths field.
-#[derive(Debug, Deserialize)]
-struct TsCompilerOptionsWithPaths {
-    /// Path aliases mapping.
-    paths: Option<HashMap<String, Vec<String>>>,
-}
-
 impl Workspace {
     /// Discover workspace configuration starting from a directory.
     ///
-    /// Searches upward for workspace root, checking in order:
+    /// Searches upward for the workspace root, checking at each directory:
     /// 1. pnpm-workspace.yaml
     /// 2. package.json with workspaces field
     /// 3. tsconfig.json with references field
     ///
+    /// A references project is provisional: a pnpm/npm workspace further up
+    /// wins only when the project lies inside one of its member packages.
+    ///
     /// # Errors
     ///
-    /// Returns an error if config parsing fails.
+    /// Returns an error if workspace metadata cannot be read or parsed, a
+    /// member glob or reference is invalid, or two members share a name.
     #[inline]
     pub fn discover(start: &Path) -> Result<Option<Self>, WorkspaceError> {
+        Self::discover_with_budget(start, &AnalysisBudget::default())
+    }
+
+    /// Discover workspace metadata under a shared analysis budget.
+    /// # Errors
+    /// Reports read/parse failures and any quota exhaustion, including optional alias reads.
+    pub fn discover_with_budget(
+        start: &Path,
+        budget: &AnalysisBudget,
+    ) -> Result<Option<Self>, WorkspaceError> {
+        let mut workspace = Self::discover_without_aliases(start, budget)?;
+        if let Some(found) = &mut workspace {
+            found.load_path_aliases(None, budget)?;
+        }
+        Ok(workspace)
+    }
+
+    /// Discover package membership/project references without automatically loading
+    /// optional path aliases. Use this before applying an explicitly selected config.
+    /// # Errors
+    /// Returns workspace input errors or quota exhaustion.
+    pub fn discover_without_aliases(
+        start: &Path,
+        budget: &AnalysisBudget,
+    ) -> Result<Option<Self>, WorkspaceError> {
+        let result = Self::discover_inner(start, budget, Membership::Expand);
+        budget.check()?;
+        result
+    }
+
+    /// Locate the workspace root that `discover_without_aliases` would select,
+    /// reading only the detecting metadata and never expanding membership.
+    /// Callers comparing many operands against one discovered workspace use
+    /// this to avoid repeating the full glob walk per operand.
+    /// # Errors
+    /// Returns detecting-metadata input errors or quota exhaustion.
+    pub fn discover_root(
+        start: &Path,
+        budget: &AnalysisBudget,
+    ) -> Result<Option<PathBuf>, WorkspaceError> {
+        let result = Self::discover_inner(start, budget, Membership::RootOnly)
+            .map(|found| found.map(|workspace| workspace.root));
+        budget.check()?;
+        result
+    }
+
+    /// Replace alias mappings using a selected parsed config, or automatic root/
+    /// base-file discovery for None. Ordinary automatic metadata failures remain
+    /// best-effort. On quota failure the previous mappings remain intact.
+    /// # Errors
+    /// Returns any recorded shared-budget exhaustion.
+    pub fn load_path_aliases(
+        &mut self,
+        selected: Option<&crate::TsConfig>,
+        budget: &AnalysisBudget,
+    ) -> Result<(), crate::budget::LimitError> {
+        let aliases = match selected {
+            Some(config) => Self::map_aliases(config, &self.packages, budget),
+            None => Self::load_aliases(&self.root, &self.packages, budget),
+        };
+        budget.check()?;
+        self.aliases = aliases;
+        Ok(())
+    }
+
+    fn discover_inner(
+        start: &Path,
+        budget: &AnalysisBudget,
+        membership: Membership,
+    ) -> Result<Option<Self>, WorkspaceError> {
         let mut current = if start.is_absolute() {
             start.to_path_buf()
         } else {
@@ -122,66 +187,207 @@ impl Workspace {
                 })?
                 .join(start)
         };
+        budget.consume(Resource::Work, 1)?;
+        let metadata = std::fs::metadata(&current).map_err(|source| WorkspaceError::Read {
+            path: current.clone(),
+            source,
+        })?;
+        if metadata.is_file() {
+            let _removed = current.pop();
+        } else if !metadata.is_dir() {
+            return Err(WorkspaceError::Read {
+                path: current,
+                source: std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "workspace discovery requires a directory or regular file",
+                ),
+            });
+        }
 
-        // Search upward for workspace root
+        // Search upward. pnpm, then npm/yarn, then TypeScript `references` are
+        // tried at each directory. A references project found first is only
+        // provisional. The search continues only to the first package-manager
+        // workspace above it, and that workspace wins only when one of its
+        // member patterns selects a directory containing the project (a
+        // member's own tsconfig must not capture the root). Otherwise, as
+        // before this rule existed, the references project is the workspace.
+        let mut provisional: Option<Self> = None;
         loop {
-            if let Some(workspace) = Self::try_detect_at(&current)? {
-                return Ok(Some(workspace));
+            budget.consume(Resource::Work, 1)?;
+            if let Some(project) = provisional.take() {
+                match Self::selects_member(&current, &project.root, budget) {
+                    Ok(Some(true)) => {
+                        // Expand the containing workspace normally.
+                        let manager = match Self::try_pnpm(&current, budget, membership)? {
+                            Some(found) => Some(found),
+                            None => Self::try_npm(&current, budget, membership)?,
+                        };
+                        return Ok(manager.or(Some(project)));
+                    },
+                    Ok(None) => provisional = Some(project),
+                    // Quotas always fail.
+                    Err(WorkspaceError::Limit(error)) => return Err(error.into()),
+                    // A workspace that does not select the project, or whose
+                    // metadata is unreadable, is one this scan was never shown
+                    // to belong to; keep the project, as before this rule.
+                    Ok(Some(false)) | Err(_) => return Ok(Some(project)),
+                }
+            } else {
+                let manager = match Self::try_pnpm(&current, budget, membership)? {
+                    Some(found) => Some(found),
+                    None => Self::try_npm(&current, budget, membership)?,
+                };
+                if manager.is_some() {
+                    return Ok(manager);
+                }
+                provisional = Self::try_typescript(&current, budget, membership)?;
             }
-
             let Some(parent) = current.parent() else {
                 break;
             };
-            if parent == current {
-                break;
-            }
             current = parent.to_path_buf();
         }
 
-        Ok(None)
+        Ok(provisional)
     }
 
-    /// Try to detect workspace at a specific directory.
-    fn try_detect_at(dir: &Path) -> Result<Option<Self>, WorkspaceError> {
-        // Try pnpm first (most explicit)
-        if let Some(workspace) = Self::try_pnpm(dir)? {
-            return Ok(Some(workspace));
+    /// Package-manager member patterns declared at `dir`, without expansion:
+    /// `None` when `dir` declares no pnpm/npm workspace.
+    fn manager_patterns(
+        dir: &Path,
+        budget: &AnalysisBudget,
+    ) -> Result<Option<Vec<String>>, WorkspaceError> {
+        let yaml_path = dir.join("pnpm-workspace.yaml");
+        if Self::optional_metadata(&yaml_path)?.is_some() {
+            let contents =
+                crate::input::read_text_budgeted(&yaml_path, budget).map_err(|source| {
+                    WorkspaceError::Read {
+                        path: yaml_path.clone(),
+                        source,
+                    }
+                })?;
+            let config: PnpmWorkspace = serde_saphyr::from_str(&contents).map_err(|source| {
+                WorkspaceError::Yaml(Box::new(crate::WorkspaceYamlError {
+                    path: yaml_path,
+                    source,
+                }))
+            })?;
+            return Ok(Some(config.packages.unwrap_or_default()));
         }
-
-        // Try npm/yarn workspaces
-        if let Some(workspace) = Self::try_npm(dir)? {
-            return Ok(Some(workspace));
+        let pkg_path = dir.join("package.json");
+        if Self::optional_metadata(&pkg_path)?.is_none() {
+            return Ok(None);
         }
+        let contents = crate::input::read_text_budgeted(&pkg_path, budget).map_err(|source| {
+            WorkspaceError::Read {
+                path: pkg_path.clone(),
+                source,
+            }
+        })?;
+        let pkg: NpmPackageJson =
+            serde_json::from_str(&contents).map_err(|source| WorkspaceError::Json {
+                path: pkg_path,
+                source,
+            })?;
+        Ok(pkg.workspaces.map(|workspaces| match workspaces {
+            WorkspacesField::Array(patterns) | WorkspacesField::Object { packages: patterns } => {
+                patterns
+            },
+        }))
+    }
 
-        // Try TypeScript references
-        if let Some(workspace) = Self::try_typescript(dir)? {
-            return Ok(Some(workspace));
+    /// Whether the workspace declared at `dir` selects a member directory that
+    /// contains `project` (the project itself or one of its ancestors below
+    /// `dir`). Membership is decided by the declared patterns, so a member
+    /// without a `name` still counts. `None` means `dir` is no workspace.
+    fn selects_member(
+        dir: &Path,
+        project: &Path,
+        budget: &AnalysisBudget,
+    ) -> Result<Option<bool>, WorkspaceError> {
+        let Some(patterns) = Self::manager_patterns(dir, budget)? else {
+            return Ok(None);
+        };
+        let Ok(relative) = project.strip_prefix(dir) else {
+            return Ok(Some(false));
+        };
+        let options = glob::MatchOptions {
+            require_literal_separator: true,
+            ..glob::MatchOptions::default()
+        };
+        let mut includes = Vec::new();
+        let mut excludes = Vec::new();
+        for pattern in &patterns {
+            budget.consume(Resource::Work, 1)?;
+            let negated = pattern.strip_prefix('!');
+            let mut stripped = negated.unwrap_or(pattern);
+            while let Some(rest) = stripped.strip_prefix("./") {
+                stripped = rest.trim_start_matches('/');
+            }
+            let compiled = Self::manifest_pattern(stripped)?;
+            if negated.is_some() {
+                excludes.push(compiled);
+            } else {
+                includes.push(compiled);
+            }
         }
-
-        Ok(None)
+        for candidate in relative.ancestors() {
+            if candidate.as_os_str().is_empty() {
+                break;
+            }
+            budget.consume(Resource::Work, units(patterns.len()))?;
+            if crate::input::excluded_component(candidate) {
+                continue;
+            }
+            let manifest = format!(
+                "{}/package.json",
+                candidate.to_string_lossy().replace('\\', "/")
+            );
+            if includes
+                .iter()
+                .any(|pattern| pattern.matches_with(&manifest, options))
+                && !excludes
+                    .iter()
+                    .any(|pattern| pattern.matches_with(&manifest, options))
+                && Self::optional_metadata(&dir.join(candidate).join("package.json"))?.is_some()
+            {
+                return Ok(Some(true));
+            }
+        }
+        Ok(Some(false))
     }
 
     /// Try to parse pnpm-workspace.yaml.
-    fn try_pnpm(dir: &Path) -> Result<Option<Self>, WorkspaceError> {
+    fn try_pnpm(
+        dir: &Path,
+        budget: &AnalysisBudget,
+        membership: Membership,
+    ) -> Result<Option<Self>, WorkspaceError> {
         let yaml_path = dir.join("pnpm-workspace.yaml");
-        if !yaml_path.exists() {
+        if Self::optional_metadata(&yaml_path)?.is_none() {
             return Ok(None);
         }
 
-        let contents = fs::read_to_string(&yaml_path).map_err(|err| WorkspaceError::Read {
-            path: yaml_path.clone(),
-            source: err,
+        let contents = crate::input::read_text_budgeted(&yaml_path, budget).map_err(|err| {
+            WorkspaceError::Read {
+                path: yaml_path.clone(),
+                source: err,
+            }
         })?;
 
-        let config: PnpmWorkspace =
-            serde_yaml::from_str(&contents).map_err(|err| WorkspaceError::Parse {
+        let config: PnpmWorkspace = serde_saphyr::from_str(&contents).map_err(|source| {
+            WorkspaceError::Yaml(Box::new(crate::WorkspaceYamlError {
                 path: yaml_path,
-                message: err.to_string(),
-            })?;
+                source,
+            }))
+        })?;
 
         let patterns = config.packages.unwrap_or_default();
-        let packages = Self::expand_patterns(dir, &patterns)?;
-        let aliases = Self::load_aliases(dir, &packages);
+        let packages = match membership {
+            Membership::Expand => Self::expand_patterns(dir, &patterns, budget)?,
+            Membership::RootOnly => HashMap::new(),
+        };
+        let aliases = HashMap::new();
 
         Ok(Some(Self {
             root: dir.to_path_buf(),
@@ -192,21 +398,27 @@ impl Workspace {
     }
 
     /// Try to parse npm/yarn workspaces from package.json.
-    fn try_npm(dir: &Path) -> Result<Option<Self>, WorkspaceError> {
+    fn try_npm(
+        dir: &Path,
+        budget: &AnalysisBudget,
+        membership: Membership,
+    ) -> Result<Option<Self>, WorkspaceError> {
         let pkg_path = dir.join("package.json");
-        if !pkg_path.exists() {
+        if Self::optional_metadata(&pkg_path)?.is_none() {
             return Ok(None);
         }
 
-        let contents = fs::read_to_string(&pkg_path).map_err(|err| WorkspaceError::Read {
-            path: pkg_path.clone(),
-            source: err,
+        let contents = crate::input::read_text_budgeted(&pkg_path, budget).map_err(|err| {
+            WorkspaceError::Read {
+                path: pkg_path.clone(),
+                source: err,
+            }
         })?;
 
         let pkg: NpmPackageJson =
-            serde_json::from_str(&contents).map_err(|err| WorkspaceError::Parse {
+            serde_json::from_str(&contents).map_err(|source| WorkspaceError::Json {
                 path: pkg_path,
-                message: err.to_string(),
+                source,
             })?;
 
         let Some(workspaces) = pkg.workspaces else {
@@ -218,8 +430,11 @@ impl Workspace {
             WorkspacesField::Object { packages } => packages,
         };
 
-        let packages = Self::expand_patterns(dir, &patterns)?;
-        let aliases = Self::load_aliases(dir, &packages);
+        let packages = match membership {
+            Membership::Expand => Self::expand_patterns(dir, &patterns, budget)?,
+            Membership::RootOnly => HashMap::new(),
+        };
+        let aliases = HashMap::new();
 
         Ok(Some(Self {
             root: dir.to_path_buf(),
@@ -230,24 +445,34 @@ impl Workspace {
     }
 
     /// Try to parse TypeScript project references from tsconfig.json.
-    fn try_typescript(dir: &Path) -> Result<Option<Self>, WorkspaceError> {
+    fn try_typescript(
+        dir: &Path,
+        budget: &AnalysisBudget,
+        membership: Membership,
+    ) -> Result<Option<Self>, WorkspaceError> {
         let ts_path = dir.join("tsconfig.json");
-        if !ts_path.exists() {
+        if Self::optional_metadata(&ts_path)?.is_none() {
             return Ok(None);
         }
 
-        let contents = fs::read_to_string(&ts_path).map_err(|err| WorkspaceError::Read {
-            path: ts_path.clone(),
-            source: err,
+        let contents = crate::input::read_text_budgeted(&ts_path, budget).map_err(|err| {
+            WorkspaceError::Read {
+                path: ts_path.clone(),
+                source: err,
+            }
         })?;
 
         // Strip comments from JSON (tsconfig allows them)
-        let stripped = Self::strip_json_comments(&contents);
+        let stripped =
+            crate::syntax::jsonc(&contents).map_err(|message| WorkspaceError::Parse {
+                path: ts_path.clone(),
+                message: message.to_owned(),
+            })?;
 
         let config: TsConfigWithRefs =
-            serde_json::from_str(&stripped).map_err(|err| WorkspaceError::Parse {
+            serde_json::from_str(&stripped).map_err(|source| WorkspaceError::Json {
                 path: ts_path,
-                message: err.to_string(),
+                source,
             })?;
 
         let Some(refs) = config.references else {
@@ -259,8 +484,11 @@ impl Workspace {
         }
 
         let paths: Vec<String> = refs.into_iter().map(|r| r.path).collect();
-        let packages = Self::resolve_ts_references(dir, &paths)?;
-        let aliases = Self::load_aliases(dir, &packages);
+        let packages = match membership {
+            Membership::Expand => Self::resolve_ts_references(dir, &paths, budget)?,
+            Membership::RootOnly => HashMap::new(),
+        };
+        let aliases = HashMap::new();
 
         Ok(Some(Self {
             root: dir.to_path_buf(),
@@ -270,102 +498,28 @@ impl Workspace {
         }))
     }
 
-    /// Strip single-line and multi-line comments from JSON.
-    fn strip_json_comments(input: &str) -> String {
-        let mut result = String::with_capacity(input.len());
-        let mut chars = input.chars().peekable();
-        let mut in_string = false;
-
-        while let Some(ch) = chars.next() {
-            if in_string {
-                Self::handle_char_in_string(ch, &mut chars, &mut result, &mut in_string);
-                continue;
-            }
-
-            if ch == '"' {
-                in_string = true;
-                result.push(ch);
-            } else if ch == '/' {
-                Self::handle_potential_comment(&mut chars, &mut result, ch);
-            } else {
-                result.push(ch);
-            }
-        }
-
-        result
-    }
-
-    /// Handle a character while inside a string literal.
-    fn handle_char_in_string(
-        ch: char,
-        chars: &mut std::iter::Peekable<std::str::Chars<'_>>,
-        result: &mut String,
-        in_string: &mut bool,
-    ) {
-        result.push(ch);
-        if ch == '\\' {
-            if let Some(&next) = chars.peek() {
-                result.push(next);
-                let _ = chars.next();
-            }
-        } else if ch == '"' {
-            *in_string = false;
-        } else {
-            // Regular character in string, already pushed above
-        }
-    }
-
-    /// Handle potential comment start in JSON.
-    fn handle_potential_comment(
-        chars: &mut std::iter::Peekable<std::str::Chars<'_>>,
-        result: &mut String,
-        ch: char,
-    ) {
-        match chars.peek() {
-            Some('/') => Self::skip_single_line_comment(chars, result),
-            Some('*') => Self::skip_multi_line_comment(chars),
-            _ => result.push(ch),
-        }
-    }
-
-    /// Skip a single-line comment (`// ...`).
-    fn skip_single_line_comment(
-        chars: &mut std::iter::Peekable<std::str::Chars<'_>>,
-        result: &mut String,
-    ) {
-        let _ = chars.next();
-        for ch in chars.by_ref() {
-            if ch == '\n' {
-                result.push('\n');
-                break;
-            }
-        }
-    }
-
-    /// Skip a multi-line comment (`/* ... */`).
-    fn skip_multi_line_comment(chars: &mut std::iter::Peekable<std::str::Chars<'_>>) {
-        let _ = chars.next();
-        while let Some(ch) = chars.next() {
-            if ch == '*' && chars.peek() == Some(&'/') {
-                let _ = chars.next();
-                break;
-            }
-        }
-    }
-
     /// Expand glob patterns to package name -> path mappings.
     fn expand_patterns(
         root: &Path,
         patterns: &[String],
+        budget: &AnalysisBudget,
     ) -> Result<HashMap<String, PathBuf>, WorkspaceError> {
         let mut packages = HashMap::new();
         let mut include_patterns = Vec::new();
         let mut exclude_patterns = Vec::new();
 
         for pattern in patterns {
-            let stripped = pattern.strip_prefix('!').unwrap_or(pattern);
+            budget.consume(Resource::Work, 1)?;
+            budget.consume(Resource::GraphBytes, units(pattern.len()))?;
+            let negated = pattern.strip_prefix('!');
+            // Manifests are matched by root-relative paths, which never start
+            // with `./`; package managers treat `./packages/*` as `packages/*`.
+            let mut stripped = negated.unwrap_or(pattern);
+            while let Some(rest) = stripped.strip_prefix("./") {
+                stripped = rest.trim_start_matches('/');
+            }
             let manifest_pattern = Self::manifest_pattern(stripped)?;
-            if pattern.starts_with('!') {
+            if negated.is_some() {
                 exclude_patterns.push(manifest_pattern);
             } else {
                 include_patterns.push((stripped.to_owned(), manifest_pattern));
@@ -379,6 +533,7 @@ impl Workspace {
                 &manifest_pattern,
                 &exclude_patterns,
                 &mut packages,
+                budget,
             )?;
         }
 
@@ -392,18 +547,29 @@ impl Workspace {
         manifest_pattern: &glob::Pattern,
         exclude_patterns: &[glob::Pattern],
         packages: &mut HashMap<String, PathBuf>,
+        budget: &AnalysisBudget,
     ) -> Result<(), WorkspaceError> {
         let search_root = root.join(Self::pattern_base(pattern));
-        if !search_root.exists() {
+        let Some(metadata) = Self::optional_metadata(&search_root)? else {
             return Ok(());
+        };
+        if !metadata.is_dir() {
+            return Err(WorkspaceError::Read {
+                path: search_root,
+                source: std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "workspace pattern prefix must be a directory",
+                ),
+            });
         }
 
-        for entry in WalkDir::new(search_root)
-            .follow_links(false)
-            .into_iter()
-            .filter_entry(|entry| !Self::is_in_excluded_dir(entry.path()))
-            .flatten()
-        {
+        for entry in crate::input::walk(&search_root, budget, |relative, _| {
+            Self::is_in_excluded_dir(relative)
+        }) {
+            let entry = entry.map_err(|error| WorkspaceError::Read {
+                path: search_root.clone(),
+                source: error,
+            })?;
             if entry.file_type().is_dir() || entry.file_name() != "package.json" {
                 continue;
             }
@@ -412,17 +578,22 @@ impl Workspace {
                 continue;
             };
             let relative_manifest = relative_manifest_path.to_string_lossy().replace('\\', "/");
+            budget.consume(Resource::Work, units(exclude_patterns.len()))?;
 
-            if !manifest_pattern.matches(&relative_manifest)
+            let options = glob::MatchOptions {
+                require_literal_separator: true,
+                ..glob::MatchOptions::default()
+            };
+            if !manifest_pattern.matches_with(&relative_manifest, options)
                 || exclude_patterns
                     .iter()
-                    .any(|exclude| exclude.matches(&relative_manifest))
+                    .any(|exclude| exclude.matches_with(&relative_manifest, options))
             {
                 continue;
             }
 
-            if let Some((name, path)) = Self::read_package_name(entry.path())? {
-                let _ = packages.insert(name, path);
+            if let Some((name, path)) = Self::read_package_name(entry.path(), budget)? {
+                Self::insert_package(packages, name, &path, budget)?;
             }
         }
 
@@ -458,43 +629,33 @@ impl Workspace {
 
     /// Check whether a pattern component contains glob metacharacters.
     fn has_glob_chars(component: &str) -> bool {
-        component.contains('*')
-            || component.contains('?')
-            || component.contains('[')
-            || component.contains(']')
-            || component.contains('{')
-            || component.contains('}')
+        component.contains(['*', '?', '['])
     }
 
-    /// Check if a path is inside a node_modules or dist directory.
+    /// Check if a path is inside a `node_modules` or dist directory.
     ///
     /// These directories contain external dependencies or build outputs,
     /// not workspace packages.
     fn is_in_excluded_dir(path: &Path) -> bool {
-        path.components().any(|c| {
-            if let std::path::Component::Normal(name) = c {
-                name == "node_modules"
-                    || name == "dist"
-                    || name == "build"
-                    || name == ".git"
-                    || name == ".next"
-            } else {
-                false
-            }
-        })
+        crate::input::excluded_component(path)
     }
 
     /// Read package name from a package.json path.
-    fn read_package_name(pkg_json: &Path) -> Result<Option<(String, PathBuf)>, WorkspaceError> {
-        let contents = fs::read_to_string(pkg_json).map_err(|err| WorkspaceError::Read {
-            path: pkg_json.to_path_buf(),
-            source: err,
+    fn read_package_name(
+        pkg_json: &Path,
+        budget: &AnalysisBudget,
+    ) -> Result<Option<(String, PathBuf)>, WorkspaceError> {
+        let contents = crate::input::read_text_budgeted(pkg_json, budget).map_err(|err| {
+            WorkspaceError::Read {
+                path: pkg_json.to_path_buf(),
+                source: err,
+            }
         })?;
 
         let pkg: MinimalPackageJson =
-            serde_json::from_str(&contents).map_err(|err| WorkspaceError::Parse {
+            serde_json::from_str(&contents).map_err(|source| WorkspaceError::Json {
                 path: pkg_json.to_path_buf(),
-                message: err.to_string(),
+                source,
             })?;
 
         let Some(name) = pkg.name else {
@@ -503,9 +664,13 @@ impl Workspace {
 
         let path = pkg_json
             .parent()
-            .map(Path::to_path_buf)
-            .unwrap_or_else(|| PathBuf::from("."));
+            .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
 
+        budget.consume(Resource::GraphBytes, units(name.len()))?;
+        budget.consume(
+            Resource::GraphBytes,
+            units(path.as_os_str().as_encoded_bytes().len()),
+        )?;
         Ok(Some((name, path)))
     }
 
@@ -513,204 +678,379 @@ impl Workspace {
     fn resolve_ts_references(
         root: &Path,
         paths: &[String],
+        budget: &AnalysisBudget,
     ) -> Result<HashMap<String, PathBuf>, WorkspaceError> {
         let mut packages = HashMap::new();
 
         for ref_path in paths {
-            let dir = root.join(ref_path);
+            budget.consume(Resource::Work, 1)?;
+            let reference = root.join(ref_path);
+            let metadata =
+                std::fs::metadata(&reference).map_err(|source| WorkspaceError::Read {
+                    path: reference.clone(),
+                    source,
+                })?;
+            let dir = if metadata.is_dir() {
+                reference
+            } else if metadata.is_file() {
+                reference.parent().unwrap_or(root).to_path_buf()
+            } else {
+                return Err(WorkspaceError::Read {
+                    path: reference,
+                    source: std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "project reference must select a directory or regular config file",
+                    ),
+                });
+            };
             let pkg_json = dir.join("package.json");
 
-            if pkg_json.exists()
-                && let Some((name, path)) = Self::read_package_name(&pkg_json)?
+            if Self::optional_metadata(&pkg_json)?.is_some()
+                && let Some((name, path)) = Self::read_package_name(&pkg_json, budget)?
             {
-                let _ = packages.insert(name, path);
+                Self::insert_package(&mut packages, name, &path, budget)?;
             }
         }
 
         Ok(packages)
     }
 
-    /// Load tsconfig path aliases and map them to package names.
-    ///
-    /// Looks for tsconfig.base.json or tsconfig.json with paths, then maps
-    /// each alias to the package that contains the target path.
-    fn load_aliases(root: &Path, packages: &HashMap<String, PathBuf>) -> HashMap<String, String> {
-        // Try tsconfig.base.json first (common in Nx), then tsconfig.json
-        let tsconfig_paths = [root.join("tsconfig.base.json"), root.join("tsconfig.json")];
+    fn optional_metadata(path: &Path) -> Result<Option<std::fs::Metadata>, WorkspaceError> {
+        crate::input::optional_metadata(path).map_err(|source| WorkspaceError::Read {
+            path: path.to_path_buf(),
+            source,
+        })
+    }
 
-        for tsconfig_path in tsconfig_paths {
-            if let Some(aliases) =
-                Self::try_load_aliases_from_tsconfig(&tsconfig_path, root, packages)
-            {
-                return aliases;
+    fn insert_package(
+        packages: &mut HashMap<String, PathBuf>,
+        name: String,
+        path: &Path,
+        budget: &AnalysisBudget,
+    ) -> Result<(), WorkspaceError> {
+        budget.consume(Resource::Work, 1)?;
+        let canonical = std::fs::canonicalize(path).map_err(|source| WorkspaceError::Read {
+            path: path.to_path_buf(),
+            source,
+        })?;
+        budget.consume(Resource::GraphBytes, units(canonical.as_os_str().len()))?;
+        if let Some(prior) = packages.get(&name)
+            && prior != &canonical
+        {
+            return Err(WorkspaceError::Parse {
+                path: path.join("package.json"),
+                message: format!(
+                    "duplicate workspace package name {name:?} at {} and {}",
+                    prior.display(),
+                    canonical.display()
+                ),
+            });
+        }
+        let _ = packages.insert(name, canonical);
+        Ok(())
+    }
+
+    /// Reuse the TypeScript loader's origin/override/fallback semantics. A root
+    /// config takes precedence over the conventional base-file fallback.
+    fn load_aliases(
+        root: &Path,
+        packages: &HashMap<String, PathBuf>,
+        budget: &AnalysisBudget,
+    ) -> HashMap<String, String> {
+        for selected in [root.join("tsconfig.json"), root.join("tsconfig.base.json")] {
+            if budget.check().is_err() {
+                break;
+            }
+            let Ok(config) = crate::TsConfig::load_with_budget(&selected, budget) else {
+                continue;
+            };
+            if !config.paths.is_empty() {
+                return Self::map_aliases(&config, packages, budget);
             }
         }
-
         HashMap::new()
     }
 
-    /// Try to load aliases from a specific tsconfig file.
-    fn try_load_aliases_from_tsconfig(
-        tsconfig_path: &Path,
-        root: &Path,
+    #[cfg_attr(feature = "profiling", hotpath::measure)]
+    fn map_aliases(
+        config: &crate::TsConfig,
         packages: &HashMap<String, PathBuf>,
-    ) -> Option<HashMap<String, String>> {
-        if !tsconfig_path.exists() {
-            return None;
-        }
-
-        let contents = fs::read_to_string(tsconfig_path).ok()?;
-        let stripped = Self::strip_json_comments(&contents);
-        let config: TsConfigWithPaths = serde_json::from_str(&stripped).ok()?;
-        let paths = config.compiler_options?.paths?;
-
-        // Build a list of (relative_path, package_name) sorted by path length desc
-        let pkg_paths = Self::build_sorted_package_paths(root, packages);
-
-        // Build aliases from paths
-        let aliases = Self::build_aliases_from_paths(&paths, &pkg_paths);
-
-        // Return aliases even if empty (this is the right tsconfig to use)
-        Some(aliases)
-    }
-
-    /// Build sorted list of (relative_path, package_name) pairs.
-    fn build_sorted_package_paths(
-        root: &Path,
-        packages: &HashMap<String, PathBuf>,
-    ) -> Vec<(String, String)> {
-        // Collect into a vec and sort for deterministic iteration
-        let mut items: Vec<_> = packages.iter().collect();
-        items.sort_by_key(|(name, _)| *name);
-
-        let mut pkg_paths: Vec<(String, String)> = items
-            .into_iter()
-            .filter_map(|(pkg_name, pkg_path)| {
-                let rel_path = pkg_path.strip_prefix(root).ok()?;
-                let rel_str = rel_path.to_string_lossy().to_string();
-                Some((rel_str, pkg_name.clone()))
-            })
-            .collect();
-
-        // Sort by path length descending to match most specific path first
-        pkg_paths.sort_by(|first, second| second.0.len().cmp(&first.0.len()));
-        pkg_paths
-    }
-
-    /// Build alias map from tsconfig paths.
-    fn build_aliases_from_paths(
-        paths: &HashMap<String, Vec<String>>,
-        pkg_paths: &[(String, String)],
+        budget: &AnalysisBudget,
     ) -> HashMap<String, String> {
-        // Sort paths for deterministic iteration
-        let mut sorted_paths: Vec<_> = paths.iter().collect();
-        sorted_paths.sort_by_key(|(alias, _)| *alias);
-
-        let mut aliases = HashMap::new();
-
-        for (alias, targets) in sorted_paths {
-            Self::try_add_alias(alias, targets, pkg_paths, &mut aliases);
+        let mut package_paths = Vec::new();
+        for (name, path) in packages {
+            if budget.consume(Resource::Work, 1).is_err() {
+                return HashMap::new();
+            }
+            let Ok(canonical) = std::fs::canonicalize(path) else {
+                continue;
+            };
+            if budget
+                .consume(Resource::GraphBytes, units(canonical.as_os_str().len()))
+                .is_err()
+            {
+                return HashMap::new();
+            }
+            package_paths.push((canonical, name));
         }
-
+        if crate::budget::sorting(package_paths.len(), budget).is_err() {
+            return HashMap::new();
+        }
+        package_paths.sort_by(|left, right| {
+            right
+                .0
+                .as_os_str()
+                .len()
+                .cmp(&left.0.as_os_str().len())
+                .then_with(|| left.1.cmp(right.1))
+        });
+        if budget
+            .consume(Resource::Work, units(config.paths.len()))
+            .is_err()
+        {
+            return HashMap::new();
+        }
+        let direct = config.can_resolve_exact_aliases_directly();
+        // General lookups inspect the same replacement lists. Compute their
+        // reservation once; direct lookups admit only the selected mapping.
+        let replacement_work = config.paths.iter().try_fold(0_u64, |total, pattern| {
+            total.checked_add(units(pattern.replacements.len()))
+        });
+        let mut aliases = HashMap::new();
+        let mut targets = HashMap::new();
+        for alias in &config.paths {
+            if budget.consume(Resource::Work, 1).is_err() {
+                break;
+            }
+            if alias.has_wildcard {
+                continue;
+            }
+            let Some(target) = Self::resolve_alias_target(
+                config,
+                alias,
+                direct,
+                replacement_work,
+                &mut targets,
+                budget,
+            ) else {
+                continue;
+            };
+            if budget
+                .consume(Resource::Work, units(package_paths.len()))
+                .is_err()
+            {
+                break;
+            }
+            let Some((member, name)) = package_paths
+                .iter()
+                .find(|(path, _)| target.starts_with(path))
+            else {
+                continue;
+            };
+            if alias.prefix == **name || Self::owned_by_inner_package(&target, member, budget) {
+                continue;
+            }
+            if budget
+                .consume(Resource::GraphBytes, units(alias.prefix.len()))
+                .is_err()
+            {
+                break;
+            }
+            if budget
+                .consume(Resource::GraphBytes, units(name.len()))
+                .is_err()
+            {
+                break;
+            }
+            let _ = aliases.insert(alias.prefix.clone(), (*name).clone());
+        }
         aliases
     }
 
-    /// Try to add an alias for a tsconfig path entry.
-    fn try_add_alias(
-        alias: &str,
-        targets: &[String],
-        pkg_paths: &[(String, String)],
-        aliases: &mut HashMap<String, String>,
-    ) {
-        // Skip wildcard aliases (e.g., "@ender/*")
-        if alias.contains('*') {
-            return;
+    /// A named package between the member root and the alias target (for
+    /// example a nested non-member package) owns the target, so the alias is
+    /// not an edge to the member; it stays a file alias.
+    fn owned_by_inner_package(target: &Path, member: &Path, budget: &AnalysisBudget) -> bool {
+        #[derive(serde::Deserialize)]
+        struct Named {
+            name: Option<serde::de::IgnoredAny>,
         }
-
-        let Some(target) = targets.first() else {
-            return;
-        };
-
-        // Find which package contains this path
-        let Some(pkg_name) = Self::find_package_for_target(target, pkg_paths) else {
-            return;
-        };
-
-        // Don't create alias if it matches the package name
-        if alias == pkg_name {
-            return;
-        }
-
-        let _ = aliases.insert(alias.to_owned(), pkg_name);
+        target
+            .ancestors()
+            .skip(1)
+            .take_while(|directory| *directory != member && directory.starts_with(member))
+            .any(|directory| {
+                if budget.consume(Resource::Work, 1).is_err() {
+                    return true;
+                }
+                let manifest = directory.join("package.json");
+                crate::input::read_admitted(&manifest, budget)
+                    .ok()
+                    .and_then(|text| serde_json::from_str::<Named>(&text).ok())
+                    .is_some_and(|named| named.name.is_some())
+            })
     }
 
-    /// Find the package that contains the given target path.
-    fn find_package_for_target(target: &str, pkg_paths: &[(String, String)]) -> Option<String> {
-        for (rel_str, pkg_name) in pkg_paths {
-            if target.starts_with(rel_str.as_str()) {
-                return Some(pkg_name.clone());
+    /// Direct resolution shares substitution/fallback rules with the public
+    /// resolver. Unusual caller-owned tables retain general first-match lookup.
+    fn resolve_alias_target<'config>(
+        config: &crate::TsConfig,
+        alias: &'config crate::tsconfig::PathAlias,
+        direct: bool,
+        replacement_work: Option<u64>,
+        targets: &mut HashMap<&'config [PathBuf], PathBuf>,
+        budget: &AnalysisBudget,
+    ) -> Option<PathBuf> {
+        if !direct {
+            return Self::resolve_alias_target_uncached(
+                config,
+                alias,
+                direct,
+                replacement_work,
+                budget,
+            );
+        }
+        // The complete ordered list determines exact-alias fallback. Borrow
+        // the already-owned key, and admit hashing work even on a cache hit.
+        budget.consume(Resource::Work, 1).ok()?;
+        budget
+            .consume(Resource::Work, units(alias.replacements.len()))
+            .ok()?;
+        if let Some(target) = targets.get(alias.replacements.as_slice()) {
+            return Some(target.clone());
+        }
+        let target =
+            Self::resolve_alias_target_uncached(config, alias, direct, replacement_work, budget)?;
+        budget
+            .consume(
+                Resource::GraphBytes,
+                units(size_of::<(&[PathBuf], PathBuf)>()),
+            )
+            .ok()?;
+        budget
+            .consume(Resource::GraphBytes, units(target.as_os_str().len()))
+            .ok()?;
+        let _ = targets.insert(alias.replacements.as_slice(), target.clone());
+        Some(target)
+    }
+
+    #[cfg_attr(feature = "profiling", hotpath::measure)]
+    fn resolve_alias_target_uncached(
+        config: &crate::TsConfig,
+        alias: &crate::tsconfig::PathAlias,
+        direct: bool,
+        replacement_work: Option<u64>,
+        budget: &AnalysisBudget,
+    ) -> Option<PathBuf> {
+        let target = if direct {
+            budget.consume(Resource::Work, 1).ok()?;
+            budget
+                .consume(Resource::Work, units(alias.replacements.len()))
+                .ok()?;
+            crate::TsConfig::try_resolve_with_alias(&alias.prefix, alias)
+        } else {
+            budget
+                .consume(Resource::Work, units(config.paths.len()))
+                .ok()?;
+            if let Some(work) = replacement_work {
+                budget.consume(Resource::Work, work).ok()?;
+            } else {
+                // Sequential checked admissions also reject theoretical sum
+                // overflow, preserving sticky failure before any file lookup.
+                for pattern in &config.paths {
+                    budget
+                        .consume(Resource::Work, units(pattern.replacements.len()))
+                        .ok()?;
+                }
+            }
+            config.resolve_alias(&alias.prefix)
+        }?;
+        Some(Self::normalize_alias_target(&target))
+    }
+
+    /// This is identity normalization, not filesystem confinement. Preserve
+    /// declared subpaths when the final source file is not present in a checkout.
+    fn normalize_alias_target(path: &Path) -> PathBuf {
+        if let Ok(canonical) = std::fs::canonicalize(path) {
+            return canonical;
+        }
+        let mut normalized = PathBuf::new();
+        for component in path.components() {
+            match component {
+                std::path::Component::ParentDir => {
+                    let _removed = normalized.pop();
+                },
+                std::path::Component::CurDir => {},
+                other @ (std::path::Component::Prefix(_)
+                | std::path::Component::RootDir
+                | std::path::Component::Normal(_)) => normalized.push(other.as_os_str()),
             }
         }
-        None
+        normalized
     }
 
     /// Check if an import specifier refers to a workspace package.
     ///
     /// Checks both direct package names and tsconfig path aliases.
     #[inline]
+    #[must_use]
     pub fn is_workspace_package(&self, specifier: &str) -> bool {
+        self.split_specifier(specifier).is_some()
+    }
+
+    /// Split a specifier naming a workspace package into the package's real
+    /// name and the subpath after the matched name or alias.
+    ///
+    /// Declared package names win. An exact tsconfig alias matches the whole
+    /// specifier or a prefix ending at a `/`, longest first, so alias names
+    /// with extra segments (`lib/a`, `@app/core/utils`) are recognized.
+    #[must_use]
+    pub fn split_specifier<'specifier>(
+        &'specifier self,
+        specifier: &'specifier str,
+    ) -> Option<(&'specifier str, Option<&'specifier str>)> {
         let package_name = Self::extract_package_name(specifier);
-
-        // Direct package match
         if self.packages.contains_key(package_name) {
-            return true;
+            let subpath = Self::extract_subpath(specifier).filter(|rest| !rest.is_empty());
+            return Some((package_name, subpath));
         }
-
-        // Check if it's an alias that maps to a workspace package
-        if let Some(real_name) = self.aliases.get(package_name) {
-            return self.packages.contains_key(real_name);
+        let mut end = specifier.len();
+        loop {
+            let prefix = specifier.get(..end)?;
+            if let Some(real_name) = self.aliases.get(prefix)
+                && self.packages.contains_key(real_name)
+            {
+                let rest = specifier.get(end..).unwrap_or_default();
+                let subpath = rest.strip_prefix('/').filter(|rest| !rest.is_empty());
+                return Some((real_name.as_str(), subpath));
+            }
+            end = prefix.rfind('/')?;
         }
-
-        false
     }
 
     /// Get the path for a workspace package.
     ///
     /// Resolves tsconfig path aliases to their actual package paths.
     #[inline]
+    #[must_use]
     pub fn get_package_path(&self, specifier: &str) -> Option<&PathBuf> {
-        let package_name = Self::extract_package_name(specifier);
-
-        // Direct package match
-        if let Some(path) = self.packages.get(package_name) {
-            return Some(path);
-        }
-
-        // Check if it's an alias
-        if let Some(real_name) = self.aliases.get(package_name) {
-            return self.packages.get(real_name);
-        }
-
-        None
+        let (name, _) = self.split_specifier(specifier)?;
+        self.packages.get(name)
     }
 
     /// Resolve an import specifier to its canonical package name.
     ///
     /// If the specifier uses a tsconfig alias, returns the real package name.
-    /// Otherwise returns the extracted package name as-is.
+    /// Known workspace names take precedence over aliases, matching
+    /// [`Self::get_package_path`]. Otherwise returns the extracted name as-is.
     #[inline]
+    #[must_use]
     pub fn resolve_package_name<'specifier>(
         &'specifier self,
         specifier: &'specifier str,
     ) -> &'specifier str {
-        let package_name = Self::extract_package_name(specifier);
-
-        // Check if it's an alias
-        if let Some(real_name) = self.aliases.get(package_name) {
-            return real_name.as_str();
-        }
-
-        package_name
+        self.split_specifier(specifier)
+            .map_or_else(|| Self::extract_package_name(specifier), |(name, _)| name)
     }
 
     /// Extract the package name from an import specifier.
@@ -718,6 +1058,7 @@ impl Workspace {
     /// Handles scoped packages: `@org/pkg/subpath` -> `@org/pkg`
     /// And regular packages: `pkg/subpath` -> `pkg`
     #[inline]
+    #[must_use]
     pub fn extract_package_name(specifier: &str) -> &str {
         if specifier.starts_with('@') {
             // Scoped package: @org/pkg or @org/pkg/subpath
@@ -752,6 +1093,7 @@ impl Workspace {
     /// `@org/pkg/foo/bar` -> `Some("foo/bar")`
     /// `@org/pkg` -> `None`
     #[inline]
+    #[must_use]
     pub fn extract_subpath(specifier: &str) -> Option<&str> {
         let pkg_name = Self::extract_package_name(specifier);
         let rest = specifier.get(pkg_name.len()..)?;
@@ -841,7 +1183,7 @@ mod tests {
             "key": "value", /* inline comment */
             "other": true
         }"#;
-        let stripped = Workspace::strip_json_comments(input);
+        let stripped = crate::syntax::jsonc(input).expect("valid JSONC");
         assert!(
             !stripped.contains("//"),
             "should strip single-line comments"
@@ -1016,7 +1358,7 @@ mod tests {
     #[test]
     fn test_strip_json_comments_url_in_string() {
         let input_url = r#"{"url": "http://example.com/path"}"#;
-        let stripped_url = Workspace::strip_json_comments(input_url);
+        let stripped_url = crate::syntax::jsonc(input_url).expect("valid JSONC");
         assert!(
             stripped_url.contains("http://example.com/path"),
             "should preserve URLs in strings"
@@ -1026,7 +1368,7 @@ mod tests {
     #[test]
     fn test_strip_json_comments_escaped_quotes() {
         let input_escaped = r#"{"text": "say \"hello\""}"#;
-        let stripped_escaped = Workspace::strip_json_comments(input_escaped);
+        let stripped_escaped = crate::syntax::jsonc(input_escaped).expect("valid JSONC");
         assert!(
             stripped_escaped.contains(r#"\"hello\""#),
             "should preserve escaped quotes"
@@ -1042,7 +1384,7 @@ mod tests {
                comment */
             "b": 2
         }"#;
-        let stripped_multi = Workspace::strip_json_comments(input_multi);
+        let stripped_multi = crate::syntax::jsonc(input_multi).expect("valid JSONC");
         assert!(
             !stripped_multi.contains("line comment"),
             "should strip line comment"
@@ -1068,7 +1410,7 @@ mod tests {
     #[test]
     fn test_strip_json_comments_preserves_in_string() {
         let input_str = r#"{"comment": "// not a comment /* also not */"}"#;
-        let stripped_str = Workspace::strip_json_comments(input_str);
+        let stripped_str = crate::syntax::jsonc(input_str).expect("valid JSONC");
         assert!(
             stripped_str.contains("// not a comment"),
             "should preserve // inside string"
@@ -1082,10 +1424,9 @@ mod tests {
     #[test]
     fn test_strip_json_comments_unterminated() {
         let input_unterm = r#"{"key": "value"} /* unterminated"#;
-        let stripped_unterm = Workspace::strip_json_comments(input_unterm);
         assert!(
-            stripped_unterm.contains("\"key\": \"value\""),
-            "should preserve content before unterminated comment"
+            crate::syntax::jsonc(input_unterm).is_err(),
+            "unterminated comment is malformed metadata"
         );
     }
 
@@ -1557,8 +1898,12 @@ mod tests {
         )
         .expect("dist package manifest should be written");
 
-        let packages = Workspace::expand_patterns(root, &[String::from("apps/**/*")])
-            .expect("workspace patterns should expand");
+        let packages = Workspace::expand_patterns(
+            root,
+            &[String::from("apps/**/*")],
+            &AnalysisBudget::default(),
+        )
+        .expect("workspace patterns should expand");
 
         assert!(
             packages.contains_key("@demo/real-app"),

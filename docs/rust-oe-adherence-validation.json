@@ -1,0 +1,252 @@
+{
+  "schema": 1,
+  "toolchain": "1.98.1",
+  "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+  "rust_oe_revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+  "cases": [
+    {
+      "name": "C01 passing",
+      "command": [
+        "cargo",
+        "xtask",
+        "fmt"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.352,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\n"
+    },
+    {
+      "name": "C01 rejects unformatted xtask member",
+      "command": [
+        "cargo",
+        "xtask",
+        "fmt"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 1.043,
+      "output_tail": "Diff in /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project/xtask/src/main.rs:231:\n         .map_err(|error| eprintln!(\"doctest failed: {error}\"))\n }\n \n\u001b[31m-fn formatting_probe( ){ }\n\u001b(B\u001b[m\u001b[32m+fn formatting_probe() {}\n\u001b(B\u001b[m \n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project/xtask)\nwarning: function `formatting_probe` is never used\n   --> xtask/src/main.rs:234:4\n    |\n234 | fn formatting_probe( ){ }\n    |    ^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `xtask` (bin \"xtask\") generated 1 warning\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.80s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\nfmt failed: command exited with non-zero code `cargo fmt --all --check`: 1\n"
+    },
+    {
+      "name": "C01 repaired",
+      "command": [
+        "cargo",
+        "xtask",
+        "fmt"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.385,
+      "output_tail": "   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project/xtask)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\n"
+    },
+    {
+      "name": "C02 passing",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.691,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project/xtask)\n    Checking jscycles v0.1.1 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s\n"
+    },
+    {
+      "name": "C02 rejects stale lock",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 101,
+      "matched": true,
+      "seconds": 0.038,
+      "output_tail": "error: cannot update the lock file /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project/Cargo.lock because --locked was passed to prevent this\nhelp: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.\n"
+    },
+    {
+      "name": "C02 repaired",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.278,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s\n"
+    },
+    {
+      "name": "C03 passing",
+      "command": [
+        "cargo",
+        "xtask",
+        "doctest"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 1.066,
+      "output_tail": "\nrunning 1 test\ntest src/lib.rs - (line 6) ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\nall doctests ran in 0.57s; merged doctests compilation took 0.42s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s\n   Doc-tests jscycles\n"
+    },
+    {
+      "name": "C03 rejects incorrect public example",
+      "command": [
+        "cargo",
+        "xtask",
+        "doctest"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 1.887,
+      "output_tail": "sertion `left == right` failed\n  left: 1\n right: 2\nstack backtrace:\n   0: __rustc::rust_begin_unwind\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5\n   1: core::panicking::panic_fmt\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14\n   2: core::panicking::assert_failed_inner\n   3: core::panicking::assert_failed::<usize, usize>\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:394:5\n   4: doctest_bundle_2024::__doctest_0::main\n   5: doctest_bundle_2024::__doctest_0::__main_fn\n   6: doctest_runner_2024::__doctest_0::TEST::{closure#0}\n   7: <doctest_runner_2024::__doctest_0::TEST::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n   8: doctest_runner_2024::main\n   9: <fn() -> std::process::ExitCode as core::ops::function::FnOnce<()>>::call_once\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\n\nfailures:\n    src/lib.rs - (line 6)\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\nall doctests ran in 0.46s; merged doctests compilation took 0.23s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles v0.1.1 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.17s\n   Doc-tests jscycles\nerror: doctest failed, to rerun pass `-p jscycles --doc`\ndoctest failed: command exited with non-zero code `cargo test --workspace --doc --all-features --locked`: 101\n"
+    },
+    {
+      "name": "C03 repaired",
+      "command": [
+        "cargo",
+        "xtask",
+        "doctest"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 1.162,
+      "output_tail": "\nrunning 1 test\ntest src/lib.rs - (line 6) ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\nall doctests ran in 0.35s; merged doctests compilation took 0.22s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles v0.1.1 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.55s\n   Doc-tests jscycles\n"
+    },
+    {
+      "name": "C04 rejects implicit unsafe operation",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 0.78,
+      "output_tail": "eatures --locked\n    Checking jscycles v0.1.1 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project)\nerror[E0133]: dereference of raw pointer is unsafe and requires unsafe block\n   --> src/lib.rs:209:55\n    |\n209 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n    |                                                       ^^^^^^^^ dereference of raw pointer\n    |\n    = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior\nnote: an unsafe function restricts its caller, but its body is safe by default\n   --> src/lib.rs:209:1\n    |\n209 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>\n    = note: requested on the command line with `-F unsafe-op-in-unsafe-fn`\n\nwarning: function `operation_probe` is never used\n   --> src/lib.rs:209:11\n    |\n209 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n    |           ^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nFor more information about this error, try `rustc --explain E0133`.\nwarning: `jscycles` (lib) generated 1 warning\nerror: could not compile `jscycles` (lib) due to 1 previous error; 1 warning emitted\nwarning: build failed, waiting for other jobs to finish...\nwarning: `jscycles` (lib test) generated 1 warning (1 duplicate)\nerror: could not compile `jscycles` (lib test) due to 1 previous error; 1 warning emitted\ncheck failed: command exited with non-zero code `cargo check --workspace --all-targets --all-features --locked`: 101\n"
+    },
+    {
+      "name": "C04 explicit operation compiles",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 1.643,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking jscycles v0.1.1 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project)\nwarning: function `operation_probe` is never used\n   --> src/lib.rs:209:11\n    |\n209 | unsafe fn operation_probe(pointer: *const u8) -> u8 { unsafe { *pointer } }\n    |           ^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `jscycles` (lib) generated 1 warning\nwarning: `jscycles` (lib test) generated 1 warning (1 duplicate)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.45s\n"
+    },
+    {
+      "name": "C04 restored safe-only project",
+      "command": [
+        "cargo",
+        "xtask",
+        "check"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 1.255,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking jscycles v0.1.1 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-q9j9bxfx/project)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.02s\n"
+    },
+    {
+      "name": "Guidance integrity passing",
+      "command": [
+        "/Users/alm/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/bin/python3.13",
+        "-B",
+        "scripts/check_adoption.py"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.044,
+      "output_tail": "Rust-OE integrity passed: 17 managed files, configuration, and agent block\n"
+    },
+    {
+      "name": "Guidance integrity rejects drift",
+      "command": [
+        "/Users/alm/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/bin/python3.13",
+        "-B",
+        "scripts/check_adoption.py"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 0.032,
+      "output_tail": "Rust-OE integrity failed: managed content drift: INDEX.md\n"
+    },
+    {
+      "name": "Guidance integrity repaired",
+      "command": [
+        "/Users/alm/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/bin/python3.13",
+        "-B",
+        "scripts/check_adoption.py"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.032,
+      "output_tail": "Rust-OE integrity passed: 17 managed files, configuration, and agent block\n"
+    },
+    {
+      "name": "Guidance guard pass/defect/repair tests",
+      "command": [
+        "/Users/alm/.local/share/uv/python/cpython-3.13.12-macos-aarch64-none/bin/python3.13",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_*.py"
+      ],
+      "exit": 0,
+      "matched": true,
+      "seconds": 0.248,
+      "output_tail": "..........\n----------------------------------------------------------------------\nRan 10 tests in 0.146s\n\nOK\n"
+    },
+    {
+      "name": "Baseline rejects unrecognized selection arguments",
+      "command": [
+        "cargo",
+        "xtask",
+        "check",
+        "--unexpected"
+      ],
+      "exit": 1,
+      "matched": true,
+      "seconds": 0.173,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check --unexpected`\nxtask baseline commands accept no extra arguments\n"
+    }
+  ],
+  "input_sha256": {
+    ".cargo/config.toml": "77c33876d6611a8a2f4d92dd782f037643545201cd3c9329395f3fe99432b298",
+    ".github/workflows/ci.yml": "59e2229e4ece35af2bd46621188e98c79333bb08ead82ec954a552ab5460ec51",
+    ".gitlab-ci.yml": "3218333b1e61b7f10055d128d8b77752794f68f64481ad65cd7cf4f022a979e9",
+    "AGENTS.md": "d6ca0df8ec4a34034aa2a69c832c14ade4f4ce7dd8af9512e828329be7f29dbf",
+    "Cargo.lock": "c2e42b76aea265db6cda640d67f063e567674b7f599a4d3933e85685c0503de7",
+    "Cargo.toml": "a15f80b21ef42e490be4725edcd898224f8a74e4b6960dd2ddf41b8c8a19399a",
+    "clippy.toml": "58734493534f24434c642acc05bf8f665fb44a5d543d1b13fcb16cf39be579c1",
+    "rust-oe.lock.json": "014ff57cc6f231d185683b0c69061a8626cf726af2d79c19d17bab47b8d11d0e",
+    "rust-oe.toml": "8b1d236531d0f364d702403353816500ca93ffe66cde17c0513bbba1d3e25937",
+    "rust-toolchain.toml": "b36eb8ee6d003e4a655f23628f257dd3e89e13d9dee83eb4901f50dce60b4f10",
+    "rustfmt.toml": "fc53c6ca3c63893a6f9dad3e99a95116a2a699937bbc9744f194d34b8bc26096",
+    "scripts/benchmark.py": "d4d880c06cd464d10c81d75611508945c69724e67127c14d94796b449b4ed582",
+    "scripts/check_adoption.py": "cb5d3254eeaada7cf62ef0ec48424914ff813c2d9b2127ba934d36c27b84448f",
+    "scripts/test_check_adoption.py": "d438e162f60f126bc6d6c2fd070ab8a037ff295342616688ae2591e4ff80da34",
+    "scripts/verify-controls.py": "4d359012853ef93fb01306b9c0d46fdcda2d4d499d832100bc153ed7c54bb72b",
+    "src/config.rs": "f0fe49f2b252283d73663e0d5d110d88da79c0800b054b610d27a9630cb8387b",
+    "src/cycles.rs": "8a0435b3e02726bc57d9e6cb5c26b47f640b3d81b11a0ecb4f1c86d6c1544f96",
+    "src/discovery.rs": "dad4713738f61ff907b40dfd1ae6c5fd62eef25ad538432cbf99649800d10f41",
+    "src/graph.rs": "108b0d6e85066ba8ca1b40bd914a37d19fbea77f4c2cafee98a5e695c8f9711b",
+    "src/imports.rs": "4efe7b893335a33df11115df635cdb63545b05a111fc08347634b12e0b3de1f1",
+    "src/input.rs": "054ee7c310496ce18663e986c422f5abbee79c8bc7a31b604a7a501f59898e83",
+    "src/lib.rs": "63d9cc24d3a3e664a88a0f479650fbb91176d0fce43be9a0719e812d90a56123",
+    "src/main.rs": "d5440e7e1c3c0134ceea4ad28c8b3b3cdc61ced638054c38ebb40a8b6c36f352",
+    "src/output.rs": "70149ed61e7c916346dffac0817180022d1a6009ba06b6988c178728cbc6b4c2",
+    "src/tsconfig.rs": "678959ad7a754d06127f8f82cd14c331248d6873ed59c6c5f4c8826f931901b1",
+    "src/workspace.rs": "adc5f9e7458fca55f50a0cc6c8cb0a284b3d2e55d2b72328c26bdd461921e821",
+    "tests/cli.rs": "a8deb031139f2dd6d3a6d6b396386effd7acfe2f5c5b165aa3dcde0a8137de18",
+    "tests/integration.rs": "87673f636843369859179dc6a3775c35236dbf4c4c0101972761258aa45e5862",
+    "xtask/Cargo.toml": "e790820b5069b3fd6a2273a3dc8ce89d275a8fb8eb3f008c6774a1b9289b4423",
+    "xtask/src/main.rs": "2c6d56577d5047b8c28747cdab682215cc9644590d8233a75d9def01a28b8f67"
+  },
+  "passed": true
+}

@@ -1,0 +1,33 @@
+# Rust-OE project selection. Commit this file and rust-oe.lock.json.
+# Keep local decisions outside project.directory.
+# Ignore .rust-oe-operation.lock and .rust-oe-transaction/ in Git.
+schema = 1
+
+[source]
+repository = "ssh://git@gitlab.maclaine.io:10022/alm/rust-oe.git"
+revision = "19e4133c0461129b0f5fdb286abd7b87511242e2"
+catalog = "rust-oe-bundles.toml"
+
+[project]
+directory = ".rust-oe"
+bundles = [
+    "standards",
+    "agents",
+    "api",
+    "cli",
+    "dependencies",
+    "verification",
+    "observability",
+    "tools",
+]
+notes = ["docs/rust-oe-adoption.md"]
+
+[agents]
+enabled = true
+path = "AGENTS.md"
+
+[limits]
+max_file_bytes = 2097152
+max_total_bytes = 33554432
+max_files = 2048
+git_timeout_seconds = 60

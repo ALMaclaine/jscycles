@@ -4,3 +4,15 @@
 # Claude/AI
 .claude-flow/
 .hive-mind/
+
+# Rust-OE operation metadata
+.rust-oe-operation.lock
+.rust-oe-transaction/
+
+# Local Python check bytecode
+__pycache__/
+
+# Fuzz build products, generated corpus, and sanitizer crash artifacts
+/fuzz/target/
+/fuzz/artifacts/
+/fuzz/coverage/
