@@ -116,8 +116,8 @@ validation report supersedes the original control report for current inputs;
 the original report and synthetic benchmark remain evidence for their own inputs.
 
 The library extractor now returns canonical absolute source/resolved paths;
-classify this behavioral compatibility change with the YAML error payload for the
-next 0.2 release. CLI file-cycle paths retain their package-relative presentation.
+this behavioral compatibility change ships with the YAML error payload change in
+0.2. CLI file-cycle paths retain their package-relative presentation.
 The subsequent [analysis-budget implementation](analysis-limits.md) adds shared
 aggregate quotas, iterative graph traversal, bounded enumeration, and staged
 reports. Its public Config field/error variants also require the planned 0.2

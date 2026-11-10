@@ -1781,7 +1781,7 @@ fn package_extends_follow_typescript_config_lookup() {
     // Each (manifest, files, extends) installs a base under node_modules. When
     // TypeScript finds the base, the child's alias cycle is reported with no
     // warning; when it does not, the tsconfig is ignored with a warning.
-    let cases: [(&str, &[&str], &str, bool); 9] = [
+    let cases: [(&str, &[&str], &str, bool); 12] = [
         (
             r#"{"name":"@cfg/base"}"#,
             &["tsconfig.json"],
@@ -1824,7 +1824,27 @@ fn package_extends_follow_typescript_config_lookup() {
             "@cfg/base/sub",
             true,
         ),
+        // A bare condition map is the `.` entry.
+        (
+            r#"{"name":"@cfg/base","exports":{"require":"./c/main.json"}}"#,
+            &["c/main.json"],
+            "@cfg/base",
+            true,
+        ),
+        // Conditions are tried in written order: `require` before `node`.
+        (
+            r#"{"name":"@cfg/base","exports":{".":{"require":"./c/main.json","node":"./c/broken.json"}}}"#,
+            &["c/main.json"],
+            "@cfg/base",
+            true,
+        ),
         // `exports` decide alone: an unexported file is not found.
+        (
+            r#"{"name":"@cfg/base","exports":"./c/main.json"}"#,
+            &["c/main.json"],
+            "@cfg/base/x",
+            false,
+        ),
         (
             r#"{"name":"@cfg/base","exports":{"./x":"./c/x.json"}}"#,
             &["c/main.json"],
@@ -1851,6 +1871,14 @@ fn package_extends_follow_typescript_config_lookup() {
                 &format!("node_modules/@cfg/base/{file}"),
                 "{\n  // base\n  \"compilerOptions\": {\"strict\": true,},\n}\n",
             );
+        }
+        // A `types` target that exists is still skipped: config lookup takes
+        // only `.json` files, so resolution falls through to `default`.
+        if manifest.contains("index.d.ts") {
+            write(root, "node_modules/@cfg/base/index.d.ts", "export {};");
+        }
+        if manifest.contains("broken.json") {
+            write(root, "node_modules/@cfg/base/c/broken.json", "{");
         }
         write(
             root,

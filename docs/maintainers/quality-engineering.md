@@ -86,6 +86,17 @@ which cannot produce valid JSON. They do not exclude a whole function or file.
 The first pass selected 135 mutations, followed by 379 across six modules. The
 cursor pass selected 715 mutations across all 15 production modules. The regular
 gate enumerates the current production selection afresh on every run.
+The 0.2.0 release preparation (2026-11-10) ran a targeted pass over the code
+added since that campaign: package `extends` resolution, Windows/absolute
+pattern spellings, byte-order-mark stripping, type-only import detection and
+edge-evidence display, 80 mutants. Four survived at first. Two exposed missing
+tests (string `exports` with a subpath; an existing non-JSON `types` target),
+and the second also revealed that condition maps were tried in serde_json's
+sorted key order rather than written order, now fixed with an order-preserving
+reader; a third test pass found and closed bare condition maps. Two are
+equivalent and recorded in `.cargo/mutants.toml` with their reasons. The full
+899-mutant campaign was interrupted at 698 (none missed) when the disk filled
+and has not been rerun on the final tree.
 Uncompilable mutants remain separately
 reported. Generated campaign manifests bind source/test/config hashes; the static
 [review policy](../../.cargo/mutation-review.json) retains exact reviewed timeout diffs. Only reproduced

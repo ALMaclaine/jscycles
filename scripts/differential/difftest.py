@@ -753,7 +753,8 @@ def add_node_modules_base(rng: random.Random, files: dict[str, str], packages: l
     home = rng.choice(["", rng.choice(packages)["dir"] + "/"])
     base = f"{home}node_modules/{name}/"
     body = '{\n  // shared base\n  "$schema": "https://json.schemastore.org/tsconfig",\n  "display": "base",\n  "compilerOptions": {"strict": true,},\n}\n'
-    variant = rng.choice(["file", "file-noext", "dir", "tsconfig-field", "exports-root", "exports-sub", "exports-conditions"])
+    variant = rng.choice(["file", "file-noext", "dir", "tsconfig-field", "exports-root", "exports-sub", "exports-conditions",
+                          "exports-order"])
     if variant in ("file", "file-noext"):
         files[base + "tsconfig.base.json"] = body
         spec = name + ("/tsconfig.base.json" if variant == "file" else "/tsconfig.base")
@@ -770,8 +771,14 @@ def add_node_modules_base(rng: random.Random, files: dict[str, str], packages: l
     elif variant == "exports-sub":
         files[base + "configs/strict.json"] = body
         spec, manifest = name + "/strict", {"name": name, "exports": {"./strict": "./configs/strict.json"}}
+    elif variant == "exports-order":
+        # Conditions are tried in written order; the later one is broken.
+        files[base + "configs/main.json"] = body
+        files[base + "configs/broken.json"] = "{"
+        spec, manifest = name, {"name": name, "exports": {".": {"require": "./configs/main.json", "node": "./configs/broken.json"}}}
     else:
         files[base + "configs/main.json"] = body
+        files[base + "index.d.ts"] = "export {};\n"
         spec, manifest = name, {"name": name, "exports": {".": {"types": "./index.d.ts", "default": "./configs/main.json"}}}
     files[base + "package.json"] = json.dumps(manifest)
     STATS["nm_" + variant.replace("-", "_")] += 1

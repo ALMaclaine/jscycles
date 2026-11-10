@@ -12,8 +12,8 @@ fuzz workspace, locked workspace builds/Clippy/tests/doctest/docs, and cargo-den
 the root policy and adds only its version-scoped development license exception.
 It is evaluated without requiring a sanitizer build in ordinary CI.
 
-As of the 2026-11-06 follow-up, the native macOS aarch64 baseline has 574 target
-tests and one public doctest; platform-conditional counts differ elsewhere. Exact
+As of the 2026-11-07 release preparation, the native macOS aarch64 baseline has
+583 target tests and one public doctest; platform-conditional counts differ elsewhere. Exact
 MSRV 1.93.0 runs the selected tests/doctest too. Python 3.11+ runs 62
 guard/release/mutation-gate tests. The
 [source-hashed control replay](evidence/rust-oe-combined-controls.json) executes 29 real

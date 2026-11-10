@@ -86,8 +86,10 @@ coordinates an embargo with the reporter and affected dependency owners, prepare
 a tested fix and release/migration guidance, then communicates the update through
 release notes and the security advisory when available. No response-time promise
 or third-party embargo timeline is invented. Ordinary bug reports use repository
-issues after private material is removed. Security route/support policy remains
-an open operational fact in [SECURITY.md](../../SECURITY.md).
+issues after private material is removed. [SECURITY.md](../../SECURITY.md) names GitHub
+private vulnerability reporting as the route and the latest minor version as
+supported; confirm in the repository settings that private reporting is
+enabled before each release.
 
 An incident closes only with a timeline, evidence, impact/affected versions,
 correction, named follow-up owners, verification, communication and resulting

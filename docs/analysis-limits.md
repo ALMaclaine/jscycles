@@ -189,8 +189,8 @@ the fallible APIs when bounding search or enumeration is required.
 
 Adding `Config::limits` and quota variants to public error enums changes source
 compatibility for struct literals and exhaustive matches. Together with the
-previous YAML error and canonical-path changes, this belongs in the next 0.2
-library release. No version bump or publication is performed here.
+previous YAML error and canonical-path changes, these are part of the 0.2
+library release; see the [upgrade notes](migration-0.2.md).
 
 ## Evidence and adopted rules
 

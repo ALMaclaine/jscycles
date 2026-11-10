@@ -627,7 +627,7 @@ impl TsConfig {
         budget: &AnalysisBudget,
     ) -> Result<Option<PathBuf>, TsConfigError> {
         let manifest = read_manifest(&package_dir.join("package.json"), budget)?;
-        if let Some(exports) = manifest.as_ref().and_then(|value| value.get("exports")) {
+        if let Some(exports) = manifest.as_ref().and_then(|value| value.exports.as_ref()) {
             let key = if subpath.is_empty() {
                 ".".to_owned()
             } else {
@@ -636,10 +636,8 @@ impl TsConfig {
             return Ok(resolve_exports(exports, &key, package_dir, budget)?);
         }
         if subpath.is_empty() {
-            if let Some(field) = manifest
-                .as_ref()
-                .and_then(|value| value.get("tsconfig"))
-                .and_then(serde_json::Value::as_str)
+            if let Some(Ordered::String(field)) =
+                manifest.as_ref().and_then(|value| value.tsconfig.as_ref())
             {
                 return Ok(Self::resolve_tsconfig_file(&package_dir.join(field)).ok());
             }
@@ -1246,12 +1244,101 @@ fn split_package_specifier(specifier: &str) -> (&str, &str) {
     .unwrap_or((specifier, ""))
 }
 
+/// A JSON value whose objects keep their key order. `exports` condition maps
+/// are tried in the order they are written, and `serde_json`'s own map sorts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Ordered {
+    String(String),
+    Array(Vec<Self>),
+    Object(Vec<(String, Self)>),
+    /// Numbers, booleans and null: never a target.
+    Other,
+}
+
+impl<'de> Deserialize<'de> for Ordered {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct OrderedVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for OrderedVisitor {
+            type Value = Ordered;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.write_str("a JSON value")
+            }
+
+            fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Ordered, E> {
+                Ok(Ordered::String(value.to_owned()))
+            }
+
+            fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Ordered, E> {
+                Ok(Ordered::String(value))
+            }
+
+            fn visit_bool<E: serde::de::Error>(self, _value: bool) -> Result<Ordered, E> {
+                Ok(Ordered::Other)
+            }
+
+            fn visit_i64<E: serde::de::Error>(self, _value: i64) -> Result<Ordered, E> {
+                Ok(Ordered::Other)
+            }
+
+            fn visit_u64<E: serde::de::Error>(self, _value: u64) -> Result<Ordered, E> {
+                Ok(Ordered::Other)
+            }
+
+            fn visit_f64<E: serde::de::Error>(self, _value: f64) -> Result<Ordered, E> {
+                Ok(Ordered::Other)
+            }
+
+            fn visit_unit<E: serde::de::Error>(self) -> Result<Ordered, E> {
+                Ok(Ordered::Other)
+            }
+
+            fn visit_seq<A: serde::de::SeqAccess<'de>>(
+                self,
+                mut seq: A,
+            ) -> Result<Ordered, A::Error> {
+                let mut items = Vec::new();
+                while let Some(item) = seq.next_element()? {
+                    items.push(item);
+                }
+                Ok(Ordered::Array(items))
+            }
+
+            fn visit_map<A: serde::de::MapAccess<'de>>(
+                self,
+                mut map: A,
+            ) -> Result<Ordered, A::Error> {
+                let mut entries: Vec<(String, Ordered)> = Vec::new();
+                while let Some((key, value)) = map.next_entry::<String, Ordered>()? {
+                    // JSON.parse keeps the last duplicate at the first's position.
+                    if let Some(entry) = entries.iter_mut().find(|(name, _)| *name == key) {
+                        entry.1 = value;
+                    } else {
+                        entries.push((key, value));
+                    }
+                }
+                Ok(Ordered::Object(entries))
+            }
+        }
+
+        deserializer.deserialize_any(OrderedVisitor)
+    }
+}
+
+/// The `package.json` fields config lookup reads.
+#[derive(Deserialize)]
+struct InstalledManifest {
+    exports: Option<Ordered>,
+    tsconfig: Option<Ordered>,
+}
+
 /// An installed package's manifest, if it has one. A manifest that exists but
 /// cannot be read or parsed rejects the config rather than being skipped.
 fn read_manifest(
     path: &Path,
     budget: &AnalysisBudget,
-) -> Result<Option<serde_json::Value>, TsConfigError> {
+) -> Result<Option<InstalledManifest>, TsConfigError> {
     if !path.is_file() {
         return Ok(None);
     }
@@ -1266,15 +1353,18 @@ const EXPORT_CONDITIONS: [&str; 4] = ["node", "require", "types", "default"];
 
 /// Resolve `key` (`.` or `./sub`) through a package's `exports`.
 fn resolve_exports(
-    exports: &serde_json::Value,
+    exports: &Ordered,
     key: &str,
     package_dir: &Path,
     budget: &AnalysisBudget,
 ) -> Result<Option<PathBuf>, crate::budget::LimitError> {
-    let subpaths = exports
-        .as_object()
-        .filter(|map| map.keys().all(|name| name.starts_with('.')));
-    let Some(map) = subpaths else {
+    let subpaths = match exports {
+        Ordered::Object(entries) if entries.iter().all(|(name, _)| name.starts_with('.')) => {
+            Some(entries)
+        },
+        Ordered::Object(_) | Ordered::String(_) | Ordered::Array(_) | Ordered::Other => None,
+    };
+    let Some(entries) = subpaths else {
         // A string, array or condition map is the `.` entry.
         return if key == "." {
             resolve_export_target(exports, None, package_dir, budget)
@@ -1282,11 +1372,11 @@ fn resolve_exports(
             Ok(None)
         };
     };
-    if let Some(target) = map.get(key) {
+    if let Some((_, target)) = entries.iter().find(|(name, _)| name == key) {
         return resolve_export_target(target, None, package_dir, budget);
     }
     // The longest matching `*` pattern wins.
-    let best = map
+    let best = entries
         .iter()
         .filter_map(|(pattern, target)| {
             let (prefix, suffix) = pattern.split_once('*')?;
@@ -1303,14 +1393,14 @@ fn resolve_exports(
 }
 
 fn resolve_export_target(
-    target: &serde_json::Value,
+    target: &Ordered,
     star: Option<&str>,
     package_dir: &Path,
     budget: &AnalysisBudget,
 ) -> Result<Option<PathBuf>, crate::budget::LimitError> {
     budget.consume(Resource::Work, 1)?;
     match target {
-        serde_json::Value::String(text) => {
+        Ordered::String(text) => {
             let Some(relative) = text.strip_prefix("./") else {
                 return Ok(None);
             };
@@ -1325,7 +1415,7 @@ fn resolve_export_target(
                     .then_some(file),
             )
         },
-        serde_json::Value::Array(items) => {
+        Ordered::Array(items) => {
             for item in items {
                 if let Some(found) = resolve_export_target(item, star, package_dir, budget)? {
                     return Ok(Some(found));
@@ -1333,7 +1423,8 @@ fn resolve_export_target(
             }
             Ok(None)
         },
-        serde_json::Value::Object(conditions) => {
+        Ordered::Object(conditions) => {
+            // In written order, as TypeScript and Node try them.
             for (condition, value) in conditions {
                 if EXPORT_CONDITIONS.contains(&condition.as_str())
                     && let Some(found) = resolve_export_target(value, star, package_dir, budget)?
@@ -1343,9 +1434,7 @@ fn resolve_export_target(
             }
             Ok(None)
         },
-        serde_json::Value::Null | serde_json::Value::Bool(_) | serde_json::Value::Number(_) => {
-            Ok(None)
-        },
+        Ordered::Other => Ok(None),
     }
 }
 

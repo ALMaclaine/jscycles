@@ -277,6 +277,15 @@ mod spelling_tests {
         }
     }
 
+    #[cfg(not(windows))]
+    #[test]
+    fn only_absolute_windows_patterns_get_the_windows_form() {
+        // Off Windows a relative pattern is never rewritten, even one that
+        // looks like a drive.
+        assert_eq!(super::pattern_spelling("a:b/"), "a:b");
+        assert_eq!(super::pattern_spelling("/repo/x/"), "/repo/x");
+    }
+
     #[test]
     fn windows_paths_lose_verbatim_prefixes_and_gain_uppercase_drives() {
         let cases = [
