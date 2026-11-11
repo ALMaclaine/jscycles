@@ -353,7 +353,9 @@ fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_impo
     use jscycles::{ImportExtractor, ImportTarget, Workspace};
 
     let directory = tempfile::tempdir().expect("temporary directory");
-    let root = directory.path();
+    // Canonical, so macOS (`/var` -> `/private/var`) classifies like Linux.
+    let canonical = fs::canonicalize(directory.path()).expect("canonical root");
+    let root = canonical.as_path();
     fs::write(root.join("leaf.ts"), "export const leaf = 1;").expect("leaf source");
     let mut paths: Vec<_> = (0..1024)
         .map(|number| PathAlias {
@@ -384,7 +386,9 @@ fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_impo
     let workspace = Workspace {
         root: root.to_path_buf(),
         format: jscycles::workspace::WorkspaceFormat::Npm,
-        packages: [("known".to_owned(), root.to_path_buf())].into(),
+        // A sibling member: a package root at `root` would make `entry.ts`
+        // import its own package, which correctly resolves the file alias.
+        packages: [("known".to_owned(), root.join("packages/known"))].into(),
         aliases: std::collections::HashMap::new(),
     };
     let physical = fs::canonicalize(root.join("leaf.ts")).expect("canonical leaf");

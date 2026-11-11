@@ -778,19 +778,29 @@ mod tests {
         let discovery = PackageDiscovery::new(&config, &[], &[])
             .expect("test discovery should be created successfully");
 
+        // Real canonical directories: member roots are canonical, and a
+        // spelled `/repo` is not absolute on Windows.
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let root = std::fs::canonicalize(directory.path()).expect("canonical root");
+        let app = root.join("apps").join("app");
+        let lib = root.join("libs").join("lib");
+        for member in [&app, &lib] {
+            std::fs::create_dir_all(member).expect("member directory");
+        }
+
         let mut packages = HashMap::new();
-        let _ = packages.insert("@demo/app".to_owned(), PathBuf::from("/repo/apps/app"));
-        let _ = packages.insert("@demo/lib".to_owned(), PathBuf::from("/repo/libs/lib"));
+        let _ = packages.insert("@demo/app".to_owned(), app.clone());
+        let _ = packages.insert("@demo/lib".to_owned(), lib);
 
         let workspace = Workspace {
-            root: PathBuf::from("/repo"),
+            root: root.clone(),
             format: WorkspaceFormat::Pnpm,
             packages,
             aliases: HashMap::new(),
         };
 
         let discovered_packages =
-            discovery.discover_workspace_packages(&workspace, &[PathBuf::from("/repo/apps")]);
+            discovery.discover_workspace_packages(&workspace, &[root.join("apps")]);
 
         assert_eq!(
             discovered_packages.len(),
@@ -798,7 +808,7 @@ mod tests {
             "should only include packages under scan path"
         );
         assert_eq!(discovered_packages[0].name, "@demo/app");
-        assert_eq!(discovered_packages[0].path, PathBuf::from("/repo/apps/app"));
+        assert_eq!(discovered_packages[0].path, app);
     }
 
     #[test]

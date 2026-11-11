@@ -25,6 +25,7 @@ import collections
 import fnmatch
 import json
 import os
+import posixpath
 import random
 import re
 import shutil
@@ -191,12 +192,14 @@ def model(root: Path, resolver: Resolver) -> Expected:
         for absolute, pattern in patterns:
             # jscycles matches absolute patterns case-sensitively except for a
             # Windows drive letter.
-            spelled = os.path.normpath(str(directory))
-            if WINDOWS:
-                spelled, pattern = spelled[:1].upper() + spelled[1:], pattern[:1].upper() + pattern[1:]
-            if absolute and spelled == pattern:
-                return True
-            if not absolute and pattern != "." and fnmatch.fnmatchcase(relative, pattern):
+            if absolute:
+                spelled = os.path.normpath(str(directory))
+                if WINDOWS:
+                    spelled, pattern = spelled[:1].upper() + spelled[1:], pattern[:1].upper() + pattern[1:]
+                if spelled == pattern:
+                    return True
+                continue
+            if pattern != "." and fnmatch.fnmatchcase(relative, pattern):
                 return True
         return False
 
@@ -602,10 +605,11 @@ def generate(rng: random.Random, root: Path) -> dict[str, str]:
         ext = target[len(stem):]
         if stem.endswith("/index") and rng.random() < 0.5:
             stem = stem[: -len("/index")]
-            rel = os.path.relpath(stem, os.path.dirname(source) or ".")
+            rel = posixpath.relpath(stem, posixpath.dirname(source) or ".")
             rel = rel if rel.startswith(".") else "./" + rel
             return rel + rng.choice(["", "/"])
-        rel = os.path.relpath(stem, os.path.dirname(source) or ".")
+        # Specifiers are `/`-separated on every platform.
+        rel = posixpath.relpath(stem, posixpath.dirname(source) or ".")
         rel = rel if rel.startswith(".") else "./" + rel
         if rng.random() < 0.03:
             head, _, last = rel.rpartition("/")
@@ -869,9 +873,12 @@ def main() -> int:
     failures = 0
     signatures: dict[str, int] = {}
     with tempfile.TemporaryDirectory(prefix="jscycles-diff-") as scratch:
+        # Resolved: Windows runners spell TEMP with 8.3 names (RUNNER~1), and
+        # absolute selectors are compared lexically with the cwd.
+        scratch = Path(scratch).resolve()
         for case in range(args.cases):
             case_seed = seed + case
-            root = Path(scratch) / "case"
+            root = scratch / "case"
             files = generate(random.Random(case_seed), root)
             materialize(root, files)
             problems = compare(root, args.binary, resolver)
