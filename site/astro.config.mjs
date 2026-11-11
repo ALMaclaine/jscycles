@@ -15,6 +15,12 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'jscycles',
+      logo: {
+        light: './src/assets/wordmark-light.svg',
+        dark: './src/assets/wordmark-dark.svg',
+        alt: 'jscycles',
+        replacesTitle: true,
+      },
       description:
         'Find circular imports in JavaScript and TypeScript projects, between files and between the packages of a monorepo.',
       social: [{ icon: 'github', label: 'GitHub', href: repository }],

@@ -1,4 +1,9 @@
-# jscycles
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ALMaclaine/jscycles/main/site/src/assets/wordmark-dark.svg">
+    <img src="https://raw.githubusercontent.com/ALMaclaine/jscycles/main/site/src/assets/wordmark-light.svg" alt="jscycles" width="240">
+  </picture>
+</h1>
 
 [![CI](https://github.com/ALMaclaine/jscycles/actions/workflows/ci.yml/badge.svg)](https://github.com/ALMaclaine/jscycles/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/jscycles.svg)](https://crates.io/crates/jscycles)

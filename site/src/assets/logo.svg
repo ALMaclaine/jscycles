@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="jscycles graph icon">
+<defs><linearGradient id="loop" x1="0.15" y1="0.05" x2="0.87" y2="0.96" objectBoundingBox="true"><stop offset="0" stop-color="#FFB91D"/><stop offset="0.48" stop-color="#FF7D1B"/><stop offset="1" stop-color="#FE315E"/></linearGradient></defs>
+<path d="M 253 91 C 180 99 105 194 90 313 C 87 342 103 379 139 396 C 212 433 322 430 395 396 C 428 381 437 351 421 303 C 392 199 332 111 253 91 Z" fill="none" stroke="url(#loop)" stroke-width="38" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="253" cy="91" r="43" fill="#FFB31C"/>
+<circle cx="90" cy="351" r="47" fill="#FF8723"/>
+<circle cx="422" cy="351" r="47" fill="#FE315E"/>
+</svg>

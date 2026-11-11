@@ -1,12 +1,18 @@
-/* Starlight theme accents: a teal that reads in both light and dark. */
+/* Accents from the logo's orange-to-red gradient, with enough contrast for
+   text and buttons in each theme. */
 :root {
-  --sl-color-accent-low: #0b3a3a;
-  --sl-color-accent: #0f8a8a;
-  --sl-color-accent-high: #a6e8e4;
+  --sl-color-accent-low: #3d1608;
+  --sl-color-accent: #ff7d1b;
+  --sl-color-accent-high: #ffd3b0;
 }
 
 :root[data-theme='light'] {
-  --sl-color-accent-low: #c7f0ec;
-  --sl-color-accent: #0b7171;
-  --sl-color-accent-high: #063b3b;
+  --sl-color-accent-low: #ffe3d1;
+  --sl-color-accent: #c2410c;
+  --sl-color-accent-high: #5c1b05;
+}
+
+/* The wordmark has generous internal padding; let it fill the header. */
+.site-title img {
+  height: 2.5rem;
 }
