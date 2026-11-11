@@ -1,0 +1,78 @@
+---
+title: jscycles
+description: Find circular imports in JavaScript and TypeScript projects, between files within a package and between the packages of a monorepo.
+template: splash
+editUrl: false
+hero:
+  tagline: Find circular imports in JavaScript and TypeScript, between files and between the packages of a monorepo. One native binary, TypeScript-accurate resolution, 5 to 25 times faster than madge and dpdm.
+  actions:
+    - text: Get started
+      link: guides/install/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/ALMaclaine/jscycles
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Try it
+
+```sh
+npm install --save-dev jscycles
+npx jscycles
+```
+
+On a checkout of [ts-morph](https://github.com/dsherret/ts-morph):
+
+```text
+$ jscycles packages
+✓ No inter-package cycles
+
+✗ @ts-morph/common: 2 cycles
+  src/collections/SortedKeyValueArray.ts -> src/utils/index.ts -> … -> src/collections/SortedKeyValueArray.ts
+  src/typescript/index.ts -> src/typescript/tsInternal.ts -> src/typescript/index.ts
+
+✗ ts-morph: 3 cycles
+  …
+  src/Project.ts -> src/ProjectContext.ts -> src/Project.ts
+
+Summary: 3 packages, 2 with file cycles (5 total), 0 inter-package cycles
+```
+
+## Why jscycles
+
+<CardGrid>
+  <Card title="File and package cycles" icon="random">
+    Loops between files inside each package, and between the packages of an
+    npm, yarn, pnpm or bun workspace. One representative cycle per tangle, so
+    the report is a to-do list rather than thousands of overlapping loops.
+  </Card>
+  <Card title="Resolves like TypeScript" icon="seti:typescript">
+    Path aliases, `extends` chains through `node_modules`, declaration files,
+    and `.js` specifiers that point at `.ts` sources.
+  </Card>
+  <Card title="Never a false clean" icon="approve-check">
+    Exit status `0` means no cycles, `1` means cycles, `2` means the scan could
+    not finish. A file that cannot be parsed fails the scan instead of leaving
+    a hole in the graph.
+  </Card>
+  <Card title="Fast, with no runtime" icon="rocket">
+    A single Rust binary that parses with tree-sitter in parallel. Prebuilt for
+    Linux (static, Alpine too), macOS and Windows; nothing runs at install
+    time.
+  </Card>
+</CardGrid>
+
+## How it compares
+
+Median of five runs on an Apple M3 Pro, analyzing each repository's `packages`
+directory ([method](guides/comparison/#performance)):
+
+| Repository | Source files | jscycles 0.2.0 | madge 8.0.0 | dpdm 3.14.0 |
+| --- | ---: | ---: | ---: | ---: |
+| nest | 1,068 | **0.08 s** | 2.04 s | 0.86 s |
+| typeorm | 3,609 | **0.28 s** | 2.97 s | 1.48 s |
+| excalidraw | 631 | **0.11 s** | 2.63 s | 0.87 s |
+| ts-morph | 1,171 | **0.08 s** | 1.64 s | 0.83 s |

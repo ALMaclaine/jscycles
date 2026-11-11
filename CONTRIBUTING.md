@@ -73,6 +73,20 @@ behavior changes.
 - Add an entry under `Unreleased` in [CHANGELOG.md](CHANGELOG.md) for anything
   a user would notice.
 
+## Website
+
+The website in `site/` is published to GitHub Pages from `main` by
+`.github/workflows/site.yml`. Its Reference section is generated from
+`docs/*.md` (and the `--help` text in `README.md`) at build time, so edit
+those files, not the generated pages. With Node.js 22.23 or newer:
+
+```sh
+cd site
+npm ci --ignore-scripts
+npm run dev     # local preview with reload
+npm run check   # sync tests, build and internal link check, as CI runs
+```
+
 ## Repository layout
 
 | Path | Contents |
@@ -84,6 +98,7 @@ behavior changes.
 | `scripts/` | Repository checks, release tooling, benchmarks, differential tests |
 | `xtask/` | `cargo xtask` tasks |
 | `docs/` | User documentation |
+| `site/` | The website (Astro Starlight): landing page and guides; its Reference pages are generated from `docs/` |
 | `docs/maintainers/` | Architecture, threat model, release runbook, quality records |
 
 The project follows a pinned set of Rust engineering practices ("Rust-OE")

@@ -1,0 +1,12 @@
+/* Starlight theme accents: a teal that reads in both light and dark. */
+:root {
+  --sl-color-accent-low: #0b3a3a;
+  --sl-color-accent: #0f8a8a;
+  --sl-color-accent-high: #a6e8e4;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #c7f0ec;
+  --sl-color-accent: #0b7171;
+  --sl-color-accent-high: #063b3b;
+}

@@ -69,6 +69,12 @@ that snapshot; see the [verification record](evidence/rust-oe-linux-verification
       workflow `release.yml`), and set publishing access to require two-factor
       authentication and disallow tokens.
 
+Website: `.github/workflows/site.yml` builds `site/` on pull requests and
+deploys it to GitHub Pages on every push to `main` that changes `site/`,
+`docs/` or `README.md`; it is not tied to releases. One-time setup: in the
+repository's Settings → Pages, set Source to "GitHub Actions". A custom
+domain needs `site` changed (and `base` removed) in `site/astro.config.mjs`.
+
 These are unsigned build identity records. No SLSA level, trusted-builder
 attestation, byte-for-byte reproducibility, notarization or independent rebuild
 is claimed. Selecting one of those promises requires its own format/verifier,

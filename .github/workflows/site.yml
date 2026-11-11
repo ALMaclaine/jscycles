@@ -1,0 +1,59 @@
+name: Site
+
+# Builds the landing page and docs (site/, generated in part from docs/) on
+# every pull request that touches them, and deploys to GitHub Pages from main.
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "docs/**", "README.md", ".github/workflows/site.yml"]
+  pull_request:
+    branches: [main]
+    paths: ["site/**", "docs/**", "README.md", ".github/workflows/site.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24.22.1"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      # No dependency needs an install script (sharp is not used).
+      - run: npm ci --ignore-scripts
+      # Unit tests for the docs sync, the build, and an internal link check.
+      - run: npm run check
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: github.event_name != 'pull_request'
+        with:
+          path: site/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

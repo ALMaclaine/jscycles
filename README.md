@@ -7,6 +7,8 @@
 Find circular imports in JavaScript and TypeScript projects, between files
 within a package and between the packages of a monorepo.
 
+**Documentation: [almaclaine.github.io/jscycles](https://almaclaine.github.io/jscycles/)**
+
 jscycles is a single native binary. It parses every file with tree-sitter,
 resolves imports the way TypeScript does (path aliases, `extends`, declaration
 files, `.js` specifiers that point at `.ts` sources), and understands npm,
