@@ -295,9 +295,12 @@ fn configuration_loading_distinguishes_absence_errors_and_best_effort() {
         ["mjs"],
         "the compatibility loader must actually load valid settings"
     );
-    assert!(
+    // Unix reports ENOTDIR for a path beneath a file; Windows reports the
+    // path as not found, which is absence there.
+    assert_eq!(
         Config::try_load_or_default(&path.join("child")).is_err(),
-        "a non-directory prefix is an input error"
+        cfg!(unix),
+        "a non-directory prefix is an input error on Unix"
     );
     std::fs::write(&path, "defaults: [").expect("malformed config");
     assert!(
