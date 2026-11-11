@@ -172,11 +172,10 @@ impl Workspace {
         Ok(())
     }
 
-    fn discover_inner(
-        start: &Path,
-        budget: &AnalysisBudget,
-        membership: Membership,
-    ) -> Result<Option<Self>, WorkspaceError> {
+    /// The absolute directory an upward search starts from: a file operand
+    /// searches from its parent; anything else that is not a directory is an
+    /// error.
+    fn search_start(start: &Path, budget: &AnalysisBudget) -> Result<PathBuf, WorkspaceError> {
         let mut current = if start.is_absolute() {
             start.to_path_buf()
         } else {
@@ -203,6 +202,15 @@ impl Workspace {
                 ),
             });
         }
+        Ok(current)
+    }
+
+    fn discover_inner(
+        start: &Path,
+        budget: &AnalysisBudget,
+        membership: Membership,
+    ) -> Result<Option<Self>, WorkspaceError> {
+        let mut current = Self::search_start(start, budget)?;
 
         // Search upward. pnpm, then npm/yarn, then TypeScript `references` are
         // tried at each directory. A references project found first is only
@@ -1113,6 +1121,41 @@ mod tests {
     use std::fs;
 
     use tempfile::tempdir;
+
+    #[test]
+    fn search_starts_from_a_directory_or_a_files_parent() {
+        let temp = tempdir().expect("directory");
+        let file = temp.path().join("index.ts");
+        fs::write(&file, "").expect("file");
+        let budget = AnalysisBudget::default();
+        for start in [temp.path(), file.as_path()] {
+            assert_eq!(
+                Workspace::search_start(start, &budget).expect("search start"),
+                temp.path(),
+                "{start:?}"
+            );
+        }
+        let missing = temp.path().join("missing");
+        assert!(
+            matches!(
+                Workspace::search_start(&missing, &budget),
+                Err(WorkspaceError::Read { path, .. }) if path == missing
+            ),
+            "a missing start is a read error"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn search_rejects_a_start_that_is_neither_file_nor_directory() {
+        let start = Path::new("/dev/null");
+        let error = Workspace::search_start(start, &AnalysisBudget::default())
+            .expect_err("a device is not a search start");
+        assert!(
+            error.to_string().contains("/dev/null"),
+            "the error names the start: {error}"
+        );
+    }
 
     #[test]
     fn test_extract_package_name_simple() {

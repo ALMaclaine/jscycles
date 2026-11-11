@@ -893,6 +893,12 @@ def main() -> int:
             destination = args.output / f"seed-{case_seed}-{kind}"
             materialize(destination, small)
             (destination / "MISMATCH.txt").write_text("\n".join(compare(destination, args.binary, resolver)) + "\n")
+            # Uploaded artifacts flatten symlinks, so keep what jscycles saw.
+            report = subprocess.run([str(args.binary), "--json", *cli_args(case_args(destination))], cwd=destination,
+                                    capture_output=True, text=True, timeout=60)
+            (destination / "REPORT.txt").write_text(f"exit {report.returncode}\n{report.stdout}{report.stderr}")
+            (destination / "LINKS.txt").write_text("".join(f"{path.relative_to(destination)} -> {os.readlink(path)}\n"
+                                                           for path in sorted(destination.rglob("*")) if path.is_symlink()))
             print(f"case {case} seed {case_seed}: {problems[0]} -> {destination}", flush=True)
             if failures >= args.max_failures:
                 break

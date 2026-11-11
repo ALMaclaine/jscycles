@@ -742,8 +742,24 @@ impl TsConfig {
     }
 
     /// Resolve replacement paths relative to `base_url`.
+    ///
+    /// A trailing separator makes a replacement a directory. Joining onto a
+    /// Windows verbatim (`\\?\`) base normalizes the pushed path and drops
+    /// that separator, so it is restored here.
     fn resolve_replacements(replacements: Vec<String>, base_url: &Path) -> Vec<PathBuf> {
-        replacements.into_iter().map(|r| base_url.join(r)).collect()
+        replacements
+            .into_iter()
+            .map(|replacement| {
+                let joined = base_url.join(&replacement);
+                if ends_with_separator(Path::new(&replacement)) && !ends_with_separator(&joined) {
+                    let mut spelled = joined.into_os_string();
+                    spelled.push(std::path::MAIN_SEPARATOR_STR);
+                    PathBuf::from(spelled)
+                } else {
+                    joined
+                }
+            })
+            .collect()
     }
 
     /// Discover tsconfig.json by searching from the given directory upward.
@@ -1542,6 +1558,29 @@ mod tests {
         let (prefix, has_wildcard) = TsConfig::parse_pattern("exact/path");
         assert_eq!(prefix, "exact/path", "prefix should be exact/path");
         assert!(!has_wildcard, "should not detect wildcard");
+    }
+
+    #[test]
+    fn directory_replacements_keep_their_trailing_separator() {
+        let bases = if cfg!(windows) {
+            vec![
+                PathBuf::from(r"C:\project"),
+                PathBuf::from(r"\\?\C:\project"),
+            ]
+        } else {
+            vec![PathBuf::from("/project")]
+        };
+        for base_url in bases {
+            let resolved = TsConfig::resolve_replacements(
+                vec!["src/*/".to_owned(), "lib/".to_owned(), "src/*".to_owned()],
+                &base_url,
+            );
+            let directories: Vec<_> = resolved
+                .iter()
+                .map(|path| ends_with_separator(path))
+                .collect();
+            assert_eq!(directories, [true, true, false], "{resolved:?}");
+        }
     }
 
     #[test]

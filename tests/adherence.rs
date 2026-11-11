@@ -432,17 +432,17 @@ fn infallible_legacy_workspace_selection_does_not_return_budget_truncation() {
     budget
         .consume(Resource::Work, remaining)
         .expect("exact work quota");
+    // Real canonical directories: a spelled `/project` is not absolute on Windows.
+    let temp = tempfile::tempdir().expect("directory");
+    let project = fs::canonicalize(temp.path()).expect("canonical root");
+    fs::create_dir(project.join("a")).expect("member directory");
     let workspace = jscycles::Workspace {
-        root: Path::new("/project").to_path_buf(),
+        root: project.clone(),
         format: jscycles::WorkspaceFormat::Npm,
-        packages: std::collections::HashMap::from([(
-            "a".to_owned(),
-            Path::new("/project/a").to_path_buf(),
-        )]),
+        packages: std::collections::HashMap::from([("a".to_owned(), project.join("a"))]),
         aliases: std::collections::HashMap::default(),
     };
-    let selected =
-        discovery.discover_workspace_packages(&workspace, &[Path::new("/project").to_path_buf()]);
+    let selected = discovery.discover_workspace_packages(&workspace, &[project]);
     assert_eq!(
         selected.len(),
         1,
@@ -711,6 +711,12 @@ fn tsconfig_array_extends_applies_entries_in_order() {
         Some(2),
         "a missing array entry is a strict --tsconfig error"
     );
+}
+
+/// Report text with `/` separators: Windows prints native `\` paths, escaped
+/// as `\\` in JSON.
+fn slashes(text: &str) -> String {
+    text.replace(r"\\", "/").replace('\\', "/")
 }
 
 fn status(root: &Path, args: &[&str]) -> Option<i32> {
@@ -985,18 +991,20 @@ fn references_project_inside_an_unrelated_npm_workspace_keeps_its_packages() {
 
 #[test]
 fn dot_slash_and_absolute_exclude_and_ignore_patterns_still_apply() {
-    let temp = tempfile::tempdir().expect("directory");
+    // Absolute patterns are compared lexically with the cwd, so run from a
+    // canonical spelling: macOS temp is `/var` -> `/private/var`, and Windows
+    // runners spell TEMP with 8.3 names (`RUNNER~1`).
+    let canonical = fs::canonicalize(std::env::temp_dir()).expect("canonical temp");
+    let canonical = canonical.to_str().expect("UTF-8 path");
+    let base = canonical.strip_prefix(r"\\?\").unwrap_or(canonical);
+    let temp = tempfile::tempdir_in(base).expect("directory");
     cycle(&temp.path().join("apps/legacy"));
     fs::write(
         temp.path().join("apps/legacy/package.json"),
         r#"{"name":"legacy"}"#,
     )
     .expect("manifest");
-    let absolute = temp
-        .path()
-        .canonicalize()
-        .expect("canonical root")
-        .join("apps/legacy");
+    let absolute = temp.path().join("apps/legacy");
     let absolute = absolute.to_str().expect("UTF-8 path").replace('\\', "/");
     for exclude in ["./apps/legacy", absolute.as_str()] {
         fs::write(
@@ -1318,7 +1326,7 @@ fn each_file_belongs_to_its_nearest_package() {
     ] {
         let output = scan(root, args);
         assert_eq!(output.status.code(), Some(1), "{args:?}");
-        let json = String::from_utf8(output.stdout).expect("utf-8");
+        let json = slashes(&String::from_utf8(output.stdout).expect("utf-8"));
         assert_eq!(
             json.matches("x.ts").count(),
             2,
@@ -1523,7 +1531,7 @@ fn declaration_files_resolve_in_typescript_order() {
     write(root, "lib/b/index.js", "export {};");
     let output = scan(root, &["--inner", "--json"]);
     assert_eq!(output.status.code(), Some(1));
-    let json = String::from_utf8(output.stdout).expect("utf-8");
+    let json = slashes(&String::from_utf8(output.stdout).expect("utf-8"));
     assert!(json.contains("lib/b/index.d.ts"), "{json}");
     // A source file still wins over its declaration.
     write(root, "lib/a.ts", "export const a = 1;");
@@ -1704,7 +1712,7 @@ fn workspace_aliases_into_a_nested_non_member_stay_file_aliases() {
     );
     for args in [&[][..], &["--inner"]] {
         let output = scan(root, args);
-        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stdout = slashes(&String::from_utf8_lossy(&output.stdout));
         assert_eq!(output.status.code(), Some(1), "{args:?}: {stdout}");
         assert!(
             stdout.contains("src/f.ts -> src/f.ts"),
