@@ -22,10 +22,10 @@ fn write(root: &Path, relative: &str, contents: &str) {
 /// `a/src` (via a tsconfig alias), `a/src/legacy` and `b`.
 fn fixture() -> (tempfile::TempDir, std::path::PathBuf) {
     let temp = tempfile::tempdir().expect("directory");
-    let root = fs::canonicalize(temp.path()).expect("canonical root");
+    let canonical = fs::canonicalize(temp.path()).expect("canonical root");
     // Users spell `C:\x`, not the verbatim `\\?\C:\x` canonical form, in
     // which Windows rejects the `/` these spellings append.
-    let spelled = root.to_str().expect("UTF-8 path");
+    let spelled = canonical.to_str().expect("UTF-8 path");
     let root = std::path::PathBuf::from(spelled.strip_prefix(r"\\?\").unwrap_or(spelled));
     write(
         &root,
