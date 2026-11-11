@@ -1326,6 +1326,33 @@ impl<'de> Deserialize<'de> for Ordered {
     }
 }
 
+#[cfg(test)]
+mod ordered_tests {
+    use super::Ordered;
+    use serde::Deserialize;
+    use serde::de::value::{BytesDeserializer, Error};
+
+    #[test]
+    fn keeps_written_key_order_and_names_what_it_expects() {
+        let value: Ordered =
+            serde_json::from_str(r#"{"b": 1, "a": ["x"], "b": "y"}"#).expect("valid JSON");
+        assert_eq!(
+            value,
+            Ordered::Object(vec![
+                ("b".to_owned(), Ordered::String("y".to_owned())),
+                (
+                    "a".to_owned(),
+                    Ordered::Array(vec![Ordered::String("x".to_owned())])
+                ),
+            ])
+        );
+        // JSON never yields bytes; another deserializer reaches `expecting`.
+        let error = Ordered::deserialize(BytesDeserializer::<Error>::new(b"x"))
+            .expect_err("bytes are not a JSON value");
+        assert!(error.to_string().contains("a JSON value"), "{error}");
+    }
+}
+
 /// The `package.json` fields config lookup reads.
 #[derive(Deserialize)]
 struct InstalledManifest {

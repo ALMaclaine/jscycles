@@ -95,8 +95,16 @@ and the second also revealed that condition maps were tried in serde_json's
 sorted key order rather than written order, now fixed with an order-preserving
 reader; a third test pass found and closed bare condition maps. Two are
 equivalent and recorded in `.cargo/mutants.toml` with their reasons. The full
-899-mutant campaign was interrupted at 698 (none missed) when the disk filled
-and has not been rerun on the final tree.
+campaign then ran on the release tree (macOS, cargo-mutants 27.1.0): 970
+mutants in 43 minutes, 800 caught, 157 unviable, 13 reviewed timeouts, none
+missed; `scripts/mutation.py` reported "Mutation review passed". Two earlier
+attempts failed and are not counted. In the first, debug builds on macOS left
+each mutant's codegen-unit objects in the shared scratch `deps/` directory
+(759,209 files after about 770 mutants), until listing it stalled rustc past
+the 180-second build timeout; the script now builds mutants without debug
+info. The second missed the order-preserving reader's `expecting` message,
+unreachable through JSON, now tested directly with a bytes deserializer. Only
+`cargo fmt` whitespace in that test changed after the passing campaign.
 Uncompilable mutants remain separately
 reported. Generated campaign manifests bind source/test/config hashes; the static
 [review policy](../../.cargo/mutation-review.json) retains exact reviewed timeout diffs. Only reproduced

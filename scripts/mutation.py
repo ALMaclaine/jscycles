@@ -17,6 +17,13 @@ import subprocess
 import tomllib
 
 CARGO_BUILD_JOBS = 2
+# Every mutant rebuilds the crate in one shared scratch target directory. With
+# debug info on, macOS keeps each build's codegen-unit objects in deps/ (the
+# unpacked split-debuginfo default), so hundreds of thousands of stale files
+# pile up until listing the directory stalls rustc past the build timeout.
+# Mutation outcomes do not depend on debug info.
+CARGO_ARGS = ["-C", "--locked", "-C", f"--jobs={CARGO_BUILD_JOBS}",
+              "-C", "--config=profile.dev.debug=0"]
 
 
 def digest(path):
@@ -194,8 +201,7 @@ def retry_unknown_timeouts(project, output, policy):
         selection, destination = retry_selection(project, output, item)
         result = subprocess.run([
             *selection, "--test-tool", "cargo", "--jobs", "1", "--timeout", "60",
-            "--build-timeout", "180", "--output", str(destination), "-C", "--locked",
-            "-C", f"--jobs={CARGO_BUILD_JOBS}",
+            "--build-timeout", "180", "--output", str(destination), *CARGO_ARGS,
         ], cwd=project, check=False)
         if result.returncode != 0 or not verified_retry(output, item):
             raise ValueError(f"mutation timeout remains unresolved: {name}")
@@ -278,6 +284,7 @@ def run_campaign(project, args, execution=None):
         # Mutant workers each launch Cargo. Bound their nested compilation too,
         # rather than multiplying the host's automatic compiler parallelism.
         policy["cargo_build_jobs"] = CARGO_BUILD_JOBS
+        policy["cargo_args"] = CARGO_ARGS
         actual = subprocess.check_output(["cargo", "mutants", "--version"], cwd=project, text=True, timeout=30).strip()
         if actual != policy["tool"]:
             raise ValueError(f"expected {policy['tool']}, got {actual}")
@@ -304,7 +311,7 @@ def run_campaign(project, args, execution=None):
         result = subprocess.run([
             "cargo", "mutants", *files,
             "--test-tool", "cargo", "--jobs", "2", "--timeout", "60", "--build-timeout", "180",
-            "--output", str(destination), "-C", "--locked", "-C", f"--jobs={CARGO_BUILD_JOBS}",
+            "--output", str(destination), *CARGO_ARGS,
         ], cwd=project, check=False)
         if (output / "outcomes.json").exists():
             pending.replace(output / "campaign.json")
