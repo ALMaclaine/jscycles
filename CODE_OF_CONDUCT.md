@@ -5,7 +5,7 @@ This project follows the
 Everyone taking part in issues, pull requests and discussions is expected to
 follow it.
 
-To report unacceptable behavior, contact the maintainer privately at the
-email address on the [@ALMaclaine GitHub profile](https://github.com/ALMaclaine).
+To report unacceptable behavior, email the maintainer privately at
+[almaclaine@gmail.com](mailto:almaclaine@gmail.com).
 Reports are handled confidentially, and the maintainer may remove, edit or
 reject contributions and block participants that violate the code of conduct.
