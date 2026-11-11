@@ -72,7 +72,8 @@ fn outcome(root: &Path, args: &[&str]) -> (Option<i32>, String) {
         })
         .collect();
     packages.sort();
-    (status, packages.join("\n"))
+    // Expectations use `/`; Windows reports native `\` (escaped in JSON).
+    (status, packages.join("\n").replace(r"\\", "/"))
 }
 
 fn assert_same(root: &Path, label: &str, spellings: &[Vec<String>], expect: impl Fn(&str) -> bool) {
