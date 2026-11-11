@@ -11,6 +11,15 @@ use serde::Serialize;
 use crate::cycles::{Cycle, PackageCycle, PackageCycleWithFiles};
 use crate::terminal::label;
 
+/// A cycle member relative to its package, or, outside it (a link target),
+/// absolute without the Windows verbatim `\\?\` prefix of canonical paths.
+fn display_path(path: &std::path::Path, base_path: &std::path::Path) -> PathBuf {
+    path.strip_prefix(base_path).map_or_else(
+        |_| crate::input::absolute_form(path),
+        std::path::Path::to_path_buf,
+    )
+}
+
 /// Results for a single package.
 #[derive(Debug, Clone)]
 pub struct PackageResult {
@@ -212,7 +221,7 @@ impl HumanFormatter {
         cycle
             .path
             .iter()
-            .map(|p| label(&p.strip_prefix(base_path).unwrap_or(p).to_string_lossy()))
+            .map(|p| label(&display_path(p, base_path).to_string_lossy()))
             .collect::<Vec<_>>()
             .join(" -> ")
     }
@@ -573,12 +582,7 @@ impl JsonFormatter {
         cycle
             .path
             .iter()
-            .map(|path| {
-                path.strip_prefix(base_path)
-                    .unwrap_or(path)
-                    .to_string_lossy()
-                    .to_string()
-            })
+            .map(|path| display_path(path, base_path).to_string_lossy().into_owned())
             .collect()
     }
 
@@ -755,6 +759,34 @@ impl UnifiedOutputFormatter for JsonFormatter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cycle_members_outside_the_package_are_shown_absolute_in_user_form() {
+        let (base, inside, outside, shown) = if cfg!(windows) {
+            (
+                r"\\?\C:\repo\a",
+                r"\\?\C:\repo\a\x.ts",
+                r"\\?\C:\repo\lib\y.ts",
+                r"C:\repo\lib\y.ts",
+            )
+        } else {
+            (
+                "/repo/a",
+                "/repo/a/x.ts",
+                "/repo/lib/y.ts",
+                "/repo/lib/y.ts",
+            )
+        };
+        let base = std::path::Path::new(base);
+        assert_eq!(
+            display_path(std::path::Path::new(inside), base),
+            PathBuf::from("x.ts")
+        );
+        assert_eq!(
+            display_path(std::path::Path::new(outside), base),
+            PathBuf::from(shown)
+        );
+    }
 
     #[test]
     fn human_reports_expose_every_bidi_control_and_unicode_line_separator() {

@@ -63,6 +63,10 @@ results on the same repository, and compare before relying on them in CI.
   index file; a sibling `dir.ts` no longer creates invented cycles.
 - File symlinks are analyzed once, by the package that owns their target.
 - Workspace globs and include roots spelled with `./` no longer match nothing.
+- Windows: a `paths` target ending in `/` (`"@x/*": ["src/*/"]`) resolves the
+  directory's index, not a sibling `<dir>.ts`.
+- Windows: cycle members outside their package are shown as `C:\...`, not
+  with the internal `\\?\` prefix.
 
 ## [0.1.1] - 2026-03-26
 

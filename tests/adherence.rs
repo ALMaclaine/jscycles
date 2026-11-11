@@ -1350,12 +1350,12 @@ fn each_file_belongs_to_its_nearest_package() {
     ] {
         let output = scan(root, args);
         assert_eq!(output.status.code(), Some(1), "{args:?}");
-        let json = String::from_utf8(output.stdout).expect("utf-8");
+        let json = slashes(&String::from_utf8(output.stdout).expect("utf-8"));
         assert!(!json.contains("x.ts"), "{args:?}: {json}");
         assert!(json.contains("src/p.ts"), "{args:?}: {json}");
     }
     let output = scan(root, &["--inner", "--json", "--only", "a"]);
-    let json = String::from_utf8(output.stdout).expect("utf-8");
+    let json = slashes(&String::from_utf8(output.stdout).expect("utf-8"));
     assert!(
         json.contains("x.ts") && !json.contains("src/p.ts"),
         "{json}"
