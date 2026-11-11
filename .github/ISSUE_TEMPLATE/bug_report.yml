@@ -1,0 +1,45 @@
+name: Bug report
+description: A wrong result, a crash, or an error you did not expect
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. A tiny project that reproduces the problem is the most helpful thing you can include.
+        Security problems: please use a private advisory instead (see SECURITY.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what jscycles printed (with the exit status), and what you expected.
+      placeholder: |
+        $ jscycles packages/app; echo $?
+        ...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The smallest set of files that shows it (file names and contents, package.json, tsconfig.json, jscycles.yaml), or a link to a repository and commit.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: jscycles version
+      description: Output of `jscycles --version`
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: macOS 15 arm64, Ubuntu 24.04 x86-64, Windows 11 ...
+    validations:
+      required: true
+  - type: textarea
+    id: other
+    attributes:
+      label: Other tools
+      description: If TypeScript, your bundler or another cycle detector treats this differently, say which one and how.

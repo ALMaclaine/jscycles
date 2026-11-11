@@ -1,0 +1,804 @@
+{
+  "schema": 2,
+  "source": "cargo +1.98.1 metadata --format-version 1 --all-features --locked",
+  "scope": "All-target-condition locked metadata, not an executed-code or source audit",
+  "resolved_packages": 134,
+  "manifest": "Cargo.toml",
+  "manifest_sha256": "3210b848501d274b57a868c4c980502c22997c08ccf7bfccd11ace2aa7279023",
+  "lock": "Cargo.lock",
+  "lock_sha256": "df2352e6426a6662b894b5af1a5338755d96a1c698d66ef78200c2b063c50bcc",
+  "executable_build_inputs": [
+    {
+      "name": "crossbeam-epoch",
+      "version": "0.9.20",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "2d6914041f254d6e9176c01941b21115dcfb7089e55135a35411081bd106ef3f",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "alloc",
+        "std"
+      ]
+    },
+    {
+      "name": "crossbeam-utils",
+      "version": "0.8.21",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "encoding_rs",
+      "version": "0.8.44",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "89253175e704ab869b04f9db224d38630e0211a53841a79181deae0889e169f5",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "alloc",
+        "default"
+      ]
+    },
+    {
+      "name": "getrandom",
+      "version": "0.3.4",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "hotpath",
+      "version": "0.28.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "e2ee4f8d17ebe2400fa845f079acf9ede235be6472512876779af45f7890f934",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "hotpath",
+        "json"
+      ]
+    },
+    {
+      "name": "hotpath-macros",
+      "version": "0.28.7",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "23148960ea4f4f2d93970cbc865dc8adfd7e065de68b6a3bdda776d900541a09",
+      "kinds": [
+        "proc-macro"
+      ],
+      "features": [
+        "default",
+        "hotpath"
+      ]
+    },
+    {
+      "name": "libc",
+      "version": "0.2.179",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "c5a2d376baa530d1238d133232d15e239abad80d05838b4b59354e5268af431f",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "multiversion_no_op",
+      "version": "1.0.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d",
+      "kinds": [
+        "proc-macro"
+      ],
+      "features": []
+    },
+    {
+      "name": "num-traits",
+      "version": "0.2.19",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "proc-macro2",
+      "version": "1.0.105",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "535d180e0ecab6268a3e718bb9fd44db66bbbc256257165fc699dadf70d16fe7",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "default",
+        "proc-macro"
+      ]
+    },
+    {
+      "name": "quote",
+      "version": "1.0.43",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "dc74d9a594b72ae6656596548f56f667211f8a97b3d4c3d467150794690dc40a",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "default",
+        "proc-macro"
+      ]
+    },
+    {
+      "name": "rayon-core",
+      "version": "1.13.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "rustix",
+      "version": "1.1.3",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "146c9e247ccc180c1f61615433868c99f3de3ae256a30a43b49f67c2d9171f34",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "alloc",
+        "default",
+        "fs",
+        "std"
+      ]
+    },
+    {
+      "name": "rustversion",
+      "version": "1.0.22",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d",
+      "kinds": [
+        "custom-build",
+        "proc-macro"
+      ],
+      "features": []
+    },
+    {
+      "name": "serde",
+      "version": "1.0.228",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "default",
+        "derive",
+        "serde_derive",
+        "std"
+      ]
+    },
+    {
+      "name": "serde_core",
+      "version": "1.0.228",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "alloc",
+        "default",
+        "result",
+        "std"
+      ]
+    },
+    {
+      "name": "serde_derive",
+      "version": "1.0.228",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79",
+      "kinds": [
+        "proc-macro"
+      ],
+      "features": [
+        "default"
+      ]
+    },
+    {
+      "name": "serde_json",
+      "version": "1.0.154",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "alloc",
+        "default",
+        "indexmap",
+        "preserve_order",
+        "std"
+      ]
+    },
+    {
+      "name": "thiserror",
+      "version": "2.0.17",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "thiserror-impl",
+      "version": "2.0.17",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913",
+      "kinds": [
+        "proc-macro"
+      ],
+      "features": []
+    },
+    {
+      "name": "time-macros",
+      "version": "0.2.32",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "7e689342a48d2ea927c87ea50cabf8594854bf940e9310208848d680d668ed85",
+      "kinds": [
+        "proc-macro"
+      ],
+      "features": [
+        "formatting",
+        "parsing",
+        "serde"
+      ]
+    },
+    {
+      "name": "tree-sitter-language",
+      "version": "0.1.9",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "d0af592be68c579aa78a16846bd19422978c3c52e438523d45ff5d1bff1f9d4a",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "wasm-bindgen",
+      "version": "0.2.106",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "0d759f433fa64a2d763d1340820e46e111a7a5ab75f993d1852d70b03dbb80fd",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "std"
+      ]
+    },
+    {
+      "name": "wasm-bindgen-macro",
+      "version": "0.2.106",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "48cb0d2638f8baedbc542ed444afc0644a29166f1595371af4fecf8ce1e7eeb3",
+      "kinds": [
+        "proc-macro"
+      ],
+      "features": []
+    },
+    {
+      "name": "wasm-bindgen-shared",
+      "version": "0.2.106",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "cbc538057e648b67f72a982e708d485b2efa771e1ac05fec311f9f63e5800db4",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "willbooster-tree-sitter",
+      "version": "18.0.2",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "4850b82f5c0c650c41bc1497b6ef2f5ebb88be7c1656772dc79e69bf2de9c9a2",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "default",
+        "std"
+      ]
+    },
+    {
+      "name": "willbooster-tree-sitter-javascript",
+      "version": "22.0.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "1509fcae81aebd53f005ca3c09a21c76ddd6c76ad581715f1d1f1a96d969f7e4",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "willbooster-tree-sitter-typescript",
+      "version": "26.0.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "dbef52d0170029359e86ccb526480ca67804e30f09c309c706171e9928299fcc",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "winapi",
+      "version": "0.3.9",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": [
+        "profileapi"
+      ]
+    },
+    {
+      "name": "winapi-i686-pc-windows-gnu",
+      "version": "0.4.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "winapi-x86_64-pc-windows-gnu",
+      "version": "0.4.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.52.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "32a4622180e7a0ec044bb555404c800bc9fd9ec262ec147edd5989ccd0c02cd3",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "windows_aarch64_msvc",
+      "version": "0.52.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "09ec2a7bb152e2252b53fa7803150007879548bc709c039df7627cabbd05d469",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "windows_i686_gnu",
+      "version": "0.52.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "8e9b5ad5ab802e97eb8e295ac6720e509ee4c243f69d781394014ebfe8bbfa0b",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "windows_i686_gnullvm",
+      "version": "0.52.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "0eee52d38c090b3caa76c563b86c3a4bd71ef1a819287c19d586d7334ae8ed66",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "windows_i686_msvc",
+      "version": "0.52.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "240948bc05c5e7c6dabba28bf89d89ffce3e303022809e73deaefe4f6ec56c66",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "windows_x86_64_gnu",
+      "version": "0.52.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "147a5c80aabfbf0c7d901cb5895d1de30ef2907eb21fbbab29ca94c5b08b1a78",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.52.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "24d5b23dc417412679681396f2b49f3de8c1473deb516bd34410872eff51ed0d",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "windows_x86_64_msvc",
+      "version": "0.52.6",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "wit-bindgen",
+      "version": "0.46.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    },
+    {
+      "name": "xshell-macros",
+      "version": "0.2.7",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "32ac00cd3f8ec9c1d33fb3e7958a82df6989c42d747bd326c822b1d625283547",
+      "kinds": [
+        "proc-macro"
+      ],
+      "features": []
+    },
+    {
+      "name": "zmij",
+      "version": "1.0.12",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "2fc5a66a20078bf1251bde995aa2fdcc4b800c70b5d92dd2c62abc5c60f679f8",
+      "kinds": [
+        "custom-build"
+      ],
+      "features": []
+    }
+  ],
+  "fuzz_workspace": {
+    "source": "cargo +1.98.1 metadata --format-version 1 --all-features --locked --manifest-path fuzz/Cargo.toml",
+    "resolved_packages": 78,
+    "manifest": "fuzz/Cargo.toml",
+    "manifest_sha256": "95110a9d57cc751a4c12240d1df93c3851209ae069ba0ae0b6d479897b44fd8f",
+    "lock": "fuzz/Cargo.lock",
+    "lock_sha256": "35d220a368c2bdc6f4c9e5560846d6d39353876194265f828b7579fa61aaea20",
+    "executable_build_inputs": [
+      {
+        "name": "crossbeam-deque",
+        "version": "0.8.8",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "622f3fc73690be383c7214310406f28a90e6edeadc3cea882f9d71e495b9711a",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "std"
+        ]
+      },
+      {
+        "name": "crossbeam-epoch",
+        "version": "0.9.21",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "dc74980687109a3b14c72fd458107bf0baa1da1a1a805e178d15501ba9b86d9d",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "alloc",
+          "std"
+        ]
+      },
+      {
+        "name": "crossbeam-utils",
+        "version": "0.8.23",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "a31eee39dddec8330830986fcd7625edb5a24ec90ea038215273bbc3adb08ac6",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "std"
+        ]
+      },
+      {
+        "name": "encoding_rs",
+        "version": "0.8.44",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "89253175e704ab869b04f9db224d38630e0211a53841a79181deae0889e169f5",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "alloc",
+          "default"
+        ]
+      },
+      {
+        "name": "getrandom",
+        "version": "0.4.3",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "std"
+        ]
+      },
+      {
+        "name": "libc",
+        "version": "0.2.191",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "std"
+        ]
+      },
+      {
+        "name": "libfuzzer-sys",
+        "version": "0.4.13",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "a9fd2f41a1cba099f79a0b6b6c35656cf7c03351a7bae8ff0f28f25270f929d2",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "link_libfuzzer"
+        ]
+      },
+      {
+        "name": "multiversion_no_op",
+        "version": "1.0.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d",
+        "kinds": [
+          "proc-macro"
+        ],
+        "features": []
+      },
+      {
+        "name": "num-traits",
+        "version": "0.2.19",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "std"
+        ]
+      },
+      {
+        "name": "proc-macro2",
+        "version": "1.0.107",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "proc-macro"
+        ]
+      },
+      {
+        "name": "quote",
+        "version": "1.0.47",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "proc-macro"
+        ]
+      },
+      {
+        "name": "rayon-core",
+        "version": "1.13.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": []
+      },
+      {
+        "name": "rustversion",
+        "version": "1.0.23",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f",
+        "kinds": [
+          "custom-build",
+          "proc-macro"
+        ],
+        "features": []
+      },
+      {
+        "name": "serde",
+        "version": "1.0.229",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "derive",
+          "serde_derive",
+          "std"
+        ]
+      },
+      {
+        "name": "serde_core",
+        "version": "1.0.229",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "alloc",
+          "default",
+          "result",
+          "std"
+        ]
+      },
+      {
+        "name": "serde_derive",
+        "version": "1.0.229",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348",
+        "kinds": [
+          "proc-macro"
+        ],
+        "features": [
+          "default"
+        ]
+      },
+      {
+        "name": "serde_json",
+        "version": "1.0.154",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "alloc",
+          "default",
+          "indexmap",
+          "preserve_order",
+          "std"
+        ]
+      },
+      {
+        "name": "thiserror",
+        "version": "2.0.21",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "09e52cb86a36cede5cb101bf8908837b3e4c6e5e59fe7fd85c23fb56200d189e",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "std"
+        ]
+      },
+      {
+        "name": "thiserror-impl",
+        "version": "2.0.21",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524",
+        "kinds": [
+          "proc-macro"
+        ],
+        "features": []
+      },
+      {
+        "name": "tree-sitter-language",
+        "version": "0.1.9",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "d0af592be68c579aa78a16846bd19422978c3c52e438523d45ff5d1bff1f9d4a",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": []
+      },
+      {
+        "name": "willbooster-tree-sitter",
+        "version": "18.0.2",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "4850b82f5c0c650c41bc1497b6ef2f5ebb88be7c1656772dc79e69bf2de9c9a2",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": [
+          "default",
+          "std"
+        ]
+      },
+      {
+        "name": "willbooster-tree-sitter-javascript",
+        "version": "22.0.1",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "1509fcae81aebd53f005ca3c09a21c76ddd6c76ad581715f1d1f1a96d969f7e4",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": []
+      },
+      {
+        "name": "willbooster-tree-sitter-typescript",
+        "version": "26.0.1",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "dbef52d0170029359e86ccb526480ca67804e30f09c309c706171e9928299fcc",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": []
+      },
+      {
+        "name": "zmij",
+        "version": "1.0.23",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b",
+        "kinds": [
+          "custom-build"
+        ],
+        "features": []
+      }
+    ],
+    "policy": "../deny.toml",
+    "exceptions": "fuzz/deny.exceptions.toml",
+    "exceptions_sha256": "cbacb7b79cc16284060a62db0084c9fd46a630db4da70a2cfd476e2cc2543b74"
+  }
+}

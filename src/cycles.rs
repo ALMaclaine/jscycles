@@ -1,45 +1,14 @@
 //! Cycle detection using Tarjan's strongly connected components algorithm.
 //!
-//! Finds all circular dependencies in both file-level and package-level graphs.
+//! Reports representative file cycles and elementary workspace-package cycles.
 
-use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::convert::Infallible;
+use std::path::PathBuf;
 
+use crate::analysis::{self, Indexed, PackageAnalysis};
+use crate::budget::{AnalysisBudget, LimitError, Meter, Resource, Unbounded, units};
 use crate::graph::{DependencyGraph, EdgeEvidence, PackageDependencyGraph};
-
-/// State container for Tarjan's algorithm.
-///
-/// Encapsulates all mutable state needed during the algorithm execution,
-/// reducing parameter count in recursive calls.
-struct TarjanState {
-    /// Current index counter for node discovery.
-    index_counter: usize,
-    /// Stack of nodes in the current DFS path.
-    stack: Vec<PathBuf>,
-    /// Set of nodes currently on the stack (for O(1) lookup).
-    on_stack: HashSet<PathBuf>,
-    /// Discovery index for each node.
-    index: HashMap<PathBuf, usize>,
-    /// Lowest reachable index for each node.
-    lowlink: HashMap<PathBuf, usize>,
-    /// Collected strongly connected components.
-    sccs: Vec<Vec<PathBuf>>,
-}
-
-impl TarjanState {
-    /// Create a new empty state.
-    #[inline]
-    fn new() -> Self {
-        Self {
-            index_counter: 0,
-            stack: Vec::new(),
-            on_stack: HashSet::new(),
-            index: HashMap::new(),
-            lowlink: HashMap::new(),
-            sccs: Vec::new(),
-        }
-    }
-}
+use crate::imports::{Import, ImportTarget};
 
 /// A circular dependency cycle.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,13 +21,15 @@ pub struct Cycle {
 impl Cycle {
     /// Create a new cycle from a path.
     #[inline]
-    pub fn new(path: Vec<PathBuf>) -> Self {
+    #[must_use]
+    pub const fn new(path: Vec<PathBuf>) -> Self {
         Self { path }
     }
 
     /// Get the length of the cycle (excluding the repeated first element).
     #[inline]
-    pub fn len(&self) -> usize {
+    #[must_use]
+    pub const fn len(&self) -> usize {
         if self.path.is_empty() {
             0
         } else {
@@ -68,7 +39,8 @@ impl Cycle {
 
     /// Check if the cycle is empty.
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
         self.path.is_empty()
     }
 }
@@ -77,235 +49,49 @@ impl Cycle {
 pub struct CycleDetector;
 
 impl CycleDetector {
-    /// Find all cycles in the dependency graph.
-    #[inline]
+    /// Return one deterministic representative per cyclic SCC without recursive traversal.
+    /// This compatibility API has no resource quotas; use a try_ method for bounded input.
+    #[must_use]
     pub fn detect(graph: &DependencyGraph) -> Vec<Cycle> {
-        let sccs = Self::tarjan(graph);
-        Self::extract_cycles(graph, sccs)
+        infallible(Self::run_graph(graph, &Unbounded))
     }
 
-    /// Tarjan's strongly connected components algorithm.
-    fn tarjan(graph: &DependencyGraph) -> Vec<Vec<PathBuf>> {
-        let mut state = TarjanState::new();
-
-        // Sort nodes for deterministic output
-        let mut nodes: Vec<_> = graph.nodes().iter().cloned().collect();
-        nodes.sort();
-
-        for node in &nodes {
-            if !state.index.contains_key(node) {
-                Self::strongconnect(graph, node, &mut state);
-            }
-        }
-
-        state.sccs
+    fn run_graph<M: Meter>(graph: &DependencyGraph, meter: &M) -> Result<Vec<Cycle>, M::Error> {
+        let indexed = Indexed::files(graph, meter)?;
+        let paths = analysis::representative(&indexed, meter)?;
+        Ok(indexed
+            .materialize(paths)
+            .into_iter()
+            .map(Cycle::new)
+            .collect())
     }
 
-    /// Helper function for Tarjan's algorithm.
-    fn strongconnect(graph: &DependencyGraph, node: &Path, state: &mut TarjanState) {
-        // Set the depth index for this node
-        let _ = state.index.insert(node.to_path_buf(), state.index_counter);
-        let _ = state
-            .lowlink
-            .insert(node.to_path_buf(), state.index_counter);
-        state.index_counter = state.index_counter.saturating_add(1);
-        state.stack.push(node.to_path_buf());
-        let _ = state.on_stack.insert(node.to_path_buf());
-
-        // Consider successors
-        let mut successors: Vec<_> = graph.successors(node).cloned().collect();
-        successors.sort();
-
-        for successor in successors {
-            if !state.index.contains_key(&successor) {
-                // Successor has not been visited; recurse
-                Self::strongconnect(graph, &successor, state);
-                // Update lowlink
-                let node_lowlink = state.lowlink.get(node).copied().unwrap_or(usize::MAX);
-                let successor_lowlink =
-                    state.lowlink.get(&successor).copied().unwrap_or(usize::MAX);
-                let _ = state
-                    .lowlink
-                    .insert(node.to_path_buf(), node_lowlink.min(successor_lowlink));
-            } else if state.on_stack.contains(&successor) {
-                // Successor is on the stack, hence in the current SCC
-                let node_lowlink = state.lowlink.get(node).copied().unwrap_or(usize::MAX);
-                let successor_index = state.index.get(&successor).copied().unwrap_or(usize::MAX);
-                let _ = state
-                    .lowlink
-                    .insert(node.to_path_buf(), node_lowlink.min(successor_index));
-            } else {
-                // Successor already processed, not part of current SCC path
-            }
-        }
-
-        // If node is a root node, pop the stack and generate an SCC
-        let node_index = state.index.get(node).copied().unwrap_or(0);
-        let node_lowlink = state.lowlink.get(node).copied().unwrap_or(0);
-
-        if node_lowlink == node_index {
-            let scc = Self::pop_scc_from_stack(node, state);
-            state.sccs.push(scc);
-        }
-    }
-
-    /// Pop a strongly connected component from the stack.
-    fn pop_scc_from_stack(node: &Path, state: &mut TarjanState) -> Vec<PathBuf> {
-        let mut scc = Vec::new();
-        while let Some(w) = state.stack.pop() {
-            let _ = state.on_stack.remove(&w);
-            let is_root = w == node;
-            scc.push(w);
-            if is_root {
-                break;
-            }
-        }
-        scc
-    }
-
-    /// Extract actual cycles from strongly connected components.
-    fn extract_cycles(graph: &DependencyGraph, sccs: Vec<Vec<PathBuf>>) -> Vec<Cycle> {
-        let mut cycles = Vec::new();
-
-        for scc in sccs {
-            if let Some(cycle) = Self::extract_cycle_from_scc(graph, &scc) {
-                cycles.push(cycle);
-            }
-        }
-
-        // Sort cycles for deterministic output
-        cycles.sort_by(|a, b| a.path.cmp(&b.path));
-        cycles
-    }
-
-    /// Extract a cycle from a single SCC.
-    fn extract_cycle_from_scc(graph: &DependencyGraph, scc: &[PathBuf]) -> Option<Cycle> {
-        if scc.len() > 1 {
-            // SCC with multiple nodes contains cycles
-            return Self::find_cycle_in_scc(graph, scc).map(Self::normalize);
-        }
-        // Single node - check for self-loop
-        let node = scc.first()?;
-        if graph.has_edge(node, node) {
-            return Some(Cycle::new(vec![node.clone(), node.clone()]));
-        }
-        None
-    }
-
-    /// Find a cycle within an SCC using DFS.
-    fn find_cycle_in_scc(graph: &DependencyGraph, scc: &[PathBuf]) -> Option<Vec<PathBuf>> {
-        let scc_set: HashSet<_> = scc.iter().collect();
-
-        // Start from the lexicographically smallest node for determinism
-        let mut sorted_scc = scc.to_vec();
-        sorted_scc.sort();
-
-        let start = sorted_scc.first()?;
-
-        let mut visited: HashSet<PathBuf> = HashSet::new();
-        let mut path: Vec<PathBuf> = Vec::new();
-
-        Self::dfs_find_cycle(graph, start, start, &scc_set, &mut visited, &mut path)
-    }
-
-    /// DFS helper to find a cycle back to the start node.
-    fn dfs_find_cycle(
+    /// Analyze a caller-owned graph with shared admission/work/output quotas.
+    /// Graph construction by the caller is outside this method's budget.
+    /// # Errors
+    /// Returns quota exhaustion with no partial result.
+    pub fn try_detect(
         graph: &DependencyGraph,
-        current: &Path,
-        start: &Path,
-        scc_set: &HashSet<&PathBuf>,
-        visited: &mut HashSet<PathBuf>,
-        path: &mut Vec<PathBuf>,
-    ) -> Option<Vec<PathBuf>> {
-        path.push(current.to_path_buf());
-        let _ = visited.insert(current.to_path_buf());
-
-        let mut successors: Vec<_> = graph
-            .successors(current)
-            .filter(|s| scc_set.contains(s))
-            .cloned()
-            .collect();
-        successors.sort();
-
-        let result =
-            Self::try_find_cycle_in_successors(graph, start, scc_set, visited, path, &successors);
-
-        if result.is_none() {
-            drop(path.pop());
-        }
-        result
+        budget: &AnalysisBudget,
+    ) -> Result<Vec<Cycle>, LimitError> {
+        Self::run_graph(graph, budget)
     }
 
-    /// Try to find a cycle by exploring successors.
-    fn try_find_cycle_in_successors(
-        graph: &DependencyGraph,
-        start: &Path,
-        scc_set: &HashSet<&PathBuf>,
-        visited: &mut HashSet<PathBuf>,
-        path: &mut Vec<PathBuf>,
-        successors: &[PathBuf],
-    ) -> Option<Vec<PathBuf>> {
-        for successor in successors {
-            if let Some(cycle) =
-                Self::check_successor(graph, successor, start, scc_set, visited, path)
-            {
-                return Some(cycle);
-            }
-        }
-        None
-    }
-
-    /// Check a single successor for cycles.
-    fn check_successor(
-        graph: &DependencyGraph,
-        successor: &PathBuf,
-        start: &Path,
-        scc_set: &HashSet<&PathBuf>,
-        visited: &mut HashSet<PathBuf>,
-        path: &mut Vec<PathBuf>,
-    ) -> Option<Vec<PathBuf>> {
-        if successor.as_path() == start && path.len() > 1 {
-            // Found a cycle back to start
-            let mut cycle = path.clone();
-            cycle.push(start.to_path_buf());
-            return Some(cycle);
-        }
-        if !visited.contains(successor) {
-            return Self::dfs_find_cycle(graph, successor, start, scc_set, visited, path);
-        }
-        None
-    }
-
-    /// Normalize a cycle to start from the lexicographically smallest node.
-    fn normalize(mut cycle: Vec<PathBuf>) -> Cycle {
-        if cycle.len() <= 1 {
-            return Cycle::new(cycle);
-        }
-
-        // Remove the last element (duplicate of first)
-        let last = cycle.pop();
-
-        // Find the index of the smallest element
-        let min_idx = cycle
-            .iter()
-            .enumerate()
-            .min_by_key(|(_, path)| *path)
-            .map(|(idx, _)| idx)
-            .unwrap_or(0);
-
-        // Rotate to start from the smallest
-        cycle.rotate_left(min_idx);
-
-        // Add the first element back at the end
-        if let Some(first) = cycle.first().cloned() {
-            cycle.push(first);
-        } else if let Some(l) = last {
-            cycle.push(l);
-        } else {
-            // Both are None, leave cycle as is
-        }
-
-        Cycle::new(cycle)
+    /// Build and analyze a file graph, admitting nodes/edges before allocation.
+    /// Inputs remain borrowed; returned paths are owned.
+    /// # Errors
+    /// Returns quota exhaustion with no partial result.
+    pub fn try_detect_imports(
+        imports: &[Import],
+        budget: &AnalysisBudget,
+    ) -> Result<Vec<Cycle>, LimitError> {
+        let indexed = Indexed::imports(imports, budget)?;
+        let paths = analysis::representative(&indexed, budget)?;
+        Ok(indexed
+            .materialize(paths)
+            .into_iter()
+            .map(Cycle::new)
+            .collect())
     }
 }
 
@@ -320,13 +106,15 @@ pub struct PackageCycle {
 impl PackageCycle {
     /// Create a new package cycle from a list of packages.
     #[inline]
-    pub fn new(packages: Vec<String>) -> Self {
+    #[must_use]
+    pub const fn new(packages: Vec<String>) -> Self {
         Self { packages }
     }
 
     /// Get the length of the cycle (excluding the repeated first element).
     #[inline]
-    pub fn len(&self) -> usize {
+    #[must_use]
+    pub const fn len(&self) -> usize {
         if self.packages.is_empty() {
             0
         } else {
@@ -336,7 +124,8 @@ impl PackageCycle {
 
     /// Check if the cycle is empty.
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
         self.packages.is_empty()
     }
 }
@@ -351,14 +140,15 @@ pub struct PackageCycleEdge {
     pub to_package: String,
 
     /// Files in the source package that import the target package.
-    /// Each entry is (source_file, optional_subpath).
+    /// Each entry is (`source_file`, `optional_subpath`).
     pub files: Vec<(PathBuf, Option<String>)>,
 }
 
 impl PackageCycleEdge {
     /// Create a new package cycle edge.
     #[inline]
-    pub fn new(from_package: String, to_package: String) -> Self {
+    #[must_use]
+    pub const fn new(from_package: String, to_package: String) -> Self {
         Self {
             from_package,
             to_package,
@@ -368,6 +158,7 @@ impl PackageCycleEdge {
 
     /// Create a package cycle edge with file evidence.
     #[inline]
+    #[must_use]
     pub fn with_evidence(
         from_package: String,
         to_package: String,
@@ -397,6 +188,7 @@ pub struct PackageCycleWithFiles {
 
 impl PackageCycleWithFiles {
     /// Create a new package cycle with files from a basic cycle and graph.
+    #[must_use]
     pub fn from_cycle(cycle: &PackageCycle, graph: &PackageDependencyGraph) -> Self {
         let mut edges = Vec::new();
 
@@ -422,7 +214,8 @@ impl PackageCycleWithFiles {
 
     /// Get the length of the cycle (excluding the repeated first element).
     #[inline]
-    pub fn len(&self) -> usize {
+    #[must_use]
+    pub const fn len(&self) -> usize {
         if self.packages.is_empty() {
             0
         } else {
@@ -432,451 +225,145 @@ impl PackageCycleWithFiles {
 
     /// Check if the cycle is empty.
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
         self.packages.is_empty()
     }
 }
 
-/// State container for package-level Tarjan's algorithm.
-struct PackageTarjanState {
-    /// Current index counter for node discovery.
-    index_counter: usize,
-    /// Stack of nodes in the current DFS path.
-    stack: Vec<String>,
-    /// Set of nodes currently on the stack (for O(1) lookup).
-    on_stack: HashSet<String>,
-    /// Discovery index for each node.
-    index: HashMap<String, usize>,
-    /// Lowest reachable index for each node.
-    lowlink: HashMap<String, usize>,
-    /// Collected strongly connected components.
-    sccs: Vec<Vec<String>>,
-}
-
-impl PackageTarjanState {
-    /// Create a new empty state.
-    #[inline]
-    fn new() -> Self {
-        Self {
-            index_counter: 0,
-            stack: Vec::new(),
-            on_stack: HashSet::new(),
-            index: HashMap::new(),
-            lowlink: HashMap::new(),
-            sccs: Vec::new(),
-        }
-    }
-}
-
-/// Cycle detection engine for package-level dependencies.
-///
-/// Uses a combination of:
-/// 1. Direct 2-cycle detection (A <-> B)
-/// 2. Johnson's algorithm for finding all elementary cycles
+/// Enumerate elementary package cycles with iterative Tarjan/Johnson traversal.
 pub struct PackageCycleDetector;
 
 impl PackageCycleDetector {
-    /// Find all cycles in the package dependency graph.
-    ///
-    /// Returns all elementary cycles (simple cycles without repeated nodes).
-    #[inline]
+    /// Enumerate all elementary cycles. This compatibility API has no resource quotas.
+    #[must_use]
     pub fn detect(graph: &PackageDependencyGraph) -> Vec<PackageCycle> {
-        let mut all_cycles = Vec::new();
-
-        // Find 2-cycles first (most common case)
-        let two_cycles = Self::find_two_cycles(graph);
-        all_cycles.extend(two_cycles);
-
-        // Find longer cycles using Johnson's algorithm on SCCs
-        let longer_cycles = Self::find_longer_cycles(graph);
-        all_cycles.extend(longer_cycles);
-
-        // Deduplicate (normalized cycles are comparable)
-        all_cycles.sort_by(|a, b| a.packages.cmp(&b.packages));
-        all_cycles.dedup();
-
-        all_cycles
+        infallible(Self::run_graph(graph, &Unbounded))
     }
 
-    /// Find all cycles with file-level detail.
-    ///
-    /// Returns cycles including which files create each edge.
-    #[inline]
+    fn run_graph<M: Meter>(
+        graph: &PackageDependencyGraph,
+        meter: &M,
+    ) -> Result<Vec<PackageCycle>, M::Error> {
+        let indexed = Indexed::packages(graph, meter)?;
+        let paths = analysis::elementary(&indexed, meter)?;
+        Ok(indexed
+            .materialize(paths)
+            .into_iter()
+            .map(PackageCycle::new)
+            .collect())
+    }
+
+    /// Analyze a caller-owned package graph with shared quotas.
+    /// # Errors
+    /// Returns quota exhaustion; construction of the caller's graph is outside this budget.
+    pub fn try_detect(
+        graph: &PackageDependencyGraph,
+        budget: &AnalysisBudget,
+    ) -> Result<Vec<PackageCycle>, LimitError> {
+        Self::run_graph(graph, budget)
+    }
+
+    /// Build and analyze package edges directly from borrowed import groups.
+    /// No unbounded intermediate package graph or import-vector copy is made.
+    /// # Errors
+    /// Returns quota exhaustion with no partial result.
+    pub fn try_detect_imports<'a>(
+        groups: impl IntoIterator<Item = (&'a str, &'a [Import])>,
+        budget: &AnalysisBudget,
+    ) -> Result<Vec<PackageCycle>, LimitError> {
+        let indexed = PackageAnalysis::build(groups, false, budget)?.graph;
+        let paths = analysis::elementary(&indexed, budget)?;
+        Ok(indexed
+            .materialize(paths)
+            .into_iter()
+            .map(PackageCycle::new)
+            .collect())
+    }
+
+    /// Enumerate cycles and expand file evidence within the same quotas.
+    /// # Errors
+    /// Returns quota exhaustion, including expansion cost, with no partial result.
+    pub fn try_detect_imports_with_files<'a>(
+        groups: impl IntoIterator<Item = (&'a str, &'a [Import])>,
+        budget: &AnalysisBudget,
+    ) -> Result<Vec<PackageCycleWithFiles>, LimitError> {
+        let indexed = PackageAnalysis::build(groups, true, budget)?;
+        let paths = analysis::elementary(&indexed.graph, budget)?;
+        let mut output = Vec::new();
+        for path in paths {
+            let mut edges = Vec::new();
+            for pair in path.windows(2) {
+                let (Some(from), Some(to)) = (pair.first(), pair.get(1)) else {
+                    continue;
+                };
+                let from_name = indexed.graph.label(*from);
+                let to_name = indexed.graph.label(*to);
+                budget.consume(Resource::Work, 1)?;
+                for name in [from_name, to_name] {
+                    budget.consume(Resource::CycleBytes, units(name.len()))?;
+                    budget.consume(Resource::CycleBytes, units(size_of::<String>()))?;
+                }
+                let mut files = Vec::new();
+                // Several imports of one package from one file are one piece
+                // of evidence; keep the first occurrence's order.
+                let mut seen = std::collections::HashSet::new();
+                if let Some(evidence) = indexed.evidence.get(&(*from, *to)) {
+                    for import in evidence {
+                        if let ImportTarget::WorkspacePackage { subpath, .. } = &import.target {
+                            budget.consume(Resource::Work, 1)?;
+                            if !seen.insert((&import.source, subpath)) {
+                                continue;
+                            }
+                            budget.consume(
+                                Resource::CycleBytes,
+                                units(import.source.as_os_str().as_encoded_bytes().len()),
+                            )?;
+                            budget.consume(
+                                Resource::CycleBytes,
+                                units(size_of::<(PathBuf, Option<String>)>()),
+                            )?;
+                            budget.consume(
+                                Resource::CycleBytes,
+                                units(subpath.as_ref().map_or(0, String::len)),
+                            )?;
+                            files.push((import.source.clone(), subpath.clone()));
+                        }
+                    }
+                }
+                edges.push(PackageCycleEdge {
+                    from_package: from_name.clone(),
+                    to_package: to_name.clone(),
+                    files,
+                });
+            }
+            let packages = indexed.graph.materialize_path(path);
+            output.push(PackageCycleWithFiles { packages, edges });
+        }
+        Ok(output)
+    }
+
+    /// Compatibility API for full evidence without quotas.
+    #[must_use]
     pub fn detect_with_files(graph: &PackageDependencyGraph) -> Vec<PackageCycleWithFiles> {
-        let cycles = Self::detect(graph);
-        cycles
+        Self::detect(graph)
             .iter()
             .map(|cycle| PackageCycleWithFiles::from_cycle(cycle, graph))
             .collect()
     }
+}
 
-    /// Find all 2-cycles (bidirectional edges: A -> B and B -> A).
-    fn find_two_cycles(graph: &PackageDependencyGraph) -> Vec<PackageCycle> {
-        let mut cycles = Vec::new();
-        let mut seen: HashSet<(String, String)> = HashSet::new();
-
-        // Sort nodes for deterministic output
-        let mut nodes: Vec<_> = graph.nodes().iter().cloned().collect();
-        nodes.sort();
-
-        for node in &nodes {
-            Self::find_two_cycles_for_node(graph, node, &mut seen, &mut cycles);
-        }
-
-        cycles
-    }
-
-    /// Find 2-cycles originating from a specific node.
-    fn find_two_cycles_for_node(
-        graph: &PackageDependencyGraph,
-        node: &str,
-        seen: &mut HashSet<(String, String)>,
-        cycles: &mut Vec<PackageCycle>,
-    ) {
-        for successor in graph.successors(node) {
-            // Check if successor also points back to node
-            if !graph.has_edge(successor, node) {
-                continue;
-            }
-
-            let pair = Self::normalize_pair(node, successor);
-            if seen.contains(&pair) {
-                continue;
-            }
-            let _ = seen.insert(pair.clone());
-
-            // Cycle representation: A -> B -> A
-            cycles.push(PackageCycle::new(vec![
-                pair.0.clone(),
-                pair.1.clone(),
-                pair.0,
-            ]));
-        }
-    }
-
-    /// Normalize a node pair to have the smaller one first.
-    fn normalize_pair(node_a: &str, node_b: &str) -> (String, String) {
-        if node_a < node_b {
-            (node_a.to_owned(), node_b.to_owned())
-        } else {
-            (node_b.to_owned(), node_a.to_owned())
-        }
-    }
-
-    /// Find cycles longer than 2 nodes using Johnson's algorithm.
-    fn find_longer_cycles(graph: &PackageDependencyGraph) -> Vec<PackageCycle> {
-        let sccs = Self::tarjan(graph);
-        let mut cycles = Vec::new();
-
-        for scc in sccs {
-            Self::find_longer_cycles_in_scc(graph, &scc, &mut cycles);
-        }
-
-        cycles
-    }
-
-    /// Find longer cycles within a single SCC.
-    fn find_longer_cycles_in_scc(
-        graph: &PackageDependencyGraph,
-        scc: &[String],
-        cycles: &mut Vec<PackageCycle>,
-    ) {
-        // Skip small SCCs (2-cycles already handled)
-        if scc.len() <= 2 {
-            return;
-        }
-
-        // Find all cycles in this SCC using Johnson's algorithm
-        let scc_cycles = Self::johnson_all_cycles(graph, scc);
-        for cycle in scc_cycles {
-            // Skip 2-cycles (already found) - len > 3 means at least 3 distinct nodes
-            if cycle.len() <= 3 {
-                continue;
-            }
-            cycles.push(Self::normalize(cycle));
-        }
-    }
-
-    /// Tarjan's strongly connected components algorithm for packages.
-    fn tarjan(graph: &PackageDependencyGraph) -> Vec<Vec<String>> {
-        let mut state = PackageTarjanState::new();
-
-        // Sort nodes for deterministic output
-        let mut nodes: Vec<_> = graph.nodes().iter().cloned().collect();
-        nodes.sort();
-
-        for node in &nodes {
-            if !state.index.contains_key(node) {
-                Self::strongconnect(graph, node, &mut state);
-            }
-        }
-
-        state.sccs
-    }
-
-    /// Helper function for Tarjan's algorithm.
-    fn strongconnect(graph: &PackageDependencyGraph, node: &str, state: &mut PackageTarjanState) {
-        // Set the depth index for this node
-        let _ = state.index.insert(node.to_owned(), state.index_counter);
-        let _ = state.lowlink.insert(node.to_owned(), state.index_counter);
-        state.index_counter = state.index_counter.saturating_add(1);
-        state.stack.push(node.to_owned());
-        let _ = state.on_stack.insert(node.to_owned());
-
-        // Consider successors
-        let mut successors: Vec<_> = graph.successors(node).cloned().collect();
-        successors.sort();
-
-        for successor in successors {
-            Self::process_successor(graph, node, &successor, state);
-        }
-
-        // If node is a root node, pop the stack and generate an SCC
-        let node_index = state.index.get(node).copied().unwrap_or(0);
-        let node_lowlink = state.lowlink.get(node).copied().unwrap_or(0);
-
-        if node_lowlink == node_index {
-            let scc = Self::pop_scc_from_stack(node, state);
-            state.sccs.push(scc);
-        }
-    }
-
-    /// Process a single successor in the Tarjan algorithm.
-    fn process_successor(
-        graph: &PackageDependencyGraph,
-        node: &str,
-        successor: &str,
-        state: &mut PackageTarjanState,
-    ) {
-        if !state.index.contains_key(successor) {
-            // Successor has not been visited; recurse
-            Self::strongconnect(graph, successor, state);
-            // Update lowlink
-            let node_lowlink = state.lowlink.get(node).copied().unwrap_or(usize::MAX);
-            let succ_lowlink = state.lowlink.get(successor).copied().unwrap_or(usize::MAX);
-            let _ = state
-                .lowlink
-                .insert(node.to_owned(), node_lowlink.min(succ_lowlink));
-        } else if state.on_stack.contains(successor) {
-            // Successor is on the stack, hence in the current SCC
-            let node_lowlink = state.lowlink.get(node).copied().unwrap_or(usize::MAX);
-            let succ_index = state.index.get(successor).copied().unwrap_or(usize::MAX);
-            let _ = state
-                .lowlink
-                .insert(node.to_owned(), node_lowlink.min(succ_index));
-        } else {
-            // Successor already processed, not part of current SCC path
-        }
-    }
-
-    /// Pop a strongly connected component from the stack.
-    fn pop_scc_from_stack(node: &str, state: &mut PackageTarjanState) -> Vec<String> {
-        let mut scc = Vec::new();
-        while let Some(w) = state.stack.pop() {
-            let _ = state.on_stack.remove(&w);
-            let is_root = w == node;
-            scc.push(w);
-            if is_root {
-                break;
-            }
-        }
-        scc
-    }
-
-    /// Johnson's algorithm for finding all elementary cycles in an SCC.
-    ///
-    /// This finds all simple cycles (cycles without repeated nodes except
-    /// the start/end node).
-    fn johnson_all_cycles(graph: &PackageDependencyGraph, scc: &[String]) -> Vec<Vec<String>> {
-        let mut cycles = Vec::new();
-        let scc_set: HashSet<_> = scc.iter().cloned().collect();
-
-        // Sort SCC nodes for deterministic iteration
-        let mut sorted_scc = scc.to_vec();
-        sorted_scc.sort();
-
-        // For each node as a starting point
-        for (idx, start) in sorted_scc.iter().enumerate() {
-            // Only consider nodes from current position onwards
-            // (nodes before have already been processed as start nodes)
-            let subgraph: HashSet<_> = sorted_scc.iter().skip(idx).cloned().collect();
-
-            let mut blocked: HashSet<String> = HashSet::new();
-            let mut blocked_map: HashMap<String, HashSet<String>> = HashMap::new();
-            let mut path = vec![start.clone()];
-
-            let _ = Self::johnson_circuit(
-                graph,
-                start,
-                start,
-                &scc_set,
-                &subgraph,
-                &mut blocked,
-                &mut blocked_map,
-                &mut path,
-                &mut cycles,
-            );
-        }
-
-        cycles
-    }
-
-    /// Circuit-finding subroutine of Johnson's algorithm.
-    #[expect(clippy::too_many_arguments, reason = "Johnson's algorithm state")]
-    fn johnson_circuit(
-        graph: &PackageDependencyGraph,
-        start: &str,
-        current: &str,
-        scc_set: &HashSet<String>,
-        subgraph: &HashSet<String>,
-        blocked: &mut HashSet<String>,
-        blocked_map: &mut HashMap<String, HashSet<String>>,
-        path: &mut Vec<String>,
-        cycles: &mut Vec<Vec<String>>,
-    ) -> bool {
-        let mut found_cycle = false;
-        let _ = blocked.insert(current.to_owned());
-
-        // Get successors in the subgraph
-        let mut successors: Vec<_> = graph
-            .successors(current)
-            .filter(|s| scc_set.contains(*s) && subgraph.contains(*s))
-            .cloned()
-            .collect();
-        successors.sort();
-
-        for successor in successors {
-            let cycle_found = Self::process_johnson_successor(
-                graph,
-                start,
-                &successor,
-                scc_set,
-                subgraph,
-                blocked,
-                blocked_map,
-                path,
-                cycles,
-            );
-            if cycle_found {
-                found_cycle = true;
-            }
-        }
-
-        if found_cycle {
-            Self::unblock(current, blocked, blocked_map);
-        } else {
-            // Add current to blocked_map for all successors
-            for successor in graph
-                .successors(current)
-                .filter(|s| scc_set.contains(*s) && subgraph.contains(*s))
-            {
-                let _ = blocked_map
-                    .entry(successor.clone())
-                    .or_default()
-                    .insert(current.to_owned());
-            }
-        }
-
-        found_cycle
-    }
-
-    /// Process a single successor in Johnson's circuit algorithm.
-    #[expect(clippy::too_many_arguments, reason = "Johnson's algorithm state")]
-    fn process_johnson_successor(
-        graph: &PackageDependencyGraph,
-        start: &str,
-        successor: &str,
-        scc_set: &HashSet<String>,
-        subgraph: &HashSet<String>,
-        blocked: &mut HashSet<String>,
-        blocked_map: &mut HashMap<String, HashSet<String>>,
-        path: &mut Vec<String>,
-        cycles: &mut Vec<Vec<String>>,
-    ) -> bool {
-        if successor == start {
-            // Found a cycle
-            let mut cycle = path.clone();
-            cycle.push(start.to_owned());
-            cycles.push(cycle);
-            return true;
-        }
-
-        if blocked.contains(successor) {
-            return false;
-        }
-
-        path.push(successor.to_owned());
-        let found = Self::johnson_circuit(
-            graph,
-            start,
-            successor,
-            scc_set,
-            subgraph,
-            blocked,
-            blocked_map,
-            path,
-            cycles,
-        );
-        let _ = path.pop();
-        found
-    }
-
-    /// Unblock a node in Johnson's algorithm.
-    fn unblock(
-        node: &str,
-        blocked: &mut HashSet<String>,
-        blocked_map: &mut HashMap<String, HashSet<String>>,
-    ) {
-        let _ = blocked.remove(node);
-        let Some(to_unblock) = blocked_map.remove(node) else {
-            return;
-        };
-        // Sort for deterministic order
-        let mut sorted: Vec<_> = to_unblock.into_iter().collect();
-        sorted.sort();
-        for other in sorted {
-            if blocked.contains(&other) {
-                Self::unblock(&other, blocked, blocked_map);
-            }
-        }
-    }
-
-    /// Normalize a cycle to start from the lexicographically smallest node.
-    fn normalize(mut cycle: Vec<String>) -> PackageCycle {
-        if cycle.len() <= 1 {
-            return PackageCycle::new(cycle);
-        }
-
-        // Remove the last element (duplicate of first)
-        let last = cycle.pop();
-
-        // Find the index of the smallest element
-        let min_idx = cycle
-            .iter()
-            .enumerate()
-            .min_by_key(|(_, name)| *name)
-            .map(|(idx, _)| idx)
-            .unwrap_or(0);
-
-        // Rotate to start from the smallest
-        cycle.rotate_left(min_idx);
-
-        // Add the first element back at the end
-        if let Some(first) = cycle.first().cloned() {
-            cycle.push(first);
-        } else if let Some(l) = last {
-            cycle.push(l);
-        } else {
-            // Both are None, leave cycle as is
-        }
-
-        PackageCycle::new(cycle)
+fn infallible<T>(result: Result<T, Infallible>) -> T {
+    match result {
+        Ok(value) => value,
+        Err(never) => match never {},
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashSet;
 
     #[test]
     fn test_simple_cycle() {
@@ -914,13 +401,19 @@ mod tests {
 
     #[test]
     fn test_cycle_normalization() {
-        let cycle = vec![
+        let cycle = [
             PathBuf::from("c.ts"),
             PathBuf::from("a.ts"),
             PathBuf::from("b.ts"),
             PathBuf::from("c.ts"),
         ];
-        let normalized = CycleDetector::normalize(cycle);
+        let mut graph = DependencyGraph::new();
+        for edge in cycle.windows(2) {
+            if let (Some(from), Some(to)) = (edge.first(), edge.get(1)) {
+                graph.add_edge(from.clone(), to.clone());
+            }
+        }
+        let normalized = CycleDetector::detect(&graph).remove(0);
         assert_eq!(
             normalized
                 .path
@@ -1508,7 +1001,6 @@ mod tests {
     /// - shared-ds imports shared-utils-test-wrappers (2-cycle)
     /// - Multiple packages form a large interconnected SCC
     #[test]
-    #[expect(clippy::too_many_lines, reason = "complex test setup required")]
     fn test_package_realistic_monorepo_structure() {
         let mut graph = PackageDependencyGraph::new();
 
@@ -1789,7 +1281,6 @@ mod tests {
     }
 
     #[test]
-    #[expect(clippy::too_many_lines, reason = "test requires multiple assertions")]
     fn test_package_cycle_with_files_from_cycle() {
         // Build a graph with edge evidence
         let mut graph = PackageDependencyGraph::new();
@@ -1857,7 +1348,7 @@ mod tests {
 
         // Check file details
         let empty_files: Vec<(PathBuf, Option<String>)> = vec![];
-        let second_files = second_edge.map(|e| &e.files).unwrap_or(&empty_files);
+        let second_files = second_edge.map_or(&empty_files, |e| &e.files);
         assert_eq!(
             second_files
                 .first()

@@ -1,0 +1,4 @@
+defaults: &extensions
+  extensions: [ts, tsx]
+packages:
+  sample: *extensions

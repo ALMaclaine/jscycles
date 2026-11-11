@@ -20,12 +20,14 @@ pub struct DependencyGraph {
 impl DependencyGraph {
     /// Create a new empty dependency graph.
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Build a dependency graph from extracted imports.
     #[inline]
+    #[must_use]
     pub fn from_imports(imports: &[Import]) -> Self {
         let mut graph = Self::new();
 
@@ -57,7 +59,8 @@ impl DependencyGraph {
 
     /// Get all nodes in the graph.
     #[inline]
-    pub fn nodes(&self) -> &HashSet<PathBuf> {
+    #[must_use]
+    pub const fn nodes(&self) -> &HashSet<PathBuf> {
         &self.nodes
     }
 
@@ -73,6 +76,7 @@ impl DependencyGraph {
 
     /// Check if there's an edge from source to target.
     #[inline]
+    #[must_use]
     pub fn has_edge(&self, from: &Path, to: &Path) -> bool {
         self.edges
             .get(from)
@@ -81,6 +85,7 @@ impl DependencyGraph {
 
     /// Get the number of nodes in the graph.
     #[inline]
+    #[must_use]
     pub fn node_count(&self) -> usize {
         self.nodes.len()
     }
@@ -96,13 +101,14 @@ impl DependencyGraph {
 #[derive(Debug, Clone, Default)]
 pub struct EdgeEvidence {
     /// Files that import from the source package to the target package.
-    /// Each entry is (source_file, target_package_subpath).
+    /// Each entry is (`source_file`, `target_package_subpath`).
     files: Vec<(PathBuf, Option<String>)>,
 }
 
 impl EdgeEvidence {
     /// Create new empty edge evidence.
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -115,13 +121,15 @@ impl EdgeEvidence {
 
     /// Get all files that contribute to this edge.
     #[inline]
+    #[must_use]
     pub fn files(&self) -> &[(PathBuf, Option<String>)] {
         &self.files
     }
 
     /// Get the number of files that contribute to this edge.
     #[inline]
-    pub fn file_count(&self) -> usize {
+    #[must_use]
+    pub const fn file_count(&self) -> usize {
         self.files.len()
     }
 }
@@ -138,13 +146,14 @@ pub struct PackageDependencyGraph {
     /// All package names in the graph.
     nodes: HashSet<String>,
 
-    /// Evidence for each edge: (from_pkg, to_pkg) -> files that create this edge.
+    /// Evidence for each edge: (`from_pkg`, `to_pkg`) -> files that create this edge.
     edge_evidence: HashMap<(String, String), EdgeEvidence>,
 }
 
 impl PackageDependencyGraph {
     /// Create a new empty package dependency graph.
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -154,6 +163,7 @@ impl PackageDependencyGraph {
     /// Takes a mapping of package name to its imports and extracts inter-package
     /// dependencies from `WorkspacePackage` imports.
     #[inline]
+    #[must_use]
     pub fn from_imports(imports_by_package: &HashMap<String, Vec<Import>>) -> Self {
         let mut graph = Self::new();
 
@@ -241,13 +251,15 @@ impl PackageDependencyGraph {
 
     /// Get the evidence (source files) for an edge.
     #[inline]
+    #[must_use]
     pub fn edge_evidence(&self, from: &str, to: &str) -> Option<&EdgeEvidence> {
         self.edge_evidence.get(&(from.to_owned(), to.to_owned()))
     }
 
     /// Get all nodes in the graph.
     #[inline]
-    pub fn nodes(&self) -> &HashSet<String> {
+    #[must_use]
+    pub const fn nodes(&self) -> &HashSet<String> {
         &self.nodes
     }
 
@@ -263,6 +275,7 @@ impl PackageDependencyGraph {
 
     /// Check if there's an edge from source to target.
     #[inline]
+    #[must_use]
     pub fn has_edge(&self, from: &str, to: &str) -> bool {
         self.edges
             .get(from)
@@ -271,6 +284,7 @@ impl PackageDependencyGraph {
 
     /// Get the number of nodes in the graph.
     #[inline]
+    #[must_use]
     pub fn node_count(&self) -> usize {
         self.nodes.len()
     }
@@ -593,10 +607,6 @@ mod tests {
     }
 
     #[test]
-    #[expect(
-        clippy::too_many_lines,
-        reason = "test setup requires multiple imports"
-    )]
     fn test_package_graph_from_imports_with_workspace_packages() {
         let mut imports_by_package = HashMap::new();
 
@@ -916,7 +926,7 @@ mod tests {
             "should have 2 files"
         );
 
-        let files = evidence.map(EdgeEvidence::files).unwrap_or(&[]);
+        let files = evidence.map_or(&[][..], EdgeEvidence::files);
         assert_eq!(files.len(), 2, "should have 2 file entries");
 
         // Check subpaths are recorded

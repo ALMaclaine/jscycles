@@ -1,442 +1,345 @@
-# jscycles
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ALMaclaine/jscycles/main/site/src/assets/wordmark-dark.svg">
+    <img src="https://raw.githubusercontent.com/ALMaclaine/jscycles/main/site/src/assets/wordmark-light.svg" alt="jscycles" width="240">
+  </picture>
+</h1>
 
-Fast circular dependency detection for JavaScript/TypeScript projects.
+[![CI](https://github.com/ALMaclaine/jscycles/actions/workflows/ci.yml/badge.svg)](https://github.com/ALMaclaine/jscycles/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/jscycles.svg)](https://crates.io/crates/jscycles)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
-A drop-in replacement for `madge --circular` with **50-100x performance improvement**.
+Find circular imports in JavaScript and TypeScript projects, between files
+within a package and between the packages of a monorepo.
 
-## Why jscycles?
+**Documentation: [jscycles.dev](https://jscycles.dev/)**
 
-Circular dependencies in JavaScript/TypeScript projects cause:
-- Runtime errors from undefined imports
-- Difficult-to-debug initialization order issues
-- Webpack/bundler warnings and failed builds
-- Increased cognitive load when understanding code flow
+jscycles is a single native binary. It parses every file with tree-sitter,
+resolves imports the way TypeScript does (path aliases, `extends`, declaration
+files, `.js` specifiers that point at `.ts` sources), and understands npm,
+yarn, pnpm and bun workspaces. On the public repositories measured below it
+runs 5 to 25 times faster than madge and dpdm.
 
-Tools like `madge` detect these cycles but become painfully slow on large monorepos. jscycles uses Rust, parallel processing, and Tarjan's strongly connected components algorithm to analyze thousands of files in milliseconds.
+```text
+$ jscycles packages
+✓ No inter-package cycles
 
-## Performance
+✗ @ts-morph/common: 2 cycles
+  src/collections/SortedKeyValueArray.ts -> src/utils/index.ts -> … -> src/collections/SortedKeyValueArray.ts
+  src/typescript/index.ts -> src/typescript/tsInternal.ts -> src/typescript/index.ts
 
-| Project Size | madge --circular | jscycles |
-|--------------|------------------|----------|
-| 100 files    | ~2s              | ~20ms    |
-| 1,000 files  | ~15s             | ~100ms   |
-| 10,000 files | ~3min            | ~2s      |
+✗ ts-morph: 3 cycles
+  …
+  src/Project.ts -> src/ProjectContext.ts -> src/Project.ts
 
-## Installation
-
-### From source
-
-```bash
-cargo install --path .
+Summary: 3 packages, 2 with file cycles (5 total), 0 inter-package cycles
 ```
 
-## Quick Start
+## Install
 
-```bash
-# Check current directory for cycles
-jscycles
+With npm (or pnpm, yarn, bun), as a development dependency:
 
-# Check specific directory
-jscycles src/
-
-# Output as JSON for CI integration
-jscycles --json
-
-# Only check specific packages in a monorepo
-jscycles --only "@myorg/core-*"
-
-# Show only inter-package cycles (outer cycles)
-jscycles --outer
-
-# Show only file-level cycles (inner cycles)
-jscycles --inner
+```sh
+npm install --save-dev jscycles
+npx jscycles
 ```
 
-## Usage
+The package runs a prebuilt native binary; npm picks the one for your
+platform from optional dependencies, and nothing runs at install time. Builds
+exist for Linux (x86-64, ARM64; static, so any distribution including
+Alpine), macOS (Intel, Apple Silicon) and Windows (x86-64). If optional
+dependencies are disabled (`--omit=optional`), the binary is missing and
+`jscycles` exits with status 2 saying so.
 
-```
-jscycles [OPTIONS] [PATHS]...
+The same binaries are attached to each
+[GitHub release](https://github.com/ALMaclaine/jscycles/releases), together
+with a `SHA256SUMS` file.
 
-Arguments:
-  [PATHS]...  Paths to check (defaults to current directory)
+With a Rust toolchain (1.93 or newer):
 
-Options:
-      --only <PATTERN>       Only check packages matching glob (repeatable)
-      --exclude <PATTERN>    Exclude packages matching glob (repeatable)
-      --extensions <EXT>     File extensions to analyze [default: ts,tsx,js,jsx]
-      --tsconfig <PATH>      Path to tsconfig.json
-      --no-tsconfig          Skip tsconfig.json auto-detection
-      --json                 Output as JSON
-      --stdin                Read paths from stdin
-      --inner                Show only file-level (inner) cycles
-      --outer                Show only package-level (outer) cycles
-  -c, --config <PATH>        Config file path [default: jscycles.yaml]
-  -q, --quiet                Only output if cycles found
-  -h, --help                 Print help
-  -V, --version              Print version
+```sh
+cargo install jscycles --locked
 ```
 
-## Examples
+From a checkout: `cargo install --path . --locked`.
 
-### Basic usage
+## Quick start
 
-```bash
-# Check a single package
-jscycles packages/core
+Run it at the root of a repository:
 
-# Check multiple directories
-jscycles packages/core packages/utils packages/ui
+```sh
+jscycles                      # every package under the current directory
+jscycles packages/core        # one directory
+jscycles --only "@myorg/*"    # packages whose name matches a glob
+jscycles --inner              # file cycles only
+jscycles --outer              # package cycles only
+jscycles --json > cycles.json # machine-readable report
 ```
 
-### Monorepo filtering
+The exit status is `0` when no cycle is found, `1` when cycles are found, and
+`2` on any error (bad configuration, unreadable files, syntax errors). A
+failed scan never reports clean.
 
-```bash
-# Only check packages matching a pattern
-jscycles --only "packages/feature-*"
+## What it finds
 
-# Exclude test packages
-jscycles --exclude "*-test" --exclude "*-e2e"
+**File cycles.** Within each package, jscycles follows relative imports and
+tsconfig path aliases between files. For each group of files that import each
+other in a loop (a strongly connected component), it reports one
+representative cycle. Fix it and run again to see what remains. madge and
+dpdm list every overlapping loop instead, so their counts are much larger.
 
-# Combine filters
-jscycles --only "@myorg/*" --exclude "@myorg/legacy-*"
+**Package cycles.** In a workspace, importing another member by name
+(`import { x } from '@myorg/utils'`), or through a tsconfig alias that points
+into a member, is a dependency between packages. Every elementary cycle
+between packages is reported. Dependencies declared in `package.json` but
+never imported are not edges.
+
+**What counts as an import:**
+
+- `import … from`, `import '…'`, `export … from`, `export * from`
+- `import('…')` and `require('…')` with a string literal (computed specifiers
+  cannot be resolved and are skipped)
+- `import x = require('…')`
+- type-only imports: `import type`, `export type` and `import()` in types.
+  The type checker sees these, but they are erased at runtime; pass
+  `--skip-type-imports` to leave them out (see
+  [type-only imports](docs/configuration.md#type-only-imports)).
+
+Imports of packages that are not workspace members (anything from
+`node_modules`) and imports that resolve to no file are ignored.
+
+**Which files belong to which package.** Every `package.json` with a `name`
+is a package, including a workspace root. Each file belongs to its nearest
+package, so nested packages are analyzed separately and each cycle is
+reported once. `node_modules`, `dist`, `build`, `.next` and `.git`
+directories are skipped. By default `.ts`, `.tsx`, `.mts`, `.cts`, `.js`,
+`.jsx`, `.mjs` and `.cjs` files are analyzed.
+
+**Syntax errors stop the scan.** A file jscycles cannot parse would leave a
+hole in the graph, so the scan fails and names the file, line and column. Use
+[`ignore`](docs/configuration.md#defaults-and-packages) for intentionally
+broken fixtures.
+
+## Use in CI
+
+jscycles fails the build when it finds cycles (status 1) or cannot complete
+the scan (status 2). For GitHub Actions:
+
+```yaml
+- name: Check for circular imports
+  run: |
+    version=v0.2.0
+    base=https://github.com/ALMaclaine/jscycles/releases/download/$version
+    curl -sSfLO "$base/jscycles-linux-x86_64"
+    curl -sSfLO "$base/SHA256SUMS"
+    sha256sum --check --ignore-missing SHA256SUMS
+    chmod +x jscycles-linux-x86_64
+    ./jscycles-linux-x86_64
 ```
 
-### Inter-package cycle detection
+To adopt it in a codebase that already has cycles, start with `--only` or
+`--exclude` for the packages that are clean, or with `--outer` for package
+cycles only, and widen the check as cycles are fixed.
 
-jscycles detects two types of cycles:
+With [pre-commit](https://pre-commit.com/), using a binary on `PATH`:
 
-- **Inner cycles**: File-level circular dependencies within a package
-- **Outer cycles**: Package-level circular dependencies between workspace packages
-
-```bash
-# Show both cycle types (default)
-jscycles
-
-# Show only file-level cycles
-jscycles --inner
-
-# Show only package-level cycles
-jscycles --outer
-```
-
-Workspace packages are automatically detected from:
-- npm/yarn/bun: `package.json` workspaces field
-- pnpm: `pnpm-workspace.yaml`
-- TypeScript: `tsconfig.json` project references
-
-### CI/CD Integration
-
-```bash
-# JSON output for parsing
-jscycles --json > cycles.json
-
-# Quiet mode - only output if cycles exist (for CI gates)
-jscycles --quiet || echo "Circular dependencies detected!"
-
-# Check specific packages from a file list
-cat changed-packages.txt | jscycles --stdin
-```
-
-### Custom file extensions
-
-```bash
-# Only TypeScript files
-jscycles --extensions ts,tsx
-
-# Include additional extensions
-jscycles --extensions ts,tsx,js,jsx,mjs,cjs
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: jscycles
+        name: jscycles
+        entry: jscycles --quiet
+        language: system
+        pass_filenames: false
+        types_or: [javascript, jsx, ts, tsx]
 ```
 
 ## Configuration
 
-Create a `jscycles.yaml` in your project root for persistent configuration:
+Options can live in a `jscycles.yaml` at the repository root:
 
 ```yaml
-# Package discovery settings
 scan:
-  # Glob patterns for directories containing packages
-  include:
-    - "packages/*"
-    - "apps/*"
-    - "libs/*"
+  include: ["packages/*", "apps/*"]   # where to look for packages
+  exclude: ["**/node_modules", "**/fixtures"]
 
-  # Directories to skip (defaults shown)
-  exclude:
-    - "**/node_modules"
-    - "**/dist"
-    - "**/build"
-
-# Default settings for all packages
 defaults:
-  # File extensions to analyze
-  extensions:
-    - ts
-    - tsx
-    - js
-    - jsx
+  skip_type_imports: true
 
-# Package-specific overrides (keyed by glob pattern)
 packages:
-  # Legacy packages might use different extensions
   "@myorg/legacy-*":
-    extensions:
-      - js
-    ignore:
-      - "**/*.test.js"
-
-  # Ignore test files in all feature packages
-  "@myorg/feature-*":
-    ignore:
-      - "**/*.test.ts"
-      - "**/*.spec.ts"
-      - "**/__tests__/**"
-      - "**/__mocks__/**"
+    extensions: [js]
+    ignore: ["**/*.test.js"]
 ```
 
-### Configuration precedence
+The [configuration reference](docs/configuration.md) lists every key, the
+precedence between the command line and the file, and the resource
+[limits](docs/analysis-limits.md).
 
-1. CLI arguments (highest priority)
-2. Package-specific config in `jscycles.yaml`
-3. Default config in `jscycles.yaml`
-4. Built-in defaults (lowest priority)
+```text
+Usage: jscycles [OPTIONS] [paths]...
 
-## TypeScript Path Aliases
+Arguments:
+  [paths]...  Paths to check (if empty, uses config scan paths)
 
-jscycles automatically discovers and uses `tsconfig.json` for path alias resolution:
-
-```json
-{
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@utils": ["src/utils/index.ts"]
-    }
-  }
-}
+Options:
+      --only <only>              Only check packages matching glob pattern (can be repeated)
+      --exclude <exclude>        Exclude packages matching glob pattern (can be repeated)
+      --extensions <extensions>  File extensions to analyze [default: ts,tsx,mts,cts,js,jsx,mjs,cjs]
+      --tsconfig <tsconfig>      Path to tsconfig.json
+      --no-tsconfig              Skip tsconfig.json auto-detection
+      --skip-type-imports        Ignore type-only imports (import type, export type, declaration files)
+      --json                     Output as JSON
+      --stdin                    Read paths from stdin
+  -c, --config <config>          Path to config file [default: jscycles.yaml]
+  -q, --quiet                    Only output if cycles found
+      --inner                    Show only file-level (inner) cycles
+      --outer                    Show only package-level (outer) cycles
+  -v, --verbose                  Show all packages (including clean) and file-level details
+  -h, --help                     Print help
+  -V, --version                  Print version
 ```
 
-With this config, imports like `@/services/api` resolve to `src/services/api.ts`.
+## TypeScript and workspaces
 
-### tsconfig options
+- **Path aliases.** The nearest `tsconfig.json` at or above each package
+  supplies `baseUrl` and `paths`. `extends` is followed through relative
+  files, packages in `node_modules` (their `exports`, `tsconfig` field or
+  `tsconfig.json`) and arrays, as TypeScript resolves them. A tsconfig that
+  cannot be loaded is skipped with a warning naming it. `--tsconfig FILE` uses
+  one file everywhere and makes problems with it errors; `--no-tsconfig`
+  disables aliases.
+- **Resolution.** Extensionless specifiers try `.ts`, `.tsx`, `.d.ts`, `.js`,
+  `.jsx`, then a directory's `index` file. `.js`, `.jsx`, `.mjs` and `.cjs`
+  specifiers find their TypeScript sources. Directory specifiers (`./dir/`,
+  `.`, `..`) resolve only to the index file.
+- **Workspaces.** Members come from `package.json` `workspaces` (npm, yarn,
+  bun), `pnpm-workspace.yaml`, or tsconfig project `references`. Member names
+  must be unique.
 
-```bash
-# Use a specific tsconfig
-jscycles --tsconfig tsconfig.build.json
+## Output
 
-# Disable tsconfig discovery (treat path aliases as external)
-jscycles --no-tsconfig
-```
+The human report lists packages with cycles. `-v` also lists clean packages
+and, for each package cycle, the files that create each edge. Colors are used
+only when stdout is a terminal.
 
-### Resolution behavior
-
-1. **Auto-discovery**: Searches upward from each package for `tsconfig.json`
-2. **Extension resolution**: Tries `.ts`, `.tsx`, `.js`, `.jsx` in order
-3. **Index files**: Resolves `@/utils` to `src/utils/index.ts` if directory
-4. **Graceful fallback**: Unresolvable aliases are treated as external modules
-
-## Output Formats
-
-### Human-readable (default)
-
-```
-=== File-level cycles ===
-✓ @myorg/utils: no cycles
-✗ @myorg/core: 2 cycles
-  components/Button.tsx → hooks/useTheme.ts → components/Button.tsx
-  services/api.ts → services/auth.ts → services/api.ts
-✓ @myorg/ui: no cycles
-
-=== Package-level cycles ===
-✗ @myorg/core → @myorg/utils → @myorg/core
-
-Summary: 3 packages, 2 file cycles, 1 package cycles
-```
-
-With color support in TTY:
-- Green checkmark for clean packages
-- Red X for packages with cycles
-
-### JSON output
-
-```bash
-jscycles --json
-```
+`--json` prints:
 
 ```json
 {
   "has_cycles": true,
-  "file_cycles": {
-    "packages": [
-      {
-        "name": "@myorg/utils",
-        "path": "packages/utils",
-        "cycles": []
-      },
-      {
-        "name": "@myorg/core",
-        "path": "packages/core",
-        "cycles": [
-          ["components/Button.tsx", "hooks/useTheme.ts", "components/Button.tsx"],
-          ["services/api.ts", "services/auth.ts", "services/api.ts"]
-        ]
-      }
-    ]
-  },
+  "has_file_cycles": true,
+  "has_package_cycles": true,
+  "file_cycles": [
+    {
+      "name": "@myorg/core",
+      "path": "./packages/core",
+      "cycles": [["src/a.ts", "src/b.ts", "src/a.ts"]]
+    }
+  ],
   "package_cycles": [
-    ["@myorg/core", "@myorg/utils", "@myorg/core"]
+    {
+      "packages": ["@myorg/core", "@myorg/utils", "@myorg/core"],
+      "edges": [
+        { "from_package": "@myorg/core", "to_package": "@myorg/utils", "files": [] },
+        { "from_package": "@myorg/utils", "to_package": "@myorg/core", "files": [] }
+      ]
+    }
   ]
 }
 ```
 
-## How It Works
+Packages are sorted by name. Each cycle starts and ends at its
+lexicographically smallest file, and file paths are relative to the package.
+Edge `files` is filled only with `-v`: an absolute `path` and, when the import
+named a subpath (`@myorg/utils/fmt`), a `subpath`. The same input always gives
+the same output.
 
-### Algorithm
+**Stability.** Within a minor version (0.2.x), existing JSON fields keep their
+names, types and meaning. New fields may be added, so ignore keys you do not
+recognize. Changes to existing fields come only with a new minor version
+before 1.0 and are listed in the [changelog](CHANGELOG.md). Always check the
+exit status before trusting a report.
 
-jscycles uses **Tarjan's strongly connected components (SCC)** algorithm:
+## Performance
 
-1. **Parse**: Extract imports from all files using ast-grep
-2. **Build graph**: Create a directed graph of file dependencies
-3. **Find SCCs**: Run Tarjan's algorithm to find strongly connected components
-4. **Extract cycles**: SCCs with >1 node contain cycles; single nodes are checked for self-loops
-5. **Normalize**: Cycles are normalized to start from the lexicographically smallest file
+Median of five runs after one warm-up, on an Apple M3 Pro (12 cores) running
+macOS, analyzing each repository's `packages` directory with every source
+extension enabled:
 
-### Import extraction
+| Repository | Source files | jscycles 0.2.0 | madge 8.0.0 | dpdm 3.14.0 |
+| --- | ---: | ---: | ---: | ---: |
+| [nest](https://github.com/nestjs/nest/tree/ed90b8357b40c6e94a466f17f0e6ade88cf80048) | 1,068 | 0.08 s | 2.04 s | 0.86 s |
+| [typeorm](https://github.com/typeorm/typeorm/tree/5a572a40bae2f85a1d5f7b87a0aa88bbbaec5ab3) | 3,609 | 0.28 s | 2.97 s | 1.48 s |
+| [excalidraw](https://github.com/excalidraw/excalidraw/tree/701b901a0f1ba3d0b390d9cdf63d112e25abac4b) | 631 | 0.11 s | 2.63 s | 0.87 s |
+| [ts-morph](https://github.com/dsherret/ts-morph/tree/f288183ddb496adc6f4c5b6929830b5b73437185) | 1,171 | 0.08 s | 1.64 s | 0.83 s |
 
-Supported import syntaxes:
-- `import x from './module'`
-- `import { x } from './module'`
-- `import * as x from './module'`
-- `import './module'` (side-effect imports)
-- `export { x } from './module'`
-- `export * from './module'`
-- Dynamic `import('./module')`
-- `require('./module')` (CommonJS)
+The tools count cycles differently (see [what it finds](#what-it-finds)), so
+their cycle counts are not comparable. Reproduce with
+`python3 scripts/compare_tools.py`; results depend on hardware and file cache.
 
-### What's considered a dependency
+## Comparison with other tools
 
-| Import | Classification |
-|--------|----------------|
-| `./relative/path` | Resolved to file path |
-| `../parent/path` | Resolved to file path |
-| `@/aliased/path` | Resolved via tsconfig paths |
-| `lodash` | External (node_modules) |
-| `@myorg/utils` | Workspace package (if in workspace) |
-| `@scope/package` | External (node_modules) |
+- **[madge](https://github.com/pahen/madge)** draws dependency graphs as
+  images, reads webpack configuration, and lists every cycle. jscycles does
+  none of these. It does report package cycles in monorepos, follows tsconfig
+  `extends` chains and workspace aliases, and fails rather than reporting
+  clean when a file cannot be parsed.
+- **[dpdm](https://github.com/acrazing/dpdm)** prints dependency trees from
+  given entry files and can skip type dependencies (`-T`).
+- **[eslint-plugin-import `no-cycle`](https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-cycle.md)**
+  reports cycles inline in the editor, at a higher cost per lint run.
+- **[Nx module boundaries](https://nx.dev/features/enforce-module-boundaries)**
+  enforces dependency rules between projects in Nx workspaces.
 
-File paths participate in file-level (inner) cycle detection. Workspace package imports participate in package-level (outer) cycle detection. External node_modules are ignored.
-
-## Exit Codes
-
-| Code | Meaning |
-|------|---------|
-| 0 | No circular dependencies found |
-| 1 | Circular dependencies detected |
-| 2 | Error occurred (invalid config, parse error, etc.) |
-
-## Library Usage
-
-jscycles can be used as a Rust library:
-
-```rust
-use jscycles::{
-    Config, CycleDetector, DependencyGraph, ImportExtractor,
-    PackageDiscovery, TsConfig, Workspace,
-};
-use jscycles::cycles::PackageCycleDetector;
-use jscycles::graph::PackageDependencyGraph;
-
-// Load configuration
-let config = Config::load_or_default(Path::new("jscycles.yaml"));
-
-// Discover workspace for inter-package cycles
-let workspace = Workspace::discover(&PathBuf::from("."))?;
-
-// Discover packages
-let discovery = PackageDiscovery::new(&config, &[], &[])?;
-let packages = discovery.discover(&PathBuf::from("."))?;
-
-// Collect imports from all packages
-let mut imports_by_package = HashMap::new();
-for package in &packages {
-    let tsconfig = TsConfig::discover(&package.path);
-    let extractor = ImportExtractor::new(
-        vec!["ts".into(), "tsx".into()],
-        tsconfig,
-    ).with_workspace(workspace.clone());
-
-    let imports = extractor.extract(&package.path)?;
-
-    // File-level cycles
-    let graph = DependencyGraph::from_imports(&imports);
-    let cycles = CycleDetector::detect(&graph);
-    println!("{}: {} file cycles", package.name, cycles.len());
-
-    imports_by_package.insert(package.name.clone(), imports);
-}
-
-// Package-level cycles
-if workspace.is_some() {
-    let pkg_graph = PackageDependencyGraph::from_imports(&imports_by_package);
-    let pkg_cycles = PackageCycleDetector::detect(&pkg_graph);
-    println!("{} inter-package cycles", pkg_cycles.len());
-}
-```
-
-## Comparison with madge
-
-| Feature | madge | jscycles |
-|---------|-------|----------|
-| Performance | Slow on large repos | 50-100x faster |
-| Language | JavaScript | Rust |
-| Parallel processing | No | Yes (rayon) |
-| tsconfig paths | Yes | Yes |
-| JSON output | Yes | Yes |
-| Webpack config | Yes | No |
-| Image output | Yes | No |
-| Monorepo support | Limited | First-class |
-| Inter-package cycles | No | Yes |
-| Workspace detection | No | npm/pnpm/TypeScript |
-
-## Related Tools
-
-- **[madge](https://github.com/pahen/madge)** - Popular JavaScript dependency graph and circular dependency detector (see [comparison](#comparison-with-madge) above)
-- **[NX](https://nx.dev/features/enforce-module-boundaries)** - Monorepo build system with module boundary enforcement and circular dependency detection via ESLint rules
-- **[eslint-plugin-import](https://github.com/import-js/eslint-plugin-import)** - ESLint plugin with `no-cycle` rule for detecting circular dependencies inline during development
-- **[dpdm](https://github.com/acrazing/dpdm)** - JavaScript/TypeScript circular dependency detector with tree output
-- **[circular-dependency-plugin](https://github.com/aackerman/circular-dependency-plugin)** - Webpack plugin that detects cycles during bundling
+Results differ between tools because their resolution rules differ. Compare
+them on your own repository before switching.
 
 ## Troubleshooting
 
-### "No packages found"
+**"No packages found."** jscycles analyzes directories whose `package.json`
+has a `name`. Run it from the repository root or pass the package directory,
+and check `scan.include`.
 
-- Ensure you're running from a directory with `package.json` files
-- Check your `scan.include` patterns in `jscycles.yaml`
-- Use `--only` to explicitly specify package patterns
+**An alias is not resolved.** Look for a `warning: ignored tsconfig` line on
+stderr; it names the file and the problem. Otherwise check that the nearest
+tsconfig at or above the package defines the alias, or pass `--tsconfig`.
 
-### Path aliases not resolving
+**A cycle only goes through types.** Use `--skip-type-imports`, or set
+`skip_type_imports: true` for the packages concerned.
 
-- Ensure `tsconfig.json` exists and has `compilerOptions.paths`
-- Check that `baseUrl` is set correctly
-- Use `--tsconfig` to specify an explicit path
-- Verify the alias pattern matches (e.g., `@/*` vs `@/`)
+**A cycle goes through a barrel file.** `export * from './x'` in an `index.ts`
+imports every re-exported module, so importing from the barrel inside the
+same package often closes a loop. Import the module directly.
 
-### False positives
+**A scan fails with a limit error.** Very large repositories can exceed the
+default resource limits; raise the one named in the error under `limits`
+([analysis limits](docs/analysis-limits.md)).
 
-- Add patterns to `ignore` in package config
-- Use `--exclude` to skip problematic packages
-- Check for `export * from` re-exports that create apparent cycles
+Known gaps are listed in
+[analysis limits](docs/analysis-limits.md#known-analysis-limits).
 
-## Development
+## Library
 
-```bash
-# Run all checks (format, clippy, test, deny, doc)
-cargo xtask ci
-```
+jscycles is also a Rust library ([docs.rs](https://docs.rs/jscycles)): package
+discovery, import extraction, resolution and cycle detection are public. The
+command-line tool in [`src/main.rs`](src/main.rs) shows how to combine them.
+In particular, pass the boundaries from
+`PackageDiscovery::discover_with_boundaries` to
+`ImportExtractor::with_nested_packages` and `with_owners`, so each file is
+analyzed by its nearest package. Library changes for 0.2 are in the
+[upgrade notes](docs/migration-0.2.md).
 
-See [CLAUDE.md](CLAUDE.md) for detailed development guidelines.
+## Contributing
+
+The most useful contribution is a bug report with a small project that
+reproduces it; see [CONTRIBUTING.md](CONTRIBUTING.md) for building, testing
+and the differential test harness. Please report security issues privately,
+as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT OR Apache-2.0
+Licensed under either of [Apache License 2.0](LICENSE-APACHE) or
+[MIT license](LICENSE-MIT) at your option. Contributions are accepted under
+the same terms.

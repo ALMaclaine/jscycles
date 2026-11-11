@@ -12,10 +12,91 @@ use jscycles::{
     WorkspaceFormat,
 };
 
+#[test]
+fn relative_package_roots_and_absolute_alias_configs_share_graph_nodes() {
+    let cwd = std::env::current_dir().expect("test working directory");
+    let root = tempfile::tempdir_in(&cwd).expect("temporary package");
+    std::fs::write(
+        root.path().join("tsconfig.json"),
+        r#"{"compilerOptions":{"baseUrl":".","paths":{"@/*":["*"]}}}"#,
+    )
+    .expect("aliases");
+    std::fs::write(
+        root.path().join("a.ts"),
+        "import {b} from '@/b'; export const a = b;",
+    )
+    .expect("source a");
+    std::fs::write(
+        root.path().join("b.ts"),
+        "import {a} from '@/a'; export const b = a;",
+    )
+    .expect("source b");
+    let config = TsConfig::load(&root.path().join("tsconfig.json")).expect("absolute config");
+    let relative = root
+        .path()
+        .strip_prefix(&cwd)
+        .expect("relative package root");
+    let imports = ImportExtractor::new(vec!["ts".to_owned()], Some(config))
+        .extract(relative)
+        .expect("extract imports");
+    assert!(
+        imports.iter().all(|import| import.source.is_absolute()),
+        "canonical source-path contract"
+    );
+    let cycles = CycleDetector::detect(&DependencyGraph::from_imports(&imports));
+    assert_eq!(
+        cycles.len(),
+        1,
+        "mixed input path spellings must retain the alias cycle"
+    );
+}
+
+#[test]
+fn automatic_include_roots_are_recursive_and_globs_select_directories() {
+    let root = tempfile::tempdir().expect("temporary repository");
+    for (directory, name) in [
+        ("packages/a", "a"),
+        ("packages/a/nested", "nested"),
+        ("packages/b", "b"),
+        ("apps/c", "c"),
+    ] {
+        let path = root.path().join(directory);
+        std::fs::create_dir_all(&path).expect("package directory");
+        std::fs::write(path.join("package.json"), format!(r#"{{"name":"{name}"}}"#))
+            .expect("package manifest");
+    }
+    for (includes, expected) in [
+        (vec!["."], vec!["a", "b", "c", "nested"]),
+        (vec!["packages/*"], vec!["a", "b", "nested"]),
+        (vec!["packages/a"], vec!["a", "nested"]),
+        (vec!["apps/*", "packages/b"], vec!["b", "c"]),
+        (Vec::new(), Vec::new()),
+    ] {
+        let config = Config {
+            scan: jscycles::config::ScanConfig {
+                include: includes.iter().map(|value| (*value).to_owned()).collect(),
+                ..jscycles::config::ScanConfig::default()
+            },
+            ..Config::default()
+        };
+        let discovery = PackageDiscovery::new(&config, &[], &[]).expect("valid selection");
+        let mut names: Vec<_> = discovery
+            .discover(root.path())
+            .expect("discover packages")
+            .into_iter()
+            .map(|package| package.name)
+            .collect();
+        names.sort();
+        assert_eq!(names, expected, "recursive include roots for {includes:?}");
+    }
+}
+
 /// Get the path to a test fixture directory.
 fn fixture_path(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures")
+        .canonicalize()
+        .expect("fixture directory should exist")
         .join(name)
 }
 
@@ -49,7 +130,7 @@ fn detect_cycles_in_fixture(fixture_name: &str) -> Vec<String> {
                 .filter_map(|p| {
                     p.strip_prefix(&path)
                         .ok()
-                        .map(|rel| rel.to_string_lossy().to_string())
+                        .map(|rel| rel.to_string_lossy().replace('\\', "/"))
                 })
                 .collect::<Vec<_>>()
                 .join(" → ")
@@ -134,7 +215,7 @@ fn test_monorepo_per_package_cycles() {
                         .filter_map(|p| {
                             p.strip_prefix(&package.path)
                                 .ok()
-                                .map(|rel| rel.to_string_lossy().to_string())
+                                .map(|rel| rel.to_string_lossy().replace('\\', "/"))
                         })
                         .collect::<Vec<_>>()
                         .join(" → ")
@@ -180,7 +261,7 @@ fn extract_imports_from_fixture(fixture_name: &str) -> Vec<(String, String)> {
                 .strip_prefix(&path)
                 .unwrap_or(&import.source)
                 .to_string_lossy()
-                .to_string();
+                .replace('\\', "/");
             (source, import.specifier.clone())
         })
         .collect();
@@ -525,13 +606,21 @@ fn test_fixture_tsconfig_extends_chain() {
     // Tests tsconfig with extends chain: tsconfig.json -> tsconfig.shared.json -> tsconfig.base.json
     // Each level adds path aliases that should all be usable for import resolution
     let cycles = detect_cycles_in_fixture("tsconfig-extends");
-    // The fixture has a cycle: base/utils -> app/config -> shared/helpers -> base/utils
+    // Each level declares its own `paths`. As in TypeScript, the child's `paths`
+    // replaces (does not merge with) the inherited option, so the parents'
+    // aliases are inactive and the base/app/shared chain is not a cycle (R10).
+    // `test_extends_child_paths_replace_parent_aliases` covers the replacement.
+    assert!(
+        cycles.is_empty(),
+        "inherited aliases must not be merged: {cycles:?}"
+    );
     insta::assert_debug_snapshot!(cycles);
 }
 
 #[test]
 fn test_fixture_tsconfig_extends_imports() {
-    // Verify all path aliases from the extends chain are resolved
+    // Snapshot the specifiers the fixture's sources contain (extraction
+    // coverage). Resolution through the chain is asserted by the tsconfig tests.
     let imports = extract_imports_from_fixture("tsconfig-extends");
     insta::assert_debug_snapshot!(imports);
 }
@@ -545,8 +634,13 @@ fn test_fixture_tsconfig_extends_pkg() {
 
 #[test]
 fn test_fixture_tsconfig_extends_pkg_cycles() {
-    // Verify cycle detection works with extends from node_modules
+    // The package base config's `paths` is replaced by the child's own `paths`
+    // (R10), so the alias-only helper/index loop does not exist.
     let cycles = detect_cycles_in_fixture("tsconfig-extends-pkg");
+    assert!(
+        cycles.is_empty(),
+        "inherited aliases must not be merged: {cycles:?}"
+    );
     insta::assert_debug_snapshot!(cycles);
 }
 
@@ -928,12 +1022,12 @@ fn test_tsconfig_extends_three_level_chain() {
         "should have @app/* from child"
     );
     assert!(
-        prefixes.iter().any(|p| p.contains("shared")),
-        "should have @shared/* from parent"
+        !prefixes.iter().any(|p| p.contains("shared")),
+        "child paths replace parent aliases"
     );
     assert!(
-        prefixes.iter().any(|p| p.contains("base")),
-        "should have @base/* from grandparent"
+        !prefixes.iter().any(|p| p.contains("base")),
+        "child paths replace grandparent aliases"
     );
 }
 
@@ -981,8 +1075,8 @@ fn test_tsconfig_extends_node_modules_aliases() {
         "should have @local/* from child config"
     );
     assert!(
-        prefixes.iter().any(|p| p.contains("company")),
-        "should have @company/* from node_modules config"
+        !prefixes.iter().any(|p| p.contains("company")),
+        "child paths replace parent paths option"
     );
 }
 
@@ -1973,7 +2067,7 @@ fn detect_cycles_with_extensions(fixture_name: &str, extensions: Vec<&str>) -> V
     let path = fixture_path(fixture_name);
     let tsconfig = TsConfig::discover(&path);
     let extractor = ImportExtractor::new(
-        extensions.into_iter().map(|s| s.to_owned()).collect(),
+        extensions.into_iter().map(ToOwned::to_owned).collect(),
         tsconfig,
     );
 
@@ -1992,7 +2086,7 @@ fn detect_cycles_with_extensions(fixture_name: &str, extensions: Vec<&str>) -> V
                 .filter_map(|p| {
                     p.strip_prefix(&path)
                         .ok()
-                        .map(|rel| rel.to_string_lossy().to_string())
+                        .map(|rel| rel.to_string_lossy().replace('\\', "/"))
                 })
                 .collect::<Vec<_>>()
                 .join(" → ")
@@ -2362,24 +2456,24 @@ fn test_workspace_packages_have_valid_paths() {
 // =============================================================================
 
 #[test]
-fn test_tsconfig_not_found_returns_none() {
-    let path = fixture_path("no-cycles");
-    let tsconfig = TsConfig::discover(&path);
-
-    // no-cycles fixture doesn't have a tsconfig
-    // This might return None or Some depending on implementation
-    // Just verify it doesn't panic
-    let _ = tsconfig;
+fn test_tsconfig_discovery_of_malformed_config_returns_none() {
+    // Automatic discovery is best-effort (docs/analysis-limits.md): the nearest
+    // config is selected, and a malformed one yields no aliases rather than an
+    // ancestor's. Absence cannot be asserted portably because discovery walks
+    // above the checkout.
+    let root = tempfile::tempdir().expect("temporary package");
+    std::fs::write(root.path().join("tsconfig.json"), "{").expect("malformed config");
+    std::fs::create_dir(root.path().join("src")).expect("source directory");
+    assert!(TsConfig::discover(&root.path().join("src")).is_none());
 }
 
 #[test]
 fn test_tsconfig_with_no_paths() {
-    let path = fixture_path("simple-cycle");
-    let tsconfig = TsConfig::discover(&path);
-
-    // simple-cycle may or may not have tsconfig
-    // Verify it handles gracefully
-    let _ = tsconfig;
+    let root = tempfile::tempdir().expect("temporary package");
+    std::fs::write(root.path().join("tsconfig.json"), "{}").expect("config");
+    let tsconfig = TsConfig::discover(root.path()).expect("nearest config is selected");
+    assert!(tsconfig.paths.is_empty(), "no paths means no aliases");
+    assert!(tsconfig.resolve_alias("anything").is_none());
 }
 
 // =============================================================================
@@ -2391,8 +2485,14 @@ fn test_very_long_cycle_completes_quickly() {
     use std::time::Instant;
 
     let start = Instant::now();
-    let _cycles = detect_cycles_in_fixture("very-long-cycle");
+    let cycles = detect_cycles_in_fixture("very-long-cycle");
     let duration = start.elapsed();
+    assert_eq!(cycles.len(), 1, "one 15-module cycle");
+    assert_eq!(
+        cycles[0].matches(" → ").count(),
+        15,
+        "all 15 edges are present"
+    );
 
     assert!(
         duration.as_secs() < 5,
@@ -2405,11 +2505,51 @@ fn test_hub_and_spoke_completes_quickly() {
     use std::time::Instant;
 
     let start = Instant::now();
-    let _cycles = detect_cycles_in_fixture("hub-and-spoke");
+    let cycles = detect_cycles_in_fixture("hub-and-spoke");
     let duration = start.elapsed();
+    assert_eq!(cycles.len(), 1, "one representative for the hub SCC");
 
     assert!(
         duration.as_secs() < 5,
         "hub-and-spoke detection should complete in under 5 seconds"
     );
+}
+
+#[test]
+fn legacy_workspace_selection_canonicalizes_scan_paths() {
+    let root = tempfile::tempdir().expect("temporary workspace");
+    for name in ["a", "b"] {
+        let package = root.path().join("packages").join(name);
+        std::fs::create_dir_all(&package).expect("package directory");
+        std::fs::write(
+            package.join("package.json"),
+            format!(r#"{{"name":"{name}"}}"#),
+        )
+        .expect("manifest");
+    }
+    std::fs::write(
+        root.path().join("package.json"),
+        r#"{"name":"root","private":true,"workspaces":["packages/*"]}"#,
+    )
+    .expect("root manifest");
+    let workspace = Workspace::discover(root.path())
+        .expect("workspace metadata")
+        .expect("workspace");
+    let discovery = PackageDiscovery::new(&Config::default(), &[], &[]).expect("discovery");
+    // A non-canonical spelling (`..` segment; on macOS also /var vs /private/var).
+    let spelled = root.path().join("packages/a/../b");
+    let selected = discovery.discover_workspace_packages(&workspace, &[spelled]);
+    let names: Vec<_> = selected
+        .iter()
+        .map(|package| package.name.as_str())
+        .collect();
+    assert_eq!(names, ["b"]);
+    // A manifest scan path selects its own directory.
+    let manifest = root.path().join("packages/a/package.json");
+    let by_manifest = discovery.discover_workspace_packages(&workspace, &[manifest]);
+    let manifest_names: Vec<_> = by_manifest
+        .iter()
+        .map(|package| package.name.as_str())
+        .collect();
+    assert_eq!(manifest_names, ["a"]);
 }

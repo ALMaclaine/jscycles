@@ -1,0 +1,4 @@
+# Development harness only. The application's root policy is unchanged.
+# Owner: alm. Review on libfuzzer-sys upgrade or distribution of fuzz binaries.
+# See docs/maintainers/build-trust.md for the manifest/README and SPDX NCSA review.
+exceptions = [{ name = "libfuzzer-sys", version = "=0.4.13", allow = ["NCSA"] }]

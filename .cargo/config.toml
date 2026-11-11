@@ -11,7 +11,7 @@ jobs = -1
 # =============================================================================
 # Run `cargo xtask ci` before every commit/PR
 
-xtask = "run --package xtask --"
+xtask = "run --locked --package xtask --"
 
 # Convenience aliases for common xtask commands
 ci = "xtask ci"

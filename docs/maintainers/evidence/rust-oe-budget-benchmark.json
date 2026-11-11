@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "workload": "synthetic TypeScript fan-in graph with one two-file cycle",
+  "files": 1000,
+  "corpus_sha256": "94804a42ebadc5c2f245b1e7520adaa548133bd767425da4b7121265bcedecde",
+  "warmups": 1,
+  "samples_seconds": [
+    0.022008833000000005,
+    0.023233541999999996,
+    0.023587165999999993,
+    0.03610224999999995,
+    0.02798666700000002,
+    0.028334499999999985,
+    0.03599595900000002
+  ],
+  "median_seconds": 0.02798666700000002,
+  "min_seconds": 0.022008833000000005,
+  "max_seconds": 0.03610224999999995,
+  "host": "macOS-15.7.4-arm64-arm-64bit",
+  "processor": "arm",
+  "binary_sha256": "7f085e76181d5687a9d0c35ed6bc28392f69126d52540a52d6b8bb24a80712a6",
+  "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget."
+}

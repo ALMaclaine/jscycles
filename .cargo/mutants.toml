@@ -1,0 +1,30 @@
+# Reviewed equivalent mutants only; see docs/maintainers/quality-engineering.md.
+# Positions are deliberate: moving/changing the implementation requires review.
+# A backslash outside a JSON string already makes the document invalid. Skipping
+# its following byte cannot make the retained backslash valid JSON.
+exclude_re = [
+  # Off Windows `cfg!(windows)` is false, so `absolute && windows` and
+  # `absolute || windows` both reduce to `absolute`, and the Windows form of a
+  # non-drive, non-verbatim absolute Unix path is the path itself. Windows CI
+  # covers the real distinction.
+  '^src/input\.rs:45:17: replace && with \|\| in pattern_spelling$',
+  # Uppercasing an uppercase or non-letter drive character is the identity, so
+  # always taking the uppercase arm returns the same string.
+  '^src/input\.rs:97:37: replace match guard drive\.is_ascii_lowercase\(\) with true in windows_user_form$',
+  '^src/syntax\.rs:128:22: replace match guard string with true in jsonc$',
+  '^src/syntax\.rs:174:22: replace match guard string with true in jsonc$',
+  # After both delimiter bytes have been blanked, these mutations merely rescan
+  # one or two spaces. They preserve values, offsets and linear progress.
+  '^src/syntax\.rs:143:24: replace \+= with -= in jsonc$',
+  '^src/syntax\.rs:143:24: replace \+= with \*= in jsonc$',
+  '^src/syntax\.rs:150:32: replace \+= with -= in jsonc$',
+  '^src/syntax\.rs:150:32: replace \+= with \*= in jsonc$',
+  # Recomputing SCCs for a one-node suffix cannot add a package cycle. The
+  # extra bookkeeping has no fixed public work-unit contract. Exhaustive cycle
+  # oracles and bounded deep-ring tests cover the meaningful behavior.
+  '^src/analysis\.rs:488:28: replace > with >= in elementary$',
+  # Always following a regular entry returns the same metadata on a stable
+  # checkout. It adds a redundant stat; it cannot change the classification.
+  # The false guard is retained: a selected symlink prefix must be followed.
+  '^src/input\.rs:13:25: replace match guard metadata.file_type\(\).is_symlink\(\) with true in optional_metadata$',
+]

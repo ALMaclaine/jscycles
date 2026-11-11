@@ -1,0 +1,2409 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-05T22:28:24.788909+00:00",
+  "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+  "rust_oe_revision": "19e4133c0461129b0f5fdb286abd7b87511242e2",
+  "rules": [
+    "PERF-001",
+    "PERF-003",
+    "INPUT-003",
+    "INPUT-004",
+    "API-008",
+    "API-010"
+  ],
+  "scope": "Workspace alias setup cost, first-match compatibility, and consistent declared package identity; local macOS arm64.",
+  "uncommitted_working_tree": true,
+  "changes": [
+    "Check ordering/uniqueness and nonempty replacements once, then resolve eligible exact workspace aliases directly through the shared substitution/fallback implementation.",
+    "Preserve general first-match lookup for public vectors with other ordering, duplicate exact prefixes or empty replacement lists.",
+    "Admit selected lookup work, membership checks and retained strings; preserve the old published alias map on quota failure.",
+    "Prioritize declared workspace names over conflicting aliases in canonical-name lookup, matching existing path lookup."
+  ],
+  "tests": {
+    "native_target_tests": 502,
+    "doctests": 1,
+    "python_tests": 57,
+    "miri_tests": 73,
+    "caller_constructed_precedence_cases": 3,
+    "bounded_setup_exact_aliases": 1024,
+    "bounded_setup_wildcards": 1,
+    "bounded_setup_work_limit": 10000
+  },
+  "commands": [
+    {
+      "command": "cargo +1.98.1 xtask ci",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/ci-final.log",
+        "sha256": "915e04e2c6100002b68e2ba0c320afd8bc900971af8d727d1e4fb4636f4e0c2b"
+      }
+    },
+    {
+      "command": "cargo +1.98.1 xtask crap",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/crap-final.log",
+        "sha256": "e7486196b3fd48234cdb2e0899e3cd66025b2840dc29612a53a5d18b787f3a68"
+      }
+    },
+    {
+      "command": "cargo +1.98.1 xtask miri",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/miri-final.log",
+        "sha256": "221f762eb349e67f5edeabf66085f189cb0d3dcd40b68165ac4fa13bcb971121"
+      }
+    },
+    {
+      "command": "cargo +1.92.0 test --workspace --all-targets --all-features --locked",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/msrv-final.log",
+        "sha256": "b1158da4ea7b9af71d323afbe7e78b08a747e14a2d30c720e99629103774d991"
+      }
+    },
+    {
+      "command": "cargo +1.92.0 test --workspace --doc --all-features --locked",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/msrv-doc-final.log",
+        "sha256": "3984a3cb58b30f0c3570bd996f02d6a5b7d5cd6cca291c8a0ee66c5035c6e416"
+      }
+    },
+    {
+      "command": "uv run --python 3.13 --no-project python -B -m unittest discover -s scripts -p 'test_*.py'",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/python-final.log",
+        "sha256": "27da83623ad59fd6e0e57e60898441c4e0ee9db621650fc26a9f19fd75a021e8"
+      }
+    },
+    {
+      "command": "uv run --python 3.13 --no-project python -B scripts/check_adoption.py",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/adoption-final.log",
+        "sha256": "0b2f21daf75504ea5d900d1e71132466d31e4301323fad2ff363acecf9d76c0c"
+      }
+    },
+    {
+      "command": "RUSTUP_TOOLCHAIN=1.98.1 uv run --python 3.13 --no-project python -B scripts/mutation.py --file src/workspace.rs --file src/tsconfig.rs --output target/tooling/mutation-workspace-aliases",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/mutants-final.log",
+        "sha256": "cbdaa28296eedfb9e9c8914817ac4bec9af6a5de11403cf9e019f7f67e8893a5"
+      }
+    },
+    {
+      "command": "RUSTUP_TOOLCHAIN=1.98.1 uv run --python 3.13 --no-project python -B scripts/mutation.py --review-only --output target/tooling/mutation-workspace-aliases",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/mutation-review.log",
+        "sha256": "8c633618fe3e80554ee5dfa0a2b5f92d08b38c24d3cfc1a79ecc4b7030e56820"
+      }
+    },
+    {
+      "command": "cargo +1.98.1 xtask profile",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/profile-final.log",
+        "sha256": "960aa69fa16216622b45f278ec218517783248b301fb07a81e1285f4b731b7e0"
+      }
+    },
+    {
+      "command": "cargo +1.98.1 package --locked --allow-dirty",
+      "exit": 0,
+      "log": {
+        "path": "target/tooling/workspace-aliases/package-final.log",
+        "sha256": "858b1ecdb3fc2ddb7030edf7b6f8f583487c271a27ad913eb16ba35ce0d3194b"
+      }
+    }
+  ],
+  "counterexamples": {
+    "artifact": {
+      "path": "target/tooling/workspace-aliases/repair-probes.json",
+      "sha256": "5b6a8b80a6b562dfccb9b9f5bff99afd076427f12476803430fe88bd2fe6f449"
+    },
+    "record": {
+      "schema": 1,
+      "binary_sha256": {
+        "before": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+        "after": "70753b5e9d216411f0522fdd025d84f345b7c8a97fc6a2f2dbd563f608ff6ab3"
+      },
+      "identity_cases": [
+        {
+          "case": "invented-cycle",
+          "outer": false,
+          "sources": {
+            "a": "export const a = 1;",
+            "b": "import 'c';",
+            "c": "import 'a';"
+          },
+          "mapping": {
+            "a": [
+              "packages/b/index.ts"
+            ]
+          },
+          "expected_cycle": false,
+          "observed": {
+            "before": {
+              "exit": 1,
+              "has_package_cycles": true,
+              "package_cycles": [
+                {
+                  "packages": [
+                    "b",
+                    "c",
+                    "b"
+                  ],
+                  "edges": [
+                    {
+                      "from_package": "b",
+                      "to_package": "c",
+                      "files": []
+                    },
+                    {
+                      "from_package": "c",
+                      "to_package": "b",
+                      "files": []
+                    }
+                  ]
+                }
+              ],
+              "stderr": ""
+            },
+            "after": {
+              "exit": 0,
+              "has_package_cycles": false,
+              "package_cycles": [],
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "case": "invented-cycle",
+          "outer": true,
+          "sources": {
+            "a": "export const a = 1;",
+            "b": "import 'c';",
+            "c": "import 'a';"
+          },
+          "mapping": {
+            "a": [
+              "packages/b/index.ts"
+            ]
+          },
+          "expected_cycle": false,
+          "observed": {
+            "before": {
+              "exit": 1,
+              "has_package_cycles": true,
+              "package_cycles": [
+                {
+                  "packages": [
+                    "b",
+                    "c",
+                    "b"
+                  ],
+                  "edges": [
+                    {
+                      "from_package": "b",
+                      "to_package": "c",
+                      "files": []
+                    },
+                    {
+                      "from_package": "c",
+                      "to_package": "b",
+                      "files": []
+                    }
+                  ]
+                }
+              ],
+              "stderr": ""
+            },
+            "after": {
+              "exit": 0,
+              "has_package_cycles": false,
+              "package_cycles": [],
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "case": "hidden-cycle",
+          "outer": false,
+          "sources": {
+            "a": "import 'b';",
+            "b": "import 'a';",
+            "c": "export const c = 1;"
+          },
+          "mapping": {
+            "a": [
+              "packages/b/index.ts"
+            ]
+          },
+          "expected_cycle": true,
+          "observed": {
+            "before": {
+              "exit": 0,
+              "has_package_cycles": false,
+              "package_cycles": [],
+              "stderr": ""
+            },
+            "after": {
+              "exit": 1,
+              "has_package_cycles": true,
+              "package_cycles": [
+                {
+                  "packages": [
+                    "a",
+                    "b",
+                    "a"
+                  ],
+                  "edges": [
+                    {
+                      "from_package": "a",
+                      "to_package": "b",
+                      "files": []
+                    },
+                    {
+                      "from_package": "b",
+                      "to_package": "a",
+                      "files": []
+                    }
+                  ]
+                }
+              ],
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "case": "hidden-cycle",
+          "outer": true,
+          "sources": {
+            "a": "import 'b';",
+            "b": "import 'a';",
+            "c": "export const c = 1;"
+          },
+          "mapping": {
+            "a": [
+              "packages/b/index.ts"
+            ]
+          },
+          "expected_cycle": true,
+          "observed": {
+            "before": {
+              "exit": 0,
+              "has_package_cycles": false,
+              "package_cycles": [],
+              "stderr": ""
+            },
+            "after": {
+              "exit": 1,
+              "has_package_cycles": true,
+              "package_cycles": [
+                {
+                  "packages": [
+                    "a",
+                    "b",
+                    "a"
+                  ],
+                  "edges": [
+                    {
+                      "from_package": "a",
+                      "to_package": "b",
+                      "files": []
+                    },
+                    {
+                      "from_package": "b",
+                      "to_package": "a",
+                      "files": []
+                    }
+                  ]
+                }
+              ],
+              "stderr": ""
+            }
+          }
+        }
+      ],
+      "quota_cases": [
+        {
+          "aliases": 1024,
+          "work_limit": 50000,
+          "observed": {
+            "before": {
+              "exit": 2,
+              "stdout_bytes": 0,
+              "stderr": "Error: analysis limit exceeded: analysis work (limit 50000)\n",
+              "has_package_cycles": null
+            },
+            "after": {
+              "exit": 1,
+              "stdout_bytes": 440,
+              "stderr": "",
+              "has_package_cycles": true
+            }
+          }
+        },
+        {
+          "aliases": 4096,
+          "work_limit": 20000000,
+          "observed": {
+            "before": {
+              "exit": 2,
+              "stdout_bytes": 0,
+              "stderr": "Error: analysis limit exceeded: analysis work (limit 20000000)\n",
+              "has_package_cycles": null
+            },
+            "after": {
+              "exit": 1,
+              "stdout_bytes": 440,
+              "stderr": "",
+              "has_package_cycles": true
+            }
+          }
+        }
+      ]
+    },
+    "hidden_package_graph_repaired": 1,
+    "invented_package_graph_repaired": 1,
+    "full_and_outer_statuses_repaired": 4,
+    "unnecessary_quota_errors_repaired": 2,
+    "default_work_limit_preserved": 20000000
+  },
+  "mutation": {
+    "tool": "cargo-mutants 27.1.0",
+    "files": [
+      "src/workspace.rs",
+      "src/tsconfig.rs"
+    ],
+    "selected": 183,
+    "caught": 131,
+    "unviable": 52,
+    "survivors": 0,
+    "timeouts": 0,
+    "new_exclusions": 0,
+    "new_timeout_reviews": 0,
+    "bound_inputs": 325,
+    "inputs": {
+      ".cargo/config.toml": "77c33876d6611a8a2f4d92dd782f037643545201cd3c9329395f3fe99432b298",
+      ".cargo/mutants.toml": "d190d432753f610efcb50036021a49a759c0be666a6aa2027f51aead0fc4e93d",
+      ".cargo/mutation-review.json": "8084e735e45bec3135419e9498363291ce1633004a4197f7008970324a8084db",
+      "Cargo.lock": "f11d920f1ab6d90edc5dd932e8dc7485eda644bbcf59fd652d07ff80ae1f4549",
+      "Cargo.toml": "19945c47de0a6da04feef5ab758b13bcdcd06ad3717862c951bfdf6fa0e8d4d7",
+      "README.md": "ec7e049087ddf65594cfac2563c070aafb8c226219f05cc8307c93fe640a4e66",
+      "clippy.toml": "58734493534f24434c642acc05bf8f665fb44a5d543d1b13fcb16cf39be579c1",
+      "rust-toolchain.toml": "b36eb8ee6d003e4a655f23628f257dd3e89e13d9dee83eb4901f50dce60b4f10",
+      "rustfmt.toml": "fc53c6ca3c63893a6f9dad3e99a95116a2a699937bbc9744f194d34b8bc26096",
+      "scripts/mutation.py": "6a5161c22ce175c44020a5e2e576105f944eb22671300e0600c64e4d068a61aa",
+      "scripts/test_mutation.py": "c3ef98484e882a728a2d97d06f1acb34144c46b0a26037f6322a6aa561caac0e",
+      "src/analysis.rs": "da971c9d50cd78b8edb7d6f183825ac894fa8864941f0242640b042580229f6b",
+      "src/budget.rs": "ed5b90916fc88d401dc50fb7356d42e76fff4d837a5c3f4f6c7ae97c31e03a17",
+      "src/config.rs": "6f566f2030f8d680625965621d60824a6cbac246e8bf97efcd29067faa864044",
+      "src/cycles.rs": "415d6ca3b6dea8853cc11e190806679a5ea59329dd9029983de2ac5e8a0369cf",
+      "src/discovery.rs": "aee41e7a3fe1d77fa0cf426565bada6310d15b8dd4b74d4e85a6ff1384fc2e0c",
+      "src/graph.rs": "78ed235273c95065e4f10e93938094daae8d564b59bcc0171021735c4d37b5e9",
+      "src/imports.rs": "f9a563a104205b64c4992a87cadcc7ab63177699ba7730393f6e919001753a0d",
+      "src/input.rs": "5900ec3fb2a2bfce48cff315cfa042e1d924d0f2423dc7fcc777ceee27cd5772",
+      "src/lib.rs": "578dc1dd892715bca56a184f1909ecb46c0e254f70e193a92d20a5937c73f8cc",
+      "src/main.rs": "9a5c407508dda79add0e21820f14828bbae14e38eeb47a4a6d530c60d2822ad7",
+      "src/module_syntax.rs": "9bca23a5afb97288f395731ece574dec2d3e7e6b668ff376f259a49b427ceba6",
+      "src/output.rs": "508a5bd9732b192a86ef961b5efa3788e86b870a2ef19400353619c76a49bf14",
+      "src/syntax.rs": "aa927962dd5378ff53833229562c17f7f64a447c0d5b8a0a7cb7cdf178187b95",
+      "src/terminal.rs": "f8a1865eb89cf7d9fcbfcc67c3cad217b78410ded0e07f8365477d3c10aadc9f",
+      "src/tsconfig.rs": "2a91eab26dc77c72a688ca42be623e4b37cfb075462515328dee88211efca5f6",
+      "src/workspace.rs": "0e8ba170a9df7655ce60e752772991718bc41caf82a50a3e71b68a81976f1310",
+      "tests/adherence.rs": "fcefec7c9dc6bd31a22c73b2996f5eedf3217787270786f4db44f1ed07d966f8",
+      "tests/boundary_closure.rs": "fdc6fb0998c7cc1898289f130998f7fe6afd1e874ca3b2fde02c54c221e9bdfe",
+      "tests/budgets.rs": "c07238edb9cdb6434569591f94a13db8b1d467e11dcf1579b537d62575fa6b1b",
+      "tests/cli.rs": "9a4b8dfb883b6b9e30d7c5a96691b8d6bde7c66177d9365b71ecef7fc083d98e",
+      "tests/fixtures/alias-chain/src/a/index.ts": "d1b98e794ba1c20e801b00156e9270d4dce519793cab4e3850d438f54a2cd652",
+      "tests/fixtures/alias-chain/src/b/index.ts": "05d745af3515099107317deff61cd9fe793f6fe863c9c61d2daefc78d49d86d5",
+      "tests/fixtures/alias-chain/src/c/index.ts": "3870682765454dc534002a627276209bd65b32c72742a6199b73c9e3771c8ad8",
+      "tests/fixtures/alias-chain/tsconfig.json": "834a15d9ec20e12dbf872a2d5753915718b0a074a787046dbcff5ec7e3103c35",
+      "tests/fixtures/circular-type-only/src/a.ts": "2e1438c17f3a25a9dfee59132ef8ab481402a50a3469317bbd2339d9e2b725fe",
+      "tests/fixtures/circular-type-only/src/b.ts": "10010f91664bfc4223ad1e88e9e355377289cfb96aa5d9eef6a1d6dd356a3256",
+      "tests/fixtures/comments-in-imports/src/a.ts": "fe5457b5eb785b3e5ac8c9b48cc4fe7ef0b20434cee6e90e9b24d3c918945f59",
+      "tests/fixtures/comments-in-imports/src/b.ts": "90528a5581c934b569f6287a84bbee336e3ab01574f5fb143198ddd0bf71ade6",
+      "tests/fixtures/comments-in-imports/src/c.ts": "ed4bb4c0bc7ccab44172e179c86670529f7b76f593ec9865c554f0255da6b656",
+      "tests/fixtures/comments-in-imports/src/main.ts": "4b8258993bce72f1e0aab510cf9ab79fcfb01b7b4910a67293cc40fbaa678f04",
+      "tests/fixtures/complex-cycles/package.json": "6f66c18c4a9d1ec1f82447073c92fa00bc61a62f05e5195778cc73a804c58cfd",
+      "tests/fixtures/complex-cycles/src/a.ts": "4a98bd5381962581f2177ec6ffada29462e15cffebb0c0d674c862e605969a54",
+      "tests/fixtures/complex-cycles/src/b.ts": "01110355fd7790462b1326af07e3ae58fcbbafd51374fb14b98a698aaa67523a",
+      "tests/fixtures/complex-cycles/src/c.ts": "6fa8bc62238a1323d507dd148e43ff7e929d45a1fad091a4488bf6f115aadb6d",
+      "tests/fixtures/complex-cycles/src/d.ts": "ed535484792fa1912651c2accaa1e06476ff53c2311f3ebd7e19b98bcdc6125b",
+      "tests/fixtures/complex-cycles/src/e.ts": "dd4f832bbc86657ab9e3948f4c6439877e20516adc5df5546e91bebbd6cb8334",
+      "tests/fixtures/deep-nesting/src/index.ts": "e0ec666d88469ea01d527b3e262cd84ce2958915cb3f9ffcdfed0ac10deb3813",
+      "tests/fixtures/deep-nesting/src/level1/a.ts": "94c0a664d77ce25e52aea2d306b10096cbf2cc73ae650907245a56d9f4c037ae",
+      "tests/fixtures/deep-nesting/src/level1/level2/b.ts": "e56789a193fcaf2135af0785d1bc018654431f7c68b26ffe72340390de10855b",
+      "tests/fixtures/deep-nesting/src/level1/level2/level3/c.ts": "93e9b23022f18db2143f35405a0cbe749362a748ded9fd8e6b59bee88b0df675",
+      "tests/fixtures/deep-nesting/src/level1/level2/level3/deep.ts": "2ad4141fe1c3e029aef95b16f0b2e08e62a583445822e2b5d0f430ba0f03bab2",
+      "tests/fixtures/default-exports-cycle/src/a.ts": "9c90561e222e2e8e602fee26c0b837c82645104c3c2e6df67d37d680239996a1",
+      "tests/fixtures/default-exports-cycle/src/b.ts": "4a70df12396089245aee5f5ba9f445f1bac6d5c6edb1264131d2887d2b180c51",
+      "tests/fixtures/diamond/package.json": "1a41afac88434ab04042dbbc033c6a2ef34fbb52573463946f1d7ed959dd12b9",
+      "tests/fixtures/diamond/src/bottom.ts": "1adecca3311ab2972a861aa80f502b47549d8f631f7ea1b3e583f330dfac9b9c",
+      "tests/fixtures/diamond/src/left.ts": "3ffd43fb5bd034861cbf75b8770e6778ead12a7ee91d686ce6a709e7bbf6e88b",
+      "tests/fixtures/diamond/src/right.ts": "f55a74df7db6e2dc0feb001a5830b7923a091b4ef1ed5dbe3ba417a164dce0f9",
+      "tests/fixtures/diamond/src/top.ts": "4ec737fe6a5817a0eb85bd5ae518036655fc6fb83294f1c25e76d3bb41b8de68",
+      "tests/fixtures/dynamic-cycle/package.json": "56445a5d62ed105e35cde2dc7b5de61b5400011e84655941ec98a4896b990cfb",
+      "tests/fixtures/dynamic-cycle/src/a.ts": "93d96f4c3b31cd4b7b826806479b789bb1338b590a23d3134d610c0d9ab44c05",
+      "tests/fixtures/dynamic-cycle/src/b.ts": "8aeb1fef7dbc35666a184f85d81d70c28de9393a7232d49c01ef7d7c7ccf3df8",
+      "tests/fixtures/hub-and-spoke/src/hub.ts": "d1c8735d71fdde4479b550fa56563f8b96c317e28727897e1005469efdb7a43a",
+      "tests/fixtures/hub-and-spoke/src/spoke1.ts": "c81be618bf207693085e99984e8ca5f097819b105ac8edef6798e97e78dcbfe2",
+      "tests/fixtures/hub-and-spoke/src/spoke2.ts": "a40fac5c42f1cfef140307a0f2bde379c8966af6e6789d716025f864b78a5412",
+      "tests/fixtures/hub-and-spoke/src/spoke3.ts": "1dc8774f0e6ef8d179ad7747bba5bcb4a0afa7876fe4001a570d981388e75d53",
+      "tests/fixtures/hub-and-spoke/src/spoke4.ts": "cdfc5593e1f10b6bb65f7d81051c75a694ec022dcfa9cd41147f87685e8ac76d",
+      "tests/fixtures/hub-and-spoke/src/spoke5.ts": "5923be368a2fbadc4f9c1c1825e60a57ef77e099c5a507cdb3392f40295c849a",
+      "tests/fixtures/import-styles/package.json": "8b66a0465d8e65c36d7daa23ded92e7115e822a663e0c23444cbd15b94a4f779",
+      "tests/fixtures/import-styles/src/dynamic-import.ts": "d5f6d6db9d54710311b1f9954e82016045eaa49441361574c78690984fadbabf",
+      "tests/fixtures/import-styles/src/helper.ts": "13821760455c40ba7dbf00314b8d7674a15357effa1019c8fca34a92b2fc79c1",
+      "tests/fixtures/import-styles/src/reexport.ts": "0515651b8595759951835a15a689f344be19574a4e69a2788bb811d4a112856d",
+      "tests/fixtures/import-styles/src/require-call.ts": "8804aa3d8921768c7a9bab70d5126b7d8670c3ad4c19a05f72065f1bc231e3b0",
+      "tests/fixtures/import-styles/src/static-import.ts": "08797b8bd92a80279794f3b9b0e0f8780fde322862007b85204ec2c156eb7681",
+      "tests/fixtures/import-styles/src/utils.ts": "91921e549456241027965fc7937a5a8d8fe3ab162c9a09b1d6c3bf9233803e4b",
+      "tests/fixtures/index-file-cycle/index.ts": "11df17d4679d08997ad31558a87f717732cdbd594b8f0663bc5998786f18ee58",
+      "tests/fixtures/index-file-cycle/moduleA.ts": "eea3ec2741187300f28cd7b1a648e44b365c16165363cf7b36044d9d2c61101b",
+      "tests/fixtures/index-file-cycle/moduleB.ts": "7efef35f96afaded0734a2319546298c919ff17e70d1d56c333f7bc94a287aa6",
+      "tests/fixtures/inter-package-cycle/package.json": "2637beed4453a07c659c9bc01a402395688af0e1ed56897be677629273ab9d25",
+      "tests/fixtures/inter-package-cycle/packages/pkg-a/package.json": "3224cba62f2bf2ca45867ddada7a1344a171a200c659ece7a5af0cf9e11f94d7",
+      "tests/fixtures/inter-package-cycle/packages/pkg-a/src/index.ts": "171325019568ca523b43db802b7c4e8a0af7f58ded95dffe2aaebb83b6e6de47",
+      "tests/fixtures/inter-package-cycle/packages/pkg-b/package.json": "91d7f019968eddce4301c7a655beeb6b25e4275b0edb07d79b4351ade3d727a6",
+      "tests/fixtures/inter-package-cycle/packages/pkg-b/src/index.ts": "85c2f7e68423faf4d7df97249ad886f3af61ca322f5408dd6e633f2aef3e09c5",
+      "tests/fixtures/inter-package-cycle/packages/pkg-c/package.json": "fb99501dea1cef615aae11fd2715dbd6a1503bf92c37dda9bc51549f14077b24",
+      "tests/fixtures/inter-package-cycle/packages/pkg-c/src/index.ts": "83b90c0977e84daf9c051841e1dd8f8fe94647668717f36d60a574156d3adb4b",
+      "tests/fixtures/inter-package-no-cycle/package.json": "e7612e4621c4cc87e1038f35ab9544dae0520a368533d961d41326453d2665ad",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-a/package.json": "93534fdf5aa1b054a40312053d0e8d3c7601e4773e2da9281cbef7f5e1e349f5",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-a/src/index.ts": "acd154913efd0900ffa1d03b4a70ea9fccbd505ca39af3294b07b76746ecd16a",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-b/package.json": "18c17abda4988d1237fb09dd9a6b8b54668fb6d9e454f70fb129fcf48ee4eefb",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-b/src/index.ts": "86497dff742ebbae98d48b056d3f102877761abf011e412a7eebf82d77c34e0f",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-c/package.json": "4928d707500fff43465d2c6f1a4e9a40b8d6a1da0ae466c0a5eade64a0a8f15b",
+      "tests/fixtures/inter-package-no-cycle/packages/pkg-c/src/index.ts": "7f2c26aa4a8b18feae8ec044cb6bc13c050fc70c69b8525d9ab8c9fda1b41195",
+      "tests/fixtures/inter-package-simple/package.json": "35b2bfe4dddb6bf56c899198c47dba37a815d26499e21ba8d6fd46775de51fbf",
+      "tests/fixtures/inter-package-simple/packages/pkg-a/package.json": "4cb4549c7c723d2cba6a74f219e815fb5b2048058a1e99240ca523a928f60536",
+      "tests/fixtures/inter-package-simple/packages/pkg-a/src/index.ts": "9ad8221ce697eb6b8da22a486efb8b170d302b852b1014178ebac3a10f2391e8",
+      "tests/fixtures/inter-package-simple/packages/pkg-b/package.json": "ac50b1eb759628075c1d5befc54b3b029ab6fbfc31e47644bbe27c58a5534501",
+      "tests/fixtures/inter-package-simple/packages/pkg-b/src/index.ts": "be438e4ff7e81cd64d1c3df1aa1098f744dff65248f3ce5e1062f26ba5ee9361",
+      "tests/fixtures/jsx-imports/src/App.tsx": "cfb1c727b7e60b3000e4776e1ff3f6fb128aa1abd5e7c00ea97328d8fd365d7f",
+      "tests/fixtures/jsx-imports/src/Button.tsx": "00657b578629a5618ef577c45f87e3dc5bb1d4e8f0ebc9c2e9cf56811d667708",
+      "tests/fixtures/jsx-imports/src/Header.tsx": "94798a1c5cd514ee39f9b200cb15ce343e45617f3a60d20e41b1b0251727c7bf",
+      "tests/fixtures/long-cycle/package.json": "50308cadb7e1599c420a6bfc075ceebff97548ee61022a159f87076b0366d8d0",
+      "tests/fixtures/long-cycle/src/a.ts": "013b3c16f4c5b159fce6b5be2efc078597649c735ed85f62eebbcd475f90ea9f",
+      "tests/fixtures/long-cycle/src/b.ts": "01110355fd7790462b1326af07e3ae58fcbbafd51374fb14b98a698aaa67523a",
+      "tests/fixtures/long-cycle/src/c.ts": "1095e0a6881f52efde598ef12b92da963857531a176c41d21c598b8e5dd248c8",
+      "tests/fixtures/long-cycle/src/d.ts": "ed535484792fa1912651c2accaa1e06476ff53c2311f3ebd7e19b98bcdc6125b",
+      "tests/fixtures/long-cycle/src/e.ts": "ee9824095c5274234c48ab7d3af94ac367a387d970cb764030b9defcaee04263",
+      "tests/fixtures/mixed-import-cycle/dynamic.ts": "f0410b2d7ef05101a1eb598985596437b57d4644865485244642dc4f7d7a9146",
+      "tests/fixtures/mixed-import-cycle/require.ts": "e948d8dd8a6c0f2f9a3e5b1318554a1f4e1062e556c6669ad195aa56a27db777",
+      "tests/fixtures/mixed-import-cycle/static.ts": "fc735ab7a04997d42daa8851bae8cdf609931798377a4d14bd30320c3808d8db",
+      "tests/fixtures/mjs-cjs-imports/src/helper.cjs": "f8e7ac2cee9edbd15a8f7d0ffd9fa5891f8f47e5699753b5ecbd5079af4e2dab",
+      "tests/fixtures/mjs-cjs-imports/src/main.mjs": "b326817dad4be98473b5ca34efbb5739bbf9a0d48e820ba441420ce9f2ed7fca",
+      "tests/fixtures/mjs-cjs-imports/src/util.mjs": "564194b381d764ab9c9461136b195c45638fcc7b93e45805c82ce9f8b166ae01",
+      "tests/fixtures/monorepo-mock/package.json": "079bcc46ff3f0f9711eda502f8167d792f9597b152ba97d5a970a69723bf353a",
+      "tests/fixtures/monorepo-mock/packages/pkg-a/package.json": "3224cba62f2bf2ca45867ddada7a1344a171a200c659ece7a5af0cf9e11f94d7",
+      "tests/fixtures/monorepo-mock/packages/pkg-a/src/helper.ts": "5261c9ebbda3e18ef969ec5e86a93229c7d237301dd8f2e1d995eb250be9bbc0",
+      "tests/fixtures/monorepo-mock/packages/pkg-a/src/index.ts": "9965b4ec00c85f4d8014f51e9db3a85a65f9c23e340f17bdf2792fddadd196e7",
+      "tests/fixtures/monorepo-mock/packages/pkg-b/package.json": "91d7f019968eddce4301c7a655beeb6b25e4275b0edb07d79b4351ade3d727a6",
+      "tests/fixtures/monorepo-mock/packages/pkg-b/src/index.ts": "5621d270339df02128ba5d21d2dbe27b24596f2b465cd68e1f409bb0706ddd1f",
+      "tests/fixtures/multiline-imports/src/main.ts": "4a2c3950faccdb028a9261776fe43bfc5bb3bb972471ad820048bf5241a3ab48",
+      "tests/fixtures/multiline-imports/src/module.ts": "404e6b3deb00a3e5fbdc63fe938db43c1f26f0301fe8aadfaa6110ff52dc0416",
+      "tests/fixtures/multiline-imports/src/other.ts": "020fa1947294a789bdb1f5aa66d57121f46120cfc9ff1c113035e5b9c7ad6f3f",
+      "tests/fixtures/multiple-entry-points/src/entry1.ts": "4db91028a78981bdbd78bcc895632e0c20a1f37d2a7a7e1cb679dbeb77b77325",
+      "tests/fixtures/multiple-entry-points/src/entry2.ts": "f91c6675b9b072d1222e52754a62d8c02a4d93685680a49570ba3bc59ef6fe5e",
+      "tests/fixtures/multiple-entry-points/src/helper.ts": "d2cf2e1230cbbe0c81dd4d93d5648dc11e5c537fcdf4ade67b6d42a5355a0ae5",
+      "tests/fixtures/multiple-entry-points/src/shared.ts": "56a26a08debc0c02cc1b4c8f60f1f3cfc173492d2428135b6c80b228e8c3e418",
+      "tests/fixtures/multiple-entry-points/src/util.ts": "3ed4a5ed011ebdef9950e2b171f8293a4c21d203db816734cb102a00c4c8bf69",
+      "tests/fixtures/mutual-recursion/src/even.ts": "629744f8ee002df71396462da888c969282c4973c74f3a6988e7186c14284a95",
+      "tests/fixtures/mutual-recursion/src/main.ts": "a50a826840385b09b760c339f0d16df0b5519627793f53ef9a1a659f75a182bf",
+      "tests/fixtures/mutual-recursion/src/odd.ts": "c8ebc0718262fa06f3afce9589971cbaa45eddd43127b9b2b0bdd8a0b7198d04",
+      "tests/fixtures/namespace-imports/src/helpers.ts": "1e782e437ee59363bec880775cb6489bf704e7cd78f334e162b224f33a37e643",
+      "tests/fixtures/namespace-imports/src/main.ts": "d5105d823dfd478377326f2d72d76be7e9bd2589f42e342f4a271145348c365f",
+      "tests/fixtures/namespace-imports/src/utils.ts": "2af9e59122a63affb1928451cce104165acd34cb3f9148bf7585f1f66dcaeb75",
+      "tests/fixtures/nested-cycles/a.ts": "1a307cdcb4a732e137e6cba91099cc4f0354804d1a88adbdc98a4249e25710e0",
+      "tests/fixtures/nested-cycles/b.ts": "7cb3dacd9d1462b042b959dea467e0f2a0855fc017ada123072ebf361c4a2c0e",
+      "tests/fixtures/nested-cycles/c.ts": "db2b54f87652f6f20cfe094ad54848149ffcfe6f15ab835b43bca5751c46555b",
+      "tests/fixtures/nested-cycles/d.ts": "6b2bad816c546759b121ac379d74564b77f1197fc2bb449a018f1bdf0bf94ca2",
+      "tests/fixtures/no-cycles/package.json": "7e659e31b3e12abce005fbcec8876af8cbd60b5769dfb329948ee8525764b5db",
+      "tests/fixtures/no-cycles/src/a.ts": "4a98bd5381962581f2177ec6ffada29462e15cffebb0c0d674c862e605969a54",
+      "tests/fixtures/no-cycles/src/b.ts": "01110355fd7790462b1326af07e3ae58fcbbafd51374fb14b98a698aaa67523a",
+      "tests/fixtures/no-cycles/src/c.ts": "303280c8f0a8b89d050d214038ff4a3daf64bf20efd8e9339bc89884d3eebee8",
+      "tests/fixtures/pnpm-catalog/packages/app/package.json": "096ff33d14cb43958a8d0ef7be4b9006ef852882adf3115b04ba6ad452a73188",
+      "tests/fixtures/pnpm-catalog/packages/app/src/index.ts": "c588e43b587953cbb399906da9ce3038b7765afa51a700c5166f35d365a14f47",
+      "tests/fixtures/pnpm-catalog/packages/lib/package.json": "bc2f2bfcc66736b4122faf4c79327b21c37a92b1814e27f4e9eab9a4e54434ff",
+      "tests/fixtures/pnpm-catalog/packages/lib/src/index.ts": "329aca78f46eebb302e5e53e684fd12d5f9eec94b4571c1a1c1ed9abc69828ab",
+      "tests/fixtures/pnpm-catalog/pnpm-workspace.yaml": "0fb360452b0231d114d0b0ad6cc76bb48fe528382f55827cf93739bf64ec79e1",
+      "tests/fixtures/pnpm-workspace/packages/pkg-a/package.json": "ed4b55be55527d47331273e7555dd3f9197a4c5e44923e42a471d09d3c52fdb1",
+      "tests/fixtures/pnpm-workspace/packages/pkg-a/src/index.ts": "f852ceab905f297c2c4f6b9f42c747495d6ca0e840a673c009233d940f95e87b",
+      "tests/fixtures/pnpm-workspace/packages/pkg-b/package.json": "988706060ecbe4e975aee16a185711ec024dd2960e48f64cfe4c4956c07fbcba",
+      "tests/fixtures/pnpm-workspace/packages/pkg-b/src/index.ts": "a71deef61f0ba2bd343fb6a0cc2a1fe7525d096f6f959c06abc050ad22fa936e",
+      "tests/fixtures/pnpm-workspace/pnpm-workspace.yaml": "477e6c5f8b033a1ecb7f8919ad2726e4328c7893c4ad6228d62471425b22dbe7",
+      "tests/fixtures/pnpm-workspace-complex/package.json": "c4f9f059af4dc96c07df77c0c30c0fd8cc56e9954f64779c46f5c92be69afe14",
+      "tests/fixtures/pnpm-workspace-complex/packages/core/package.json": "58f70dba2434ab931d0e083f447c3486353282eb8f5cd4736fd2a8477afbf019",
+      "tests/fixtures/pnpm-workspace-complex/packages/core/src/index.ts": "bb04d6df77ed0eb612c01ee73d888e8540428e06df2a1edbad2f3a675b0bfa03",
+      "tests/fixtures/pnpm-workspace-complex/packages/ignored/package.json": "36329b5c592facca04b8fcb04ba9db5a06e075d9b47d25f27396c5aef4076a85",
+      "tests/fixtures/pnpm-workspace-complex/packages/ignored/src/index.ts": "ce50890add716bcf682bdb5f1bad4a4811d2dac13cdfb9142df346408a3dc95d",
+      "tests/fixtures/pnpm-workspace-complex/packages/utils/package.json": "96420bc8eb33be7f962266a57251adb1ad80c4341967730195bdacaf3ba87221",
+      "tests/fixtures/pnpm-workspace-complex/packages/utils/src/index.ts": "6541bf3781c88e84cd6ec1f6f96955778be8360c549181fe573093f964d4d9cc",
+      "tests/fixtures/pnpm-workspace-complex/pnpm-workspace.yaml": "2925d0a50ad4ca70552ab9583ad28c87448cf32c3efe4aed06f26d98790014f3",
+      "tests/fixtures/re-export-cycle/index.ts": "219998d1f9e54feea18016732c46d3f26ac0ba17546bf64d9da3047c00da75f1",
+      "tests/fixtures/re-export-cycle/main.ts": "4a81024f74eea148f1120283d5cad7ff714f6fa3dde68b7f9e314be4a47cb500",
+      "tests/fixtures/re-export-cycle/utils.ts": "c18fcc206ce107cd1c4811d787644410107fe7f762b44cc083abb2524fa59d7e",
+      "tests/fixtures/self-loop/package.json": "e91f9a30e9401021f3a60c5b5242471c2bc7d85b639272eebb89ffb1af8f178a",
+      "tests/fixtures/self-loop/src/self.ts": "6108c3a837d78833becea8511578e272cdc724e26bdd8166cd56277875ed1963",
+      "tests/fixtures/side-effect-imports/src/app.ts": "0cb8c9a2ef1375140b6e75dbc4c6145b7a274128cb645611304970819b2046cf",
+      "tests/fixtures/side-effect-imports/src/main.ts": "4e85cde76b9738a67968ccd1f33aeee7654d45924ba7bcce8afa3c42892f49a7",
+      "tests/fixtures/side-effect-imports/src/polyfill.ts": "b3398fcede11954b0ef3ab249ed1b6f148f8071bd39956353cf27de64f4ef276",
+      "tests/fixtures/side-effect-imports/src/setup.ts": "38ba45b54782fa5ff23fb2496c113c3a67060c452a046555526d3e48a74f6988",
+      "tests/fixtures/simple-cycle/package.json": "11b965968e8aaabce4157109690b30397ddae467988b29a6f1f8b29d0364a870",
+      "tests/fixtures/simple-cycle/src/a.ts": "4a98bd5381962581f2177ec6ffada29462e15cffebb0c0d674c862e605969a54",
+      "tests/fixtures/simple-cycle/src/b.ts": "97b89936029b9bdc3cd3e6dad7a2d2264b09c76f0b4be22bc82aac3c1470bb6f",
+      "tests/fixtures/star-exports/src/a.ts": "fc8861840c3fee0427972630167a8943294dfc951283894d635f05c1d50f4aab",
+      "tests/fixtures/star-exports/src/b.ts": "9c164cfcd5425acb875a0175f29e14338d2f3ae76cf4c0ee6664ec9f4b8cac43",
+      "tests/fixtures/star-exports/src/index.ts": "754750f4d26a17e855ade2f6fb33b92101ff79700130b15417246d852692a477",
+      "tests/fixtures/string-escapes/src/a.ts": "fe5457b5eb785b3e5ac8c9b48cc4fe7ef0b20434cee6e90e9b24d3c918945f59",
+      "tests/fixtures/string-escapes/src/b.ts": "7f770e73d7381e2bde83fa9bac95335c62feb5e24263cc67fd3b3d2b55e392a3",
+      "tests/fixtures/string-escapes/src/main.ts": "b5d08f6d1c57ad858406b7190cfdc079df20914939b2fce998f8aea69b642a88",
+      "tests/fixtures/tsconfig-aliases/packages/pkg-a/package.json": "e2f6d7883dd3d651227c783e446549d69d55628a4cb29f6a2dc68843f9b39a1f",
+      "tests/fixtures/tsconfig-aliases/packages/pkg-b/package.json": "cb213eeb17408dc11beb99d73a771cc254bf491fb1966ea0b22061cc2419f2ab",
+      "tests/fixtures/tsconfig-aliases/pnpm-workspace.yaml": "477e6c5f8b033a1ecb7f8919ad2726e4328c7893c4ad6228d62471425b22dbe7",
+      "tests/fixtures/tsconfig-aliases/tsconfig.base.json": "3a297b3b733337ecf1201107668d432e98ece7474ed8cfe15450bb5813951757",
+      "tests/fixtures/tsconfig-complex/package.json": "47c4352d13ecdaae758b1b72d986a852631b52f59ac6c010fad5f07e838fe4b5",
+      "tests/fixtures/tsconfig-complex/src/components/Button.ts": "ca66a7c4c73b7637715779c29ca5ece2d8bcabd6275e0d923a7f040f28cbb789",
+      "tests/fixtures/tsconfig-complex/src/config.ts": "3cb2756cbbd59153b651508c486367285cc96652bd334faf5ed0aef72c18a612",
+      "tests/fixtures/tsconfig-complex/src/index.ts": "2881f56878600675c0e1a2b27a5127517d6f0d709c0ce7f6bc111417a310b51a",
+      "tests/fixtures/tsconfig-complex/src/utils/format.ts": "e0fe90849c245c725727a58289730137c0710a0fba8b5430581b3b1f8a39a816",
+      "tests/fixtures/tsconfig-complex/src/utils/helper.ts": "769304054680131fc00e41acd7d3a5a5f550e5b12444f5ef88c81b1dd31ffc6a",
+      "tests/fixtures/tsconfig-complex/tsconfig.json": "0c2eb8b648c35b76b6e7f83c17f3d172a4d383efb6885ce74e57934ff4e19a0f",
+      "tests/fixtures/tsconfig-extends/src/app/config.ts": "1727e421801406a0a9799097722d7c3ca7a7b16ab830bf29c7ec095f3d6fa73e",
+      "tests/fixtures/tsconfig-extends/src/base/utils.ts": "255cfe308bbfa6699d1885fc3147a54eaac99cac653aaa3af9d69f0c2202b99b",
+      "tests/fixtures/tsconfig-extends/src/shared/helpers.ts": "1b3d30e85bf310d36feac948dab0fba4c141cd2baa20078b33c1aca61ab65964",
+      "tests/fixtures/tsconfig-extends/tsconfig.base.json": "e7acc33f43397e688fa2b6b870118dbb37a21d9433107b934f232b458f1b0bb0",
+      "tests/fixtures/tsconfig-extends/tsconfig.json": "675d51eb09b3357259bae9136581c01d477da535b24b133dfd0bfe0f4f04345e",
+      "tests/fixtures/tsconfig-extends/tsconfig.shared.json": "d52874ab4014613536ee44062fdec95da7937826347bbd507e71677acf4274e0",
+      "tests/fixtures/tsconfig-extends-pkg/node_modules/@company/tsconfig/src/util.ts": "cdbd2ec08d9899c7340d45acd035348930f858c909cc3a6cff968cd293e35465",
+      "tests/fixtures/tsconfig-extends-pkg/node_modules/@company/tsconfig/tsconfig.json": "5c3f184a94bf2893d77cc1271ae23145546caa6f9745eb8d89719a017786af06",
+      "tests/fixtures/tsconfig-extends-pkg/src/helper.ts": "fe160ab552757636e06083a30d98d0df057b34a52edf9d22eb4994c2a3dfbf0c",
+      "tests/fixtures/tsconfig-extends-pkg/src/index.ts": "2a74d086575230d14ffd7a15388b3838a34dfc867308e1ea257fa69cab7ce439",
+      "tests/fixtures/tsconfig-extends-pkg/tsconfig.json": "d1b1214b0c8fa97052e05adae147c4bfbd79b4ad67f90286cb66b8a9797b9b3d",
+      "tests/fixtures/very-long-cycle/src/m1.ts": "8ccdb2c8779358db02de613a6dddfb8c04b133bf3e31be318268cc92d9de9186",
+      "tests/fixtures/very-long-cycle/src/m10.ts": "71886992b97bac514cdcd5bf42212ddd6386ef6106f071dd48e3208d83d2487f",
+      "tests/fixtures/very-long-cycle/src/m11.ts": "1ec0f3b5732938e0a9ac259a07be0185e44af497aa6c46abdad827d16ea95a1c",
+      "tests/fixtures/very-long-cycle/src/m12.ts": "7299e4c1e5600f10284ed4481cbb190bc6eb0ebef9cd7553d9c4e7dd730e23d3",
+      "tests/fixtures/very-long-cycle/src/m13.ts": "08475cb0777ab5ef3aeb3e79eca554b3ec5144ec0be0e67792635c7afe70ff28",
+      "tests/fixtures/very-long-cycle/src/m14.ts": "7a9e98da3e594c808cc54249a519fb4b020808586a335d723b81f29bfc04f63d",
+      "tests/fixtures/very-long-cycle/src/m15.ts": "1377c02ba1b01154628bb659f4d3e2a427838d9acb5aa64bb1272ce14c89cbef",
+      "tests/fixtures/very-long-cycle/src/m2.ts": "c26ad47e52b90a4ae6cf14618ff62f898e5704d0b4805147bf4bd8f70853c319",
+      "tests/fixtures/very-long-cycle/src/m3.ts": "fb95e07e6bd05e8083ce4ca45c9aecc80d6f4fc2dffb8af1aab52312ac076294",
+      "tests/fixtures/very-long-cycle/src/m4.ts": "64d2828fbf578f230d0666190dd6b0dc907ae11219fc8a45b287c5347a315e5e",
+      "tests/fixtures/very-long-cycle/src/m5.ts": "a8edb5650eaa0f701f42ae645f1169624227f332689f44a682fea23ec024fd0c",
+      "tests/fixtures/very-long-cycle/src/m6.ts": "34062e0151b1c04003ebac01311f4c8600ad95cfebf6950798c106f5fa948430",
+      "tests/fixtures/very-long-cycle/src/m7.ts": "6f1e17df2835c791b92af1ef2da61135e13afee2392e3d02fbe35b29a99ad988",
+      "tests/fixtures/very-long-cycle/src/m8.ts": "75609deafbcf915f498935127da5dd2dab3ad565fb0afa6434fb7ce74d957a68",
+      "tests/fixtures/very-long-cycle/src/m9.ts": "672b527a1e8b04a3ae96f52e97a7265a51211a49abbe85faf39e086d76c35304",
+      "tests/fixtures/wide-graph/src/a1.ts": "995666814890625c519790b0b06a9edbcd08e9022ce8ff4d9806a6e4faa6d7e2",
+      "tests/fixtures/wide-graph/src/a2.ts": "12d2a49a694f0e24a22064027df5dc7a2d3077b306a18ead8696a476517dd4b1",
+      "tests/fixtures/wide-graph/src/a3.ts": "5a2855dde8a37de7269be0a490b27b12199a2c7b414d20342959784b5a884f49",
+      "tests/fixtures/wide-graph/src/a4.ts": "1ee3e2e63c441a6dafd1856aa20e3d5f0e086bfb591f72061703d6ca67f28e5f",
+      "tests/fixtures/wide-graph/src/a5.ts": "64da6502abfd99eb20ec25470e4ecfafefb138dd58bec5f120b747488f314a1d",
+      "tests/fixtures/wide-graph/src/a6.ts": "fc36f436c6aa463966638bbf35156f5423c31a3d9204292ad06c64b21bd7f339",
+      "tests/fixtures/wide-graph/src/a7.ts": "7a118bac81540bca627b6f82ca01194eef6b015192790238140c126322c26c68",
+      "tests/fixtures/wide-graph/src/a8.ts": "57026af4abec2271c8ebc1e4b04caae8a3dbcd17d916e9416bafee51b28beef4",
+      "tests/fixtures/wide-graph/src/hub.ts": "246cccbec71e27f2b9be09e35e2112e72349e9d9bc5b245550a91a22377e68bc",
+      "tests/fixtures/with-tsconfig/package.json": "3f8cedf9ad2cebb5068026e7bb18f54e352ec9c9717ff0c02893d884074f26c3",
+      "tests/fixtures/with-tsconfig/src/a.ts": "fbeabd301f5cf65f3a8cb18303e94bd91f38733a6496627114af96d0558a9ecf",
+      "tests/fixtures/with-tsconfig/src/b.ts": "a7d735486de8cab828cf13bb49e23fd3afad867acac74fba1771d9ade68bb582",
+      "tests/fixtures/with-tsconfig/tsconfig.json": "c02933a0435e4608a4f0b53037627eaf4f5ae653b61768e6d18788ac7d0526a5",
+      "tests/fixtures/workspace-diamond/package.json": "20a84c50233207d2f30d22207b1f292597288194c3637e4322ac6fc5a1d9ab58",
+      "tests/fixtures/workspace-diamond/packages/bottom/package.json": "9cc0f2dfac2bab975660f0ab5deb363d2ecd3040122697e22f2fc10085a6d0cc",
+      "tests/fixtures/workspace-diamond/packages/bottom/src/index.ts": "0074ccb7cb0b7cbc0d18cff4bdf0a7d3a707afc0e8c2e1ca85b616cb0e3eb490",
+      "tests/fixtures/workspace-diamond/packages/core/package.json": "e28e72050477063071282543f42d72cca135e094f69c87edba0101249aa6c89e",
+      "tests/fixtures/workspace-diamond/packages/core/src/index.ts": "e0a46cf1aa41a002d6bd342cf141ede47daded78fc8f385aff4ac2cb154cabe2",
+      "tests/fixtures/workspace-diamond/packages/left/package.json": "25eecb4ad5d307072b0428b3f7e69d5e5bc1e36e678b32274711840476f3a83b",
+      "tests/fixtures/workspace-diamond/packages/left/src/index.ts": "78ee25c79f9b469c8efab2d1dfb7e549be7596a3763a1213197036180497c3cf",
+      "tests/fixtures/workspace-diamond/packages/right/package.json": "67eb63103da238e205382af4212c1abc5a256db22b0a4436428c08ac4dd7dc96",
+      "tests/fixtures/workspace-diamond/packages/right/src/index.ts": "09d4605167fe17714201cf589b94913eeb0c823b24142daf048e459c85e0cc28",
+      "tests/fixtures/workspace-five-packages/package.json": "da99e555cd33380154512123aee994fe71065357cd3cf2dcf81192531db96fad",
+      "tests/fixtures/workspace-five-packages/packages/a/package.json": "1841633847f55a0098d3a27a6940a4e0db83a38d105c3a7459106f51023a42be",
+      "tests/fixtures/workspace-five-packages/packages/a/src/index.ts": "f5f02cd09661f6b53a04a378496be62e47b7f835ab960c85172ee5910ad44aee",
+      "tests/fixtures/workspace-five-packages/packages/b/package.json": "911dca453a2eb2bd530df70ab4426bd23f3f0ef5912ca213f3da0ea0d64a0808",
+      "tests/fixtures/workspace-five-packages/packages/b/src/index.ts": "2d6a3b09a614f6c09a728ec3694934042c2cfe8427fe678d947a7752e208cb24",
+      "tests/fixtures/workspace-five-packages/packages/c/package.json": "76b70cb08fd130310d72573223d33da8bf552ca5c86653cf24dc52577a7d731b",
+      "tests/fixtures/workspace-five-packages/packages/c/src/index.ts": "4d69c5a7150ccc36f8dcaa6d9ee796a192ec59215deab61a5f9a93661600545b",
+      "tests/fixtures/workspace-five-packages/packages/d/package.json": "b4dcf3f3a4ca3ba2867af7c06f90efec96063ed21ef3b7b6c8194737b51a9f73",
+      "tests/fixtures/workspace-five-packages/packages/d/src/index.ts": "7be4caaedb2e75498eea37ffa2e598f9775f925e37738eb8451e373269b68bcd",
+      "tests/fixtures/workspace-five-packages/packages/e/package.json": "c56eb7da6e72f24a228179434a6b1cf00716655798c1bd7cc076bc758f9d0148",
+      "tests/fixtures/workspace-five-packages/packages/e/src/index.ts": "2fc7eebaefa08ab8ea5f987f177d8abb171000eaecdd48ba1e7439404f36a7d3",
+      "tests/fixtures/workspace-shared-cycle/package.json": "c237883a22f17cb78c0b0c968a877c20f1fde36fea7811de139833323174fb2f",
+      "tests/fixtures/workspace-shared-cycle/packages/app/package.json": "4dd74346c4da3609d5ad8e037dbe14e6426cbab07f6c1f94ee06dfe4b035e00f",
+      "tests/fixtures/workspace-shared-cycle/packages/app/src/index.ts": "b49fe4bf0d0bb713d928d27e71064308b5d81f4ac7ef05a51319137bee04bb31",
+      "tests/fixtures/workspace-shared-cycle/packages/shared/package.json": "4877a5213fb05d5b02b477e5f05baaa9346045442c2df35b9f26b22c029ed4fb",
+      "tests/fixtures/workspace-shared-cycle/packages/shared/src/index.ts": "93a625d97accc18f92d3e784d04f7b9605255828580399fa5c64fb0b598632be",
+      "tests/fixtures/workspace-shared-cycle/packages/utils/package.json": "7828f14d6cf7259a6efc4219bfb944f8211130d7a63ee17be8421e2465279a5e",
+      "tests/fixtures/workspace-shared-cycle/packages/utils/src/index.ts": "c9be85b0a76399ae168b527821fdfece6e65c968ab10d520e16b2159d90b29bb",
+      "tests/fixtures/workspace-with-shared-dep/package.json": "40a0b22bc6bbc0047cb2b8d02947b8e5ae888f16a45053b58a27ebdb81a22f18",
+      "tests/fixtures/workspace-with-shared-dep/packages/app/package.json": "e1fe434fa9ac627379c6a5fe037a1388476fccb84b0ce36595925643c93bfe58",
+      "tests/fixtures/workspace-with-shared-dep/packages/app/src/index.ts": "0bafd95a2248ff435eb3e2b40ebbb0b3b3841595dd9923ccf66d8de417fa1056",
+      "tests/fixtures/workspace-with-shared-dep/packages/lib/package.json": "3f618c0dc620d33d65734d797d7db3970bd3cf44779dbfaf3039836ac0411180",
+      "tests/fixtures/workspace-with-shared-dep/packages/lib/src/index.ts": "da1fddf962375079f5b5187da8b89fc794928a98562ca344144d8ff5ede2d866",
+      "tests/fixtures/workspace-with-shared-dep/packages/shared/package.json": "14c0d516fa9bedac4a791af113f019f7e4e43f242a49e54f137dbdd8663c60ee",
+      "tests/fixtures/workspace-with-shared-dep/packages/shared/src/index.ts": "b57589905bc0eee990d1b667cd048aa33cff25266deda17100eea42abbd212fe",
+      "tests/import_forms.rs": "8c2499edc9688cfaf9c45573064a5a5bafe73f742b18ba00e998145675c786f1",
+      "tests/integration.rs": "df3f73d2b8a9e9f34907c98baa277ace390bc9fd156667ff21df5234af808deb",
+      "tests/miri.rs": "047ae1ec1160072ddd8cc85fb78dfe8f338b9ef99cd56061679e187572e30f09",
+      "tests/mutation_contracts.rs": "7d42123cae57addc5950e25de3d0f59feb0fb5a11a90290b5cea6ace575f95ed",
+      "tests/resolution.rs": "3a10cbc4c4cf67e3a2be9e0acbb9c242371fd61600b5e953c67ee61d8451b770",
+      "tests/snapshots/integration__alias_chain_detection.snap": "a58880153e4bde3f60102341e833028d98222eac2e1d0b819048464e54602a4d",
+      "tests/snapshots/integration__circular_type_only_detection.snap": "8fb6f1f804aed28204ba2b784b342e7d36c0b03e21fe4336413413b4259051dd",
+      "tests/snapshots/integration__comments_in_imports_detection.snap": "8500519bf3d32421dd7187be4d60f0dddd2437b84247caf4bac2e86068ff67f9",
+      "tests/snapshots/integration__complex_cycles_import_extraction.snap": "3150d9958c48a551d48e0d00d5b4cb2e3a6cff83edde793cf05926acb8bd8fb2",
+      "tests/snapshots/integration__deep_nesting_cycle_detection.snap": "4dc9f1f92a4fd7c8f71f606d2248a0ced9eb0ce52cb7bd2dbc7ffca0bb039dbc",
+      "tests/snapshots/integration__deep_nesting_imports.snap": "79269798c0c462fb9cf6eee5bf5fe8444f7fa69ee7b83f393cd38d2e66c1956e",
+      "tests/snapshots/integration__default_exports_cycle_detection.snap": "17ac7be3f4d99f60c0712cb0081cddb70cbc3a690ff5f63c38e2b5c8dc4f933a",
+      "tests/snapshots/integration__diamond_import_extraction.snap": "4e5e101189a6b8686fe733328c63ccff9b52139f0645b1fa4c26145e581daa8b",
+      "tests/snapshots/integration__dynamic_cycle_detects_dynamic_imports.snap": "e626da28b5c2aa6ebe998551a0db11f1d07e70c75fafd1f3fbc62ceb19383ffc",
+      "tests/snapshots/integration__fixture_complex_cycles.snap": "365f571b7d6a0a9a96c37ac3316c851448707e6f702dc821ace8fac1db2bcc9a",
+      "tests/snapshots/integration__fixture_dynamic_import_cycle.snap": "62e9e4e6c9ae4b7e5ca61cc0ce8da097dd8434ef156b450a2a2df3723e4ccc27",
+      "tests/snapshots/integration__fixture_import_styles.snap": "5f8de3ccb8973a05156a60f87374f4176f03434f02a9afc5452cacb5b00b3771",
+      "tests/snapshots/integration__fixture_import_styles_cycles.snap": "c4e3821fd1ea18b0f50a6def786e4d2a06c24244eaa8579cffc40929f0a16266",
+      "tests/snapshots/integration__fixture_long_cycle.snap": "d65782c77f8c568d1a8b81504e91a67e1f7269245fea71e2a1287194d3b41321",
+      "tests/snapshots/integration__fixture_monorepo_discovery.snap": "cb0717fbf8b5d9836f33402d4785f35aafee1a2475da93b1639e392835c4486c",
+      "tests/snapshots/integration__fixture_self_loop.snap": "8fd2fb605a05758147721fa7cd36fb4e0f2deced9ed5a40fdc2e71cbc7a7b218",
+      "tests/snapshots/integration__fixture_simple_cycle.snap": "8f0924be5c723a041973ea75abb0189958e58536ad33b93f77055cd32d454b95",
+      "tests/snapshots/integration__fixture_tsconfig_complex_imports.snap": "3e45af3b560e20c91bcb15c7522c82eef0256ac3f0c7516efc946527520aa278",
+      "tests/snapshots/integration__fixture_tsconfig_complex_paths.snap": "7c1c3bd9f8715010fd0ec207848e43988f0d93059c62393ac619b5e4c5b1e4ac",
+      "tests/snapshots/integration__fixture_tsconfig_extends_chain.snap": "9d335585da8299ebac5b41e965473e24e52d5281d36c8e438c29e9e5d2c89e85",
+      "tests/snapshots/integration__fixture_tsconfig_extends_imports.snap": "89c1efc0ff15e96493e23aa54caf43e1f8ce7a42f01fd3788535f1cdbaa12c66",
+      "tests/snapshots/integration__fixture_tsconfig_extends_pkg.snap": "87bb9da3761bc0391c71334fe84efadc301ad78bc32524e37cbd455d6502b925",
+      "tests/snapshots/integration__fixture_tsconfig_extends_pkg_cycles.snap": "0991de8db94e332c861d279718a43e5941ee8942400282427e36859a4c2d572a",
+      "tests/snapshots/integration__fixture_with_tsconfig.snap": "6103ca09e1df24e9fb1daa2de38ed0e9ddac985e6083d23010c4fc422875934b",
+      "tests/snapshots/integration__hub_and_spoke_detection.snap": "f26f5bcc90897e6c8319699f4fb2abe93a42946d2b82cd0617f04d12034b1cc9",
+      "tests/snapshots/integration__index_file_cycle_detection.snap": "365cd224cf86347098552dde24db2fd3c93ad2aa461dc272f58446d49c890a6e",
+      "tests/snapshots/integration__index_file_cycle_imports.snap": "1a286694d43856ff19ae3475669e00d6058aaddd35a902aca6c6ab2672a7d9a6",
+      "tests/snapshots/integration__inter_package_simple_cycle.snap": "c5f0631ef827471c742f804023a2e47b782cfbe1771d72004c4dcfbe1d258724",
+      "tests/snapshots/integration__inter_package_three_way_cycle.snap": "a41ce671610f1589aaeac91a1cacf1e5b9ff4c05cea52067ee2f5dc9db0dabc4",
+      "tests/snapshots/integration__jsx_imports_detection.snap": "7a9110e85d864e5600d57997aaf9a6e4c65ff3a391b58e9b25c6aed2919ecbb9",
+      "tests/snapshots/integration__long_cycle_import_extraction.snap": "ef438b4358e76129edc0bb9d0f63bc09d502c6a4162e50260c821edc47c4e6a6",
+      "tests/snapshots/integration__mixed_import_cycle_detection.snap": "2f0f525e18f5225277c6824f8a71010a078b60601cc833904e95b5d4b1957e90",
+      "tests/snapshots/integration__mixed_import_cycle_imports.snap": "2a8634cbf72ecd4655854beaca49a897b4074311d91ca53aa45e152048e782d1",
+      "tests/snapshots/integration__mjs_cjs_imports_detection.snap": "ca4b6baf98a976724467f7f4be0bd1f1a8a9b80f061f5681dc1ed55b8a3d1648",
+      "tests/snapshots/integration__monorepo_per_package_cycles.snap": "9aef8f6b8844d1a325a113a9fad5fe6a9df583ab4d0410bb752cc1054c9c38f4",
+      "tests/snapshots/integration__multiline_imports_detection.snap": "7c90d4c9b446482c84ad2def839f834da68a5904f234488f697f6898e39a6f84",
+      "tests/snapshots/integration__multiple_entry_points_detection.snap": "384df7b6ce28faf24cac86b755692484daaf2161d6d29d81c3f4929dddb38c6a",
+      "tests/snapshots/integration__multiple_entry_points_imports.snap": "70c1512c745e9df4f9ece79a78e981d52f1a4f4896bd4587cde9a7cee0caab65",
+      "tests/snapshots/integration__mutual_recursion_detection.snap": "f75bbd2942f8e3246d99feea9a2edc3a32ec0ddf50bbabcaf652f87725327f90",
+      "tests/snapshots/integration__namespace_imports_detection.snap": "50a61202beeb64253f24b4d7670dc1cf5f1ebac68c33debf995a0499bcc56b8c",
+      "tests/snapshots/integration__nested_cycles_detection.snap": "dcedfddd5f0a462988b6e719af794fbbf5b96f461fe0a1d275d3287ef09282ea",
+      "tests/snapshots/integration__nested_cycles_imports.snap": "f49f1a634223e2508855cc79739e0340e7b33076d5504497095c6308660de69b",
+      "tests/snapshots/integration__no_cycles_import_extraction.snap": "a35c3e666497bb69332f468356964781670f51a405be3075083df235e31d1fd4",
+      "tests/snapshots/integration__pnpm_catalog_cycle.snap": "a62e5da9adedceca4afa3ed2ea085c7236be86d8d6e2ac3e2e79a3704f35c8ec",
+      "tests/snapshots/integration__pnpm_workspace_complex_cycle.snap": "e5dae49d0b0ecb9bf5e72340e430df869899acfde556b1bd17774a83bade8980",
+      "tests/snapshots/integration__pnpm_workspace_cycle.snap": "9f01860398aff8e70824df10af06b6c1db966407fa3817e23ab5743f1157da1e",
+      "tests/snapshots/integration__re_export_cycle_detection.snap": "6b1be5751f3086e1b00b364fe9d7cd77e1a562de3ba1fd6b189f2f1e163bebf8",
+      "tests/snapshots/integration__re_export_cycle_imports.snap": "0556bc8e476de79482410510826e5d625c7856f9835df66395ffb0094f5ac7c6",
+      "tests/snapshots/integration__self_loop_import_extraction.snap": "8d5c24068244cb487bef2d4dea4d0d549973069b68e849e585bab0c8596e7cfa",
+      "tests/snapshots/integration__side_effect_imports_detection.snap": "2d9a2b63daa6b3f3386bcd1d4198f8ebbeeb0dd9b26edb7f442986b32c3fb3ad",
+      "tests/snapshots/integration__simple_cycle_import_extraction.snap": "74c8e348e9644644f71a34d487f7f4a312eaadf89fe083ea8e1a924c5a6034ed",
+      "tests/snapshots/integration__star_exports_detection.snap": "feb1c207d893739eb1db41f1431c910284fc53003254e3459652ee9e83c0b815",
+      "tests/snapshots/integration__star_exports_imports.snap": "6774c30aef0c91f3d389da0e695fb7e52390ad6eb5eeb820d19317262176ef2c",
+      "tests/snapshots/integration__very_long_cycle_detection.snap": "c86f2d9ae6dd323f00ce4b5a9f756b6d4db15b3862a70c702cb4547ac5fe3168",
+      "tests/snapshots/integration__workspace_five_packages_cycle.snap": "39038ff7894c93814b80a17cefad7f6b5deba971577310fd8505840054ab870e",
+      "tests/snapshots/integration__workspace_shared_cycle_detection.snap": "497685df530ef34b0eee36b67941c8510e02bced7a589f1f004e71e064451934",
+      "tests/source_boundaries.rs": "5f97cee04ad59af6ba4e06864a1007bcc7b1ccd870b436da47f88134ce55ac5c",
+      "tests/workspace_aliases.rs": "0913ead388578780c2e026dc2859d3c35afbe133f55ad32161d47384de34e636",
+      "xtask/Cargo.toml": "9a90b3a4d9e18e8339df514116d0664444d4669d35ae522171a8fe7151b7bd1b",
+      "xtask/src/main.rs": "0e3106d4f719fa9e332e4cbc672656ebe8ce913a776cac2fb68837d95cceed8c"
+    },
+    "selection_sha256": "af0a6f9891d1b257dc2837e226d41a8b05d1b043baaf88b499729a2694c777fb",
+    "manifest": {
+      "path": "target/tooling/mutation-workspace-aliases/mutants.out/campaign.json",
+      "sha256": "78666c3d14a02a0ddff92098b611e38e1e4189a221c26d55a36b26543dc8ce8a"
+    },
+    "outcomes": {
+      "path": "target/tooling/mutation-workspace-aliases/mutants.out/outcomes.json",
+      "sha256": "2ee278ac358805e7080b693db9312b7a549c0875ca7a240364e0753ec927c21d"
+    },
+    "cases": [
+      {
+        "name": "src/tsconfig.rs:41:9: replace CompilerOptions::merge_with_parent -> Self with Default::default()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2bbfdc8960f250cf4b420d9c744026484b3a6a43241117efdb5cf148ee2cc1f9"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::new(), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "08119f4a8eec8009def91d890b52b6ac984f7d460c398458aff14bd848f942a2"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::from_iter([0]), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "377427797a2f0c7560d4da026e6439cc6470c8f864c3057d58da85563aceefaa"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::from_iter([0]), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "d4154d549414e223e594fc45d8edfd0a674533506c8f86fdf74028946d5af44a"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::new(), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "96c9a49c5294487805bb466208955d42ec37e7160d557cc6188f026399a581bc"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::new(0), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "67fb5d1034fe9d03f41af98d39d791c0a19bd7e8f8ddf0be863bf65178592cef"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::new(0), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "5b7f3de2b563b90353132a625d29663de5687187e16e7306f11bf4777f5bf594"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::from(0), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "f91d92dc82a6199c7118cb888523afeaafe0e6df032f71ea054fcd7148b38489"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::from(0), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "6efa6ad1053dcd544cb3ab63debc7eb646b01d7acd314bbd2090d7e9fe1be2e7"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::from_iter([1]), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "8ede6a84969946e905d07551e092ec1815d1cf4364b25eb91b6d9f3d713507d7"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::from_iter([1]), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "3e6bad6fbdb55070cd82d2a2f275f05c7229b325997f2bbc87880c77e17ab268"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::new(1), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "b0d3ed74363b00b647a27371b77963034b0930c2b527d22bd312013a08385edb"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::new(1), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "778783882acbcefc8cb47606150b7e336a9f09290c13d8d5b5e8598db3c720b2"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::from(1), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "26e31ade171065f33dee615c22c80de81cdc791b4a8e1aeb8e413123261b9cf0"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (true, Reverse::from(1), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "bac6c7c6c405e43e288b58d4509ab9d4bbf5a8c4580e05bf34df940053a20ec6"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::new(), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "deaf3a60b5e13a27248661f30d58d3c6561000840d3ec14f055894b588b0bd7e"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::new(), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "ce1713a3a0c95ecb5ed18c5f4322191df9804b6dcb4db5a1223588e06b68e550"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::from_iter([0]), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "a26ef5eb292dd3f01f6cb41fe31d3fec913941049ae008b45cd62965d5018c2e"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::from_iter([0]), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "c5d823cca5ff7063e8af76ae198cd826243c45bda7594c378a17b086453699a8"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::new(0), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "28a4154ccf1036fe3be5b71f7b253df55181df2fe0d3522432854d70f4749489"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::new(0), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "3198f82b6ac4e100b6f8103927bf2932cf6eba4a551a78e9d642f61e632aebb2"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::from(0), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "10fd73966b45af5eaf4d6bacd163e10f2ed1af4b9a4eb8014826ebb1cd578bb4"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::from(0), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "cd7ae57b7f45aad80d1f6493b1f4090e54f244a5b0ad2157817aa08a8ca587e6"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::from_iter([1]), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "8af7f6e31d48b36f7cdb739b3730eeedb2c1d5e0f73c2e0ea3f29adadc63503d"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::from_iter([1]), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "8ca8af2a9f9597b186441efac921a6daa9bbe79ce2a586af81e5d39e2a097adb"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::new(1), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "df149b8e0deed96ec2e5fadc0f42edf23833da0a640865335f0ab0dcd1cc556f"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::new(1), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "291a7cc74553f8d73ced1230fdb8935207d8c7f6cfc242c1b1f9970e60bad7d7"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::from(1), \"\")",
+        "outcome": "Unviable",
+        "diff_sha256": "701721ab222dfbc2056a8b6f2942a76197822eaaad2fb6852df86c39af049301"
+      },
+      {
+        "name": "src/tsconfig.rs:68:9: replace PathAlias::priority -> (bool, std::cmp::Reverse<usize>, &str) with (false, Reverse::from(1), \"xyzzy\")",
+        "outcome": "Unviable",
+        "diff_sha256": "dad86288e0458b2962a6a32d48b4af705e2ccb85f2c336fd7ff09136d2de2568"
+      },
+      {
+        "name": "src/tsconfig.rs:112:5: replace normalize_module_path -> PathBuf with Default::default()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "e32ac1aff07e8e47bbabb298a5ac6d4d5b851a97df50ad280e04dfb4c637be83"
+      },
+      {
+        "name": "src/tsconfig.rs:117:37: replace match guard matches!(components.last(), Some(Component::Normal(_))) with true in normalize_module_path",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b167a8f28bdce25ca8018545dc06f5dda9e80fdfdb19a767e080b9c7e5b47383"
+      },
+      {
+        "name": "src/tsconfig.rs:117:37: replace match guard matches!(components.last(), Some(Component::Normal(_))) with false in normalize_module_path",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "5751d24199feb9236027ea6ea8ce5ec38207101acae6f6925ceea3afebbfe028"
+      },
+      {
+        "name": "src/tsconfig.rs:120:37: replace match guard matches!(components.last(), Some(Component::RootDir)) with true in normalize_module_path",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "5bf71c4054f1c2f84e6c0c4d7108e4d2ea3e42e59a8bc3d3f4e1cc2d3659f947"
+      },
+      {
+        "name": "src/tsconfig.rs:120:37: replace match guard matches!(components.last(), Some(Component::RootDir)) with false in normalize_module_path",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "3b4fe3902a709935cb3f391c48622cd25ae657710db2f1d138f20b0732c4a9c1"
+      },
+      {
+        "name": "src/tsconfig.rs:136:9: replace TsConfig::can_resolve_exact_aliases_directly -> bool with true",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "941d0edc3342cfa9c4c8275cebcc7bf401d1dd132365432e59d80aec6c9be5bb"
+      },
+      {
+        "name": "src/tsconfig.rs:136:9: replace TsConfig::can_resolve_exact_aliases_directly -> bool with false",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0ce4519cec483fcf66e3b87da166dfe6ab774ce9c382805e4d839ed0c5465354"
+      },
+      {
+        "name": "src/tsconfig.rs:139:13: replace && with || in TsConfig::can_resolve_exact_aliases_directly",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "3f34d682eac2b26e89aecff3afa43b08f7812e444f2ca2b8604920eaa0651996"
+      },
+      {
+        "name": "src/tsconfig.rs:138:26: delete ! in TsConfig::can_resolve_exact_aliases_directly",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "044a1c813e2b10862e4d9573e082f4f9107710d23195dfab8167e12aa68d3739"
+      },
+      {
+        "name": "src/tsconfig.rs:142:61: replace < with == in TsConfig::can_resolve_exact_aliases_directly",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "660069a744c74cbe5b08b9df589b3236b1caaaed824caba06a691e70e3d346fc"
+      },
+      {
+        "name": "src/tsconfig.rs:142:61: replace < with > in TsConfig::can_resolve_exact_aliases_directly",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "de81a35e2a8cc6b83167eae2646952bd7976d674631adaf256ff4179a837d68c"
+      },
+      {
+        "name": "src/tsconfig.rs:154:9: replace TsConfig::load -> Result<Self, TsConfigError> with Ok(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "54f03fd81dbd70043be69b885de1b4d839708474d935155df0289a66603669e2"
+      },
+      {
+        "name": "src/tsconfig.rs:165:9: replace TsConfig::load_with_budget -> Result<Self, TsConfigError> with Ok(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "c559e88d4db61b890a6fc310d6af2bf7344cff959e06a39f2e221da9bbaf2b84"
+      },
+      {
+        "name": "src/tsconfig.rs:142:61: replace < with <= in TsConfig::can_resolve_exact_aliases_directly",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "3761db0f6816b544d7d1147b7cb74fb9465b2cb8cd1da241f3c802aff26c49dc"
+      },
+      {
+        "name": "src/tsconfig.rs:186:21: replace && with || in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "64085b7d73738968456518706dd66fa6267506056c45a3809c68babb0daea33d"
+      },
+      {
+        "name": "src/tsconfig.rs:187:21: replace || with && in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "082951ead4438daa650c4f3988950babfff2c65177fe1e22edda9bd34c74eaae"
+      },
+      {
+        "name": "src/tsconfig.rs:186:25: delete ! in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "34767333a11619c2dc3ece71456b9b3e1dbaa1adf444f43e46984d671ecd8117"
+      },
+      {
+        "name": "src/tsconfig.rs:186:81: replace != with == in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "62c054d0bccdec3f0268c428859b43726bf2c06d1c38551598a4fab0bac4bf3d"
+      },
+      {
+        "name": "src/tsconfig.rs:186:49: replace || with && in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7956b00c65e090e525a9f547a931ebd1d4acce583f3b821b36a093dfd8affa3c"
+      },
+      {
+        "name": "src/tsconfig.rs:196:25: replace || with && in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "d9fd98c691b3824202d8935394f7ed4dd7e9cd6368edd8d018588fc90b8f576f"
+      },
+      {
+        "name": "src/tsconfig.rs:195:25: replace || with && in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "1b8fca33f25cd37add7b997c158b35a565a0861916630d0c9be9ce74e0f89823"
+      },
+      {
+        "name": "src/tsconfig.rs:194:30: replace > with == in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "52feb9f3e11cd26f319609b22e25d3b82c6e13b07b8cd74f5dbf7ee940986bdd"
+      },
+      {
+        "name": "src/tsconfig.rs:194:30: replace > with < in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7d83b675cb36bc19a5c988ccbd6a2e85211a7dfe57d39f4978dc6c56317799c0"
+      },
+      {
+        "name": "src/tsconfig.rs:194:30: replace > with >= in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "85d3a056b1ca1487c4527df619b8ecf7fbdd556bf0cbc050548f5d6fa1f9a972"
+      },
+      {
+        "name": "src/tsconfig.rs:195:52: replace && with || in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "1c78234b8faef46cc15abe34afaee13e6b2dee0e5a433deb0d1b7f7dbabb3b62"
+      },
+      {
+        "name": "src/tsconfig.rs:195:61: replace != with == in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7a4aabfd97c8ed5d2f0ca8517d1d9c96ae54d8e365d0128933c9112a79a83d1c"
+      },
+      {
+        "name": "src/tsconfig.rs:196:53: replace && with || in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2b3d44ded58362bc97e2971150c1cd4722941425fdd3fb45e7a026f2796789cd"
+      },
+      {
+        "name": "src/tsconfig.rs:196:29: delete ! in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "bb7858a3d6d4e1ce4a0b21557d79c5663244302416679bb7d8c14dec51f34dd2"
+      },
+      {
+        "name": "src/tsconfig.rs:196:62: replace != with == in TsConfig::load_with_budget",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b645e7e494fe7cda8dd9c697970567e72556d9a001fe4298f84a10b56709f4a8"
+      },
+      {
+        "name": "src/tsconfig.rs:220:9: replace TsConfig::load_merged_options -> Result<CompilerOptions, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "51a4e119e428d34b81ac4c6bedc3b79fea980a41750ea7c9e62acc020fbc2142"
+      },
+      {
+        "name": "src/tsconfig.rs:228:9: replace TsConfig::load_options_at -> Result<CompilerOptions, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "31a07a5eae1c30fb9f36ca021b79d5bb210fa821c2772395782290905ea30370"
+      },
+      {
+        "name": "src/tsconfig.rs:228:18: replace >= with < in TsConfig::load_options_at",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "842eee7f37ece081841453136eb93fdae6df843b984d56ffc432088f9bd3f5a4"
+      },
+      {
+        "name": "src/tsconfig.rs:264:9: replace TsConfig::load_parent_options -> Result<CompilerOptions, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "827683ea512b0b0593e7eae6fdb5a4411576cb6acdd0b26ff2b701fad0ef903f"
+      },
+      {
+        "name": "src/tsconfig.rs:276:9: replace TsConfig::resolve_extends_path -> Result<PathBuf, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "c916304ccbcd731ef3d76ba329e01d19e77e312c400319d7823f159f408183b8"
+      },
+      {
+        "name": "src/tsconfig.rs:303:9: replace TsConfig::resolve_tsconfig_file -> Result<PathBuf, TsConfigError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0fd2c0c57b5ff6b0baaffa756f9543a506743f8350d1766d08b2a0522142f6ea"
+      },
+      {
+        "name": "src/tsconfig.rs:332:9: replace TsConfig::compile_path_mappings -> Vec<PathAlias> with vec![Default::default()]",
+        "outcome": "Unviable",
+        "diff_sha256": "0cbb6d2725465aa9a689efc7ce592984b5e1891410a6addc2de6a152bd40731e"
+      },
+      {
+        "name": "src/tsconfig.rs:349:9: replace TsConfig::compile_alias -> PathAlias with Default::default()",
+        "outcome": "Unviable",
+        "diff_sha256": "590606dbb4b8d038638f1e56468ceeac721d534e52732b64980a85bdcab63f28"
+      },
+      {
+        "name": "src/tsconfig.rs:332:9: replace TsConfig::compile_path_mappings -> Vec<PathAlias> with vec![]",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "d41a29d8f9a94e61404639da81632634c2b2cdb7d1599e192bb2ae0814c8a994"
+      },
+      {
+        "name": "src/tsconfig.rs:361:9: replace TsConfig::parse_pattern -> (String, bool) with (String::new(), true)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7e38e2052ae27a0c226f8dfafaf14c47ac5fdaeb988cd32772d3ff7a3c7ec5b7"
+      },
+      {
+        "name": "src/tsconfig.rs:361:9: replace TsConfig::parse_pattern -> (String, bool) with (String::new(), false)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "8ee693f429b34a8064e92037df0076716afee3089b1fb55614f1d969259d06b4"
+      },
+      {
+        "name": "src/tsconfig.rs:361:9: replace TsConfig::parse_pattern -> (String, bool) with (\"xyzzy\".into(), true)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4579a4872147cc1780533fe600f9a75d224bcc7d2232283759c45ab70c9a98d2"
+      },
+      {
+        "name": "src/tsconfig.rs:361:9: replace TsConfig::parse_pattern -> (String, bool) with (\"xyzzy\".into(), false)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "8282b0d8bdd4cd11d7f6c5fd41884ca9aa2758031a14e787e11687248bd56b0f"
+      },
+      {
+        "name": "src/tsconfig.rs:373:9: replace TsConfig::resolve_replacements -> Vec<PathBuf> with vec![]",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "dffae59ce3ead39f680cbf0bc3d6bba2ffdb3ec2cfb25015b889d93e98b5a4d3"
+      },
+      {
+        "name": "src/tsconfig.rs:373:9: replace TsConfig::resolve_replacements -> Vec<PathBuf> with vec![Default::default()]",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "90d37a90868765db393cf2ada9a004bbd89127001ac4d94f17b5c5af43bf2e81"
+      },
+      {
+        "name": "src/tsconfig.rs:381:9: replace TsConfig::discover -> Option<Self> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "2b86ad1f836992f36a731e5c05c6206be1f60b67f988c6f2bb1ad077b458d576"
+      },
+      {
+        "name": "src/tsconfig.rs:381:9: replace TsConfig::discover -> Option<Self> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "a03e82ed3973f10481fe29ed026d45b19459b6b24b10b87eeb08f60d131a79f1"
+      },
+      {
+        "name": "src/tsconfig.rs:406:9: replace TsConfig::resolve_alias -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "97954db4a75a20a0cbc8774acf43e1735d10c5ff40beded8b018383f2b249823"
+      },
+      {
+        "name": "src/tsconfig.rs:406:9: replace TsConfig::resolve_alias -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "86725f52d3009571e3aa93a184026d7d62741a33f511a3c145f26bac8751ca01"
+      },
+      {
+        "name": "src/tsconfig.rs:416:9: replace TsConfig::try_resolve_with_alias -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7c4b9bf0b56b00d6264ba0e3e8f1183ebab640618f7345d25127d36d69c9723a"
+      },
+      {
+        "name": "src/tsconfig.rs:416:9: replace TsConfig::try_resolve_with_alias -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4c544e14252a915072a6a2087e44ceeffa87cb9840e6fc5f76a5652be37728dc"
+      },
+      {
+        "name": "src/tsconfig.rs:426:17: replace && with || in TsConfig::try_resolve_with_alias",
+        "outcome": "Unviable",
+        "diff_sha256": "3d5ca080635a365f296085a1d7f3b99c9ecddb921c4fd3001fd7d6cfd16fe3d5"
+      },
+      {
+        "name": "src/tsconfig.rs:418:29: replace == with != in TsConfig::try_resolve_with_alias",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "5a728094d592d2511d3f274bdc6bcd220c95eaa7716156f6a691e0dae9d7efa6"
+      },
+      {
+        "name": "src/tsconfig.rs:451:9: replace TsConfig::substitute_wildcard -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0e677ea8a3a36d9631a50af624cfa86a4686745a5a8f643b412cf715e868c3eb"
+      },
+      {
+        "name": "src/tsconfig.rs:451:9: replace TsConfig::substitute_wildcard -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b022beb2764e64a36f2efc0dc430c5ad2242e1e6f2391a66191b72f92dc81ae0"
+      },
+      {
+        "name": "src/tsconfig.rs:476:9: replace TsConfig::try_resolve_with_extensions -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "deda8d3995e0d166f41cd0442c3aece954d9d55da51412ffc73ae391e6933a48"
+      },
+      {
+        "name": "src/tsconfig.rs:464:16: delete ! in TsConfig::substitute_wildcard",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "f0493692e09ecdff3e9fec42a1be15c46a34b66b9810e098c224835f160e1997"
+      },
+      {
+        "name": "src/tsconfig.rs:476:9: replace TsConfig::try_resolve_with_extensions -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b75d8d7c23e74303c5afd6df0b9306e033e47ab1b895f7762e8a3c17b48344ad"
+      },
+      {
+        "name": "src/tsconfig.rs:478:13: delete match arm Some(\"mjs\" | \"mts\") in TsConfig::try_resolve_with_extensions",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "a56a7574bfaeebc33596a495557c9468c41e843497f9a30f862b3effdbf088e0"
+      },
+      {
+        "name": "src/tsconfig.rs:479:13: delete match arm Some(\"cjs\" | \"cts\") in TsConfig::try_resolve_with_extensions",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "db2ce0215f53ffd3ef633e6f407634bf9248502964cfedb4dc0f53f568cb6b23"
+      },
+      {
+        "name": "src/tsconfig.rs:508:9: replace TsConfig::try_resolve_as_directory -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "31666d85f4e8746e2acbf83f5a2df07c637544a711e827161d176bc1804a8f83"
+      },
+      {
+        "name": "src/tsconfig.rs:508:9: replace TsConfig::try_resolve_as_directory -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b6b3c56ec4a390247a32e61bc82be83751ba4e44a256bdc46a0bebd8d1402a98"
+      },
+      {
+        "name": "src/tsconfig.rs:508:12: delete ! in TsConfig::try_resolve_as_directory",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "f91dfa8a4aaa6a6a87b23706e3fd30276f0df0c5c33635b6ad7d325b2e894553"
+      },
+      {
+        "name": "src/tsconfig.rs:532:9: replace TsConfigCache::with_budget -> Self with Default::default()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0e4b115856e78a9ccfd536623a85fe7ef6e62d76e2d1c538e26b34b3bfe4ee7a"
+      },
+      {
+        "name": "src/tsconfig.rs:543:9: replace TsConfigCache::discover -> Option<TsConfig> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "9f9095f4ab33993ed27d05c14d45bb94caecf58c59d84e0999ed6b6409df5283"
+      },
+      {
+        "name": "src/tsconfig.rs:543:9: replace TsConfigCache::discover -> Option<TsConfig> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "192bc3a7b965b6ecde43846e66c02f78f3fd7a2aa05de4ea7a4cf373eb8d9da4"
+      },
+      {
+        "name": "src/tsconfig.rs:551:9: replace TsConfigCache::discover_shared -> Option<Arc<TsConfig>> with Some(Arc::new(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "2752e2c2835db3ec8f536467451145a8f5a80e57a162ad82650e1e47ba85dba5"
+      },
+      {
+        "name": "src/tsconfig.rs:551:9: replace TsConfigCache::discover_shared -> Option<Arc<TsConfig>> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "f83e9a549fb8a77c17254ca50a5b0ea299c57c210754c232595b8506a86b51aa"
+      },
+      {
+        "name": "src/tsconfig.rs:590:9: replace TsConfigCache::load -> Option<TsConfig> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "62a763ae32fbf18b043c471004f443fd8eb920060384a714ca57178149992d1e"
+      },
+      {
+        "name": "src/tsconfig.rs:590:9: replace TsConfigCache::load -> Option<TsConfig> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "bd2cf5e76b6fc6978988a75b8098fe43a32ae14bdb242a0ccbe1971d57e96881"
+      },
+      {
+        "name": "src/tsconfig.rs:597:9: replace TsConfigCache::clone_snapshot -> Option<TsConfig> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "ade59d141e914e382d6664bc81a64f0cc77aeddbd88ba001ad5251dab55e1bdf"
+      },
+      {
+        "name": "src/tsconfig.rs:597:9: replace TsConfigCache::clone_snapshot -> Option<TsConfig> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4c2262d27e52556052bcf87570a14cb44e97427c223c484179218e6c7fb2382e"
+      },
+      {
+        "name": "src/tsconfig.rs:629:9: replace TsConfigCache::cached_dir_result -> Option<CachedDirResult> with Some(Default::default())",
+        "outcome": "Unviable",
+        "diff_sha256": "787e876b9aab4d52ebdeaf453ca39e00864a71ba151cb7488c54e3d09e49473b"
+      },
+      {
+        "name": "src/tsconfig.rs:638:9: replace TsConfigCache::cache_dir_results -> Option<()> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "f282a77f9ff88715c2ec3cbee44c3253d406eecef1e3254708130356a5578f1a"
+      },
+      {
+        "name": "src/tsconfig.rs:629:9: replace TsConfigCache::cached_dir_result -> Option<CachedDirResult> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4cdd190857903e246bba0f17cb0501793995b70fcb4e2498deae991b4213f902"
+      },
+      {
+        "name": "src/tsconfig.rs:662:9: replace TsConfigCache::load_cached -> Option<Arc<TsConfig>> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "e7b465269305a2cbc69b477e3a013fdaa4f0719d12ef5e72bca3a644b07f4fe2"
+      },
+      {
+        "name": "src/tsconfig.rs:662:9: replace TsConfigCache::load_cached -> Option<Arc<TsConfig>> with Some(Arc::new(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "b02eb25af676274269a5468ea813a87e04243de2f61551b2c6ea4867c99fc857"
+      },
+      {
+        "name": "src/tsconfig.rs:638:9: replace TsConfigCache::cache_dir_results -> Option<()> with Some(())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "bfddf6dff04056a0271494c68c5e4087fe28ece19d40353cb2dd00eccae0b0d6"
+      },
+      {
+        "name": "src/tsconfig.rs:689:9: replace CachedDirResult::path -> Option<&Path> with Some(Box::leak(Box::new(Default::default())))",
+        "outcome": "Unviable",
+        "diff_sha256": "22d04c71a045292add0b15d2a14ce1188270c32f876ecd1d59efc963c1991ce9"
+      },
+      {
+        "name": "src/tsconfig.rs:689:9: replace CachedDirResult::path -> Option<&Path> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "fce4b4da7e657dc66e58cd4d4680dbddc06a1d30e02649ff373d612c942d8625"
+      },
+      {
+        "name": "src/workspace.rs:99:9: replace Workspace::discover -> Result<Option<Self>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "6bffcfcc17284b3b8a071f8aedbe764d5411ad72233737afc745eb3a37005376"
+      },
+      {
+        "name": "src/workspace.rs:99:9: replace Workspace::discover -> Result<Option<Self>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b91a813e44e066a23648b9840b14a10be7e0f0296a3f07559faba70dab01983a"
+      },
+      {
+        "name": "src/workspace.rs:109:9: replace Workspace::discover_with_budget -> Result<Option<Self>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "fa5b344a3d46ca54cd0dfbef1c518940ff6856ba6390f9ff8442ac0ed6bacb96"
+      },
+      {
+        "name": "src/workspace.rs:109:9: replace Workspace::discover_with_budget -> Result<Option<Self>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "3e3ed2452dc6762a66ee9edda296444c77a6d37582fefb1bf60e2a2ebd73d5ff"
+      },
+      {
+        "name": "src/workspace.rs:124:9: replace Workspace::discover_without_aliases -> Result<Option<Self>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "a91972c32cf97c5d4ca8c4815ff85365d569c6d380bb6f23c226aa91db262921"
+      },
+      {
+        "name": "src/workspace.rs:124:9: replace Workspace::discover_without_aliases -> Result<Option<Self>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "382b58afbbaca2d95dd5a464bafc5c2f0586360a863ce3ca35b168b5df0f3695"
+      },
+      {
+        "name": "src/workspace.rs:139:9: replace Workspace::load_path_aliases -> Result<(), crate::budget::LimitError> with Ok(())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0b59f731f99ab4cce22bca4f42b8451073ef3dde62277e5e5d8b44142c7c0727"
+      },
+      {
+        "name": "src/workspace.rs:152:9: replace Workspace::discover_inner -> Result<Option<Self>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "7bff7496a4d6274dfd7a099a26ea291687401feb85ce98a93488bb0cd6ed03cc"
+      },
+      {
+        "name": "src/workspace.rs:152:9: replace Workspace::discover_inner -> Result<Option<Self>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "5abc6ecb0c22d18438e2816632661d0a1a5201ade7fb532f5e0098bbf9b1408d"
+      },
+      {
+        "name": "src/workspace.rs:169:19: delete ! in Workspace::discover_inner",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4de71d22bbcb930366a089169a74b28d7bf7cedac3fbeedff0617e0ca4c5f958"
+      },
+      {
+        "name": "src/workspace.rs:200:9: replace Workspace::try_detect_at -> Result<Option<Self>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "241e578ac9f2753bb4b97b1f11784304904bdd8a555cc258fb9cd042fa757030"
+      },
+      {
+        "name": "src/workspace.rs:200:9: replace Workspace::try_detect_at -> Result<Option<Self>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "6962e4f99ca7cb3f2050b9c2d93b6464b999c9eb7f4056ac4fd35fde243ff0d0"
+      },
+      {
+        "name": "src/workspace.rs:219:9: replace Workspace::try_pnpm -> Result<Option<Self>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "fd85363988d2514ad81c66d4d5b6087b80ee9c74f95a67cad31fcfc6b528f63f"
+      },
+      {
+        "name": "src/workspace.rs:219:9: replace Workspace::try_pnpm -> Result<Option<Self>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "15988b0ea238d9a81ca421b0ec716d152c11772bef2ea327a17558a0ca59c5ad"
+      },
+      {
+        "name": "src/workspace.rs:252:9: replace Workspace::try_npm -> Result<Option<Self>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "f0e0ef6a88633e4be28f91b5d6f033fe0aa343d925ec169b997810af793b1636"
+      },
+      {
+        "name": "src/workspace.rs:252:9: replace Workspace::try_npm -> Result<Option<Self>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "c3d888919ccdb01c54770644ab3d8af5f27f7fffc46dddfd13cd69b233f9343f"
+      },
+      {
+        "name": "src/workspace.rs:292:9: replace Workspace::try_typescript -> Result<Option<Self>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "ca18d7a9e7d39b7e17c09ecda7ddc056350d24b6846d749d60d05f21ac241efa"
+      },
+      {
+        "name": "src/workspace.rs:343:9: replace Workspace::expand_patterns -> Result<HashMap<String, PathBuf>, WorkspaceError> with Ok(HashMap::new())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0e4274146e6f13cbcc475226535a4b977ec3566455a59fd791fec011922e9741"
+      },
+      {
+        "name": "src/workspace.rs:292:9: replace Workspace::try_typescript -> Result<Option<Self>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "73e55b93596a2b98fb04d50a41f4ea2d33d9820ad350a2d2d2cdc52fe332eebf"
+      },
+      {
+        "name": "src/workspace.rs:343:9: replace Workspace::expand_patterns -> Result<HashMap<String, PathBuf>, WorkspaceError> with Ok(HashMap::from_iter([(String::new(), Default::default())]))",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "26a94addeb0761861c3e5b2e1323ee9e0b10635c578084cb7232314a4331b5ee"
+      },
+      {
+        "name": "src/workspace.rs:343:9: replace Workspace::expand_patterns -> Result<HashMap<String, PathBuf>, WorkspaceError> with Ok(HashMap::from_iter([(\"xyzzy\".into(), Default::default())]))",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0639b7c7c7df89b9534655d391ec4ca91894f172a298944df7a9726641c5666c"
+      },
+      {
+        "name": "src/workspace.rs:382:9: replace Workspace::expand_single_pattern -> Result<(), WorkspaceError> with Ok(())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "9c833bf273bb6665b23204a15c125977aac7c77a38f096385af1877243d254e5"
+      },
+      {
+        "name": "src/workspace.rs:386:12: delete ! in Workspace::expand_single_pattern",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "163202096a89656df263f6b575b5efb40934faec3d3d952b3d741e875e2afcc8"
+      },
+      {
+        "name": "src/workspace.rs:401:64: replace != with == in Workspace::expand_single_pattern",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "46920e9e9b8501019e39cd81d302abf891d7963837dcfcb6f3f784c36cad3ec0"
+      },
+      {
+        "name": "src/workspace.rs:401:43: replace || with && in Workspace::expand_single_pattern",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "ab3c9838ed08d678107e51d743fc28bdb057d296f35d9be38aef5ba928ea213f"
+      },
+      {
+        "name": "src/workspace.rs:412:17: delete field require_literal_separator from struct glob::MatchOptions expression in Workspace::expand_single_pattern",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "1a12f79710e132ff8a77731a2abf57634168040483ce7f2f2e44cc4184b1b459"
+      },
+      {
+        "name": "src/workspace.rs:416:17: replace || with && in Workspace::expand_single_pattern",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "48d9504c337a862b6dd5a5525f2ec844bffdb0895be1bf06b90dd8a2a42e0d51"
+      },
+      {
+        "name": "src/workspace.rs:415:16: delete ! in Workspace::expand_single_pattern",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "04fce93d8965088d72b870a8f9e50050bee436d8cf3130cda36f7c5d4960e8ac"
+      },
+      {
+        "name": "src/workspace.rs:433:9: replace Workspace::manifest_pattern -> Result<glob::Pattern, WorkspaceError> with Ok(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "0ec0f7977c1b9c2c21d9df231add94e05f6c5accf65b490b98bd084c86f75527"
+      },
+      {
+        "name": "src/workspace.rs:442:9: replace Workspace::pattern_base -> PathBuf with Default::default()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "a3f3d862f71df6c746ecba1c9d17e21d2f35a614532b9e7fc074bd5aee3deb7f"
+      },
+      {
+        "name": "src/workspace.rs:445:37: replace || with && in Workspace::pattern_base",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "8407faaacef25553e130757de4ee7133c9f274a1528b1ba20399df7203b218a4"
+      },
+      {
+        "name": "src/workspace.rs:460:9: replace Workspace::has_glob_chars -> bool with false",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "912ddebbdd020a2e9c2211607ea05d8aef39b067b011ee2b7341a5f1f2d1cf5a"
+      },
+      {
+        "name": "src/workspace.rs:460:9: replace Workspace::has_glob_chars -> bool with true",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "08a9df50aced0ac03105878236f309d61ac0dbf3eb11edeacd7f6d4a6ad79b6f"
+      },
+      {
+        "name": "src/workspace.rs:468:9: replace Workspace::is_in_excluded_dir -> bool with true",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "a3e3e16376afccb4e49a803b4fcece1c32511e33a899e58f53f447c6a19c4a6d"
+      },
+      {
+        "name": "src/workspace.rs:468:9: replace Workspace::is_in_excluded_dir -> bool with false",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "57d84051be904c5a4c6a4fa8f2981dfdaff29c5c5dcd3529008aec3488210488"
+      },
+      {
+        "name": "src/workspace.rs:476:9: replace Workspace::read_package_name -> Result<Option<(String, PathBuf)>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "3a33f0d05740eaf90e6d443c5690448bab81bc6df3d74205fa507b251f119a54"
+      },
+      {
+        "name": "src/workspace.rs:476:9: replace Workspace::read_package_name -> Result<Option<(String, PathBuf)>, WorkspaceError> with Ok(Some((String::new(), Default::default())))",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "89701873439634d3a4e6abfbcf1f152e185112a9d3b5b50cc5404b8769fabc4a"
+      },
+      {
+        "name": "src/workspace.rs:476:9: replace Workspace::read_package_name -> Result<Option<(String, PathBuf)>, WorkspaceError> with Ok(Some((\"xyzzy\".into(), Default::default())))",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "27c8b48530923d046f061fcd1f16dfe9df53abc0755419fe2fc3217b8d1e78a1"
+      },
+      {
+        "name": "src/workspace.rs:511:9: replace Workspace::resolve_ts_references -> Result<HashMap<String, PathBuf>, WorkspaceError> with Ok(HashMap::new())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "35dd0c54ebfdcf354058f5998143a4910916c8e9148ff1138572af5d26788ba8"
+      },
+      {
+        "name": "src/workspace.rs:511:9: replace Workspace::resolve_ts_references -> Result<HashMap<String, PathBuf>, WorkspaceError> with Ok(HashMap::from_iter([(String::new(), Default::default())]))",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4d9f4f81b1b9b6b889f66a9b80d73521c3e83df8a68a91173a2eadbab0989365"
+      },
+      {
+        "name": "src/workspace.rs:537:17: replace && with || in Workspace::resolve_ts_references",
+        "outcome": "Unviable",
+        "diff_sha256": "8c8c085ec7f6318f23fe94fa34fc3257c5e1502f9663dcb5000260f03385984b"
+      },
+      {
+        "name": "src/workspace.rs:511:9: replace Workspace::resolve_ts_references -> Result<HashMap<String, PathBuf>, WorkspaceError> with Ok(HashMap::from_iter([(\"xyzzy\".into(), Default::default())]))",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2e3708e59f08d41a783bb55e009f3ac52f8dac03544f4538a4f5ab3debdc16f0"
+      },
+      {
+        "name": "src/workspace.rs:547:9: replace Workspace::optional_metadata -> Result<Option<std::fs::Metadata>, WorkspaceError> with Ok(Some(Default::default()))",
+        "outcome": "Unviable",
+        "diff_sha256": "edc5b2bb6c01db0aad6ee31b35429c7cb3e89d36333d77a785781cff0f54c9d5"
+      },
+      {
+        "name": "src/workspace.rs:547:9: replace Workspace::optional_metadata -> Result<Option<std::fs::Metadata>, WorkspaceError> with Ok(None)",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "495e624774f648f42176a32d1996620f8dd88e548ae6c4f4a19aecf2e92135ed"
+      },
+      {
+        "name": "src/workspace.rs:566:13: replace && with || in Workspace::insert_package",
+        "outcome": "Unviable",
+        "diff_sha256": "80f0f3eaa76d96c195e795279966600201f42d2582ff3355421b7ecc84439e42"
+      },
+      {
+        "name": "src/workspace.rs:559:9: replace Workspace::insert_package -> Result<(), WorkspaceError> with Ok(())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "5c45d663a83f621c4b656276e818f37dd23e8fdc3b84541a477f60843e2e58e9"
+      },
+      {
+        "name": "src/workspace.rs:566:22: replace != with == in Workspace::insert_package",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b6f1f916e99981db5e05cb03ff63bf1ae53c428d34ddf09944572c27f291af0d"
+      },
+      {
+        "name": "src/workspace.rs:588:9: replace Workspace::load_aliases -> HashMap<String, String> with HashMap::new()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "7e4176b8ede58926c3f2460dd4c45352d010bdd62c3aedd2e18dfbc634fd11d8"
+      },
+      {
+        "name": "src/workspace.rs:588:9: replace Workspace::load_aliases -> HashMap<String, String> with HashMap::from_iter([(String::new(), String::new())])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b21c71f9c097b3589bb5d4028dcdde8b23ee217eb1eacebbfeac78b84801fb99"
+      },
+      {
+        "name": "src/workspace.rs:588:9: replace Workspace::load_aliases -> HashMap<String, String> with HashMap::from_iter([(String::new(), \"xyzzy\".into())])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b0c90e50e904f5183fedf958355fda4ac526fbc415ee11656654efd954987a2f"
+      },
+      {
+        "name": "src/workspace.rs:588:9: replace Workspace::load_aliases -> HashMap<String, String> with HashMap::from_iter([(\"xyzzy\".into(), String::new())])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "871b708d41da4bf64e73ad4feca5ac12e3e667d3bf56bf44c961ad155667220d"
+      },
+      {
+        "name": "src/workspace.rs:588:9: replace Workspace::load_aliases -> HashMap<String, String> with HashMap::from_iter([(\"xyzzy\".into(), \"xyzzy\".into())])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b5d030f58fdf2ee476af563ad652d75228fad3e2ae4fe64a2cd2c959bf2946fe"
+      },
+      {
+        "name": "src/workspace.rs:595:16: delete ! in Workspace::load_aliases",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "6449c9dbe81e35e459860152f12838b423d8a0cecc4ed3a0c1a833303f805a10"
+      },
+      {
+        "name": "src/workspace.rs:608:9: replace Workspace::map_aliases -> HashMap<String, String> with HashMap::new()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "13032f0fefd6cb3cd9d5212388d55962c8e5fcfa43f9da57c3bef4cb111260b3"
+      },
+      {
+        "name": "src/workspace.rs:608:9: replace Workspace::map_aliases -> HashMap<String, String> with HashMap::from_iter([(String::new(), String::new())])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "1400fcef82b28be2e1a71b8e4e560449ed535af26240ea1a2c63f49996b8584e"
+      },
+      {
+        "name": "src/workspace.rs:608:9: replace Workspace::map_aliases -> HashMap<String, String> with HashMap::from_iter([(String::new(), \"xyzzy\".into())])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4677a9bca04e40b8762aff2165bc0343bda345d7241b3d31e2415394857c877e"
+      },
+      {
+        "name": "src/workspace.rs:608:9: replace Workspace::map_aliases -> HashMap<String, String> with HashMap::from_iter([(\"xyzzy\".into(), String::new())])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "c2c8b27ca45807fcc3b3da9890529541b0f84cabfc1012388d3107c8f2018710"
+      },
+      {
+        "name": "src/workspace.rs:608:9: replace Workspace::map_aliases -> HashMap<String, String> with HashMap::from_iter([(\"xyzzy\".into(), \"xyzzy\".into())])",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "198830c4e2a9931cb5c8b6eb3baad08a87f18121ff0aded90af243cbd4864361"
+      },
+      {
+        "name": "src/workspace.rs:672:29: replace == with != in Workspace::map_aliases",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "bbcc1a60dda6839283db9d553739db32254f89d59f6bc54793d0c9844ba65b7d"
+      },
+      {
+        "name": "src/workspace.rs:701:9: replace Workspace::resolve_alias_target -> Option<PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "2f7a4a4f488ac5acd6615457969e430d392b2c65fe03f6f5b6ea562acae82188"
+      },
+      {
+        "name": "src/workspace.rs:701:9: replace Workspace::resolve_alias_target -> Option<PathBuf> with Some(Default::default())",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "ead69195e678149703d19aaad57dd35db0a4066287cf7803ecc585b07d82d866"
+      },
+      {
+        "name": "src/workspace.rs:730:9: replace Workspace::normalize_alias_target -> PathBuf with Default::default()",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "43f1646375870b9db817e101c1e517c2f5da148f7c5246ff241a4ff756e1fa45"
+      },
+      {
+        "name": "src/workspace.rs:754:9: replace Workspace::is_workspace_package -> bool with true",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "de789c65885f0f65e7e4127e40e46f81691dc6cc8e8378c333b112256bd821ca"
+      },
+      {
+        "name": "src/workspace.rs:754:9: replace Workspace::is_workspace_package -> bool with false",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b7ed2127c7ef6ab3d379ba23e87e243aa13eefab51ffe4dd7b2a78fa005452c4"
+      },
+      {
+        "name": "src/workspace.rs:775:9: replace Workspace::get_package_path -> Option<&PathBuf> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "315a4d7bbc6636f38604741173f53698c4eb7e536e9f24b9fd6d72bfdd05a35d"
+      },
+      {
+        "name": "src/workspace.rs:775:9: replace Workspace::get_package_path -> Option<&PathBuf> with Some(Box::leak(Box::new(Default::default())))",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "bd4b09d60751cdd4104ca5be59bfb0a15d2a519fdc9dc373651791a7f90f13a8"
+      },
+      {
+        "name": "src/workspace.rs:801:9: replace Workspace::resolve_package_name -> &'specifier str with \"\"",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "b8b1eed348d8065d670f2bb7ac593a5f96e7546ab39572e93f53f8bd2e4a55f4"
+      },
+      {
+        "name": "src/workspace.rs:801:9: replace Workspace::resolve_package_name -> &'specifier str with \"xyzzy\"",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "36ec57f3dd2973c93e49d38cc1cd76f00f1227a191ddabf9a9dcebed8be7c3cc"
+      },
+      {
+        "name": "src/workspace.rs:822:9: replace Workspace::extract_package_name -> &str with \"\"",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "cd0b962dc0f27cd8f19911588e3859282a746a6b89d94cee587c3092021fafee"
+      },
+      {
+        "name": "src/workspace.rs:822:9: replace Workspace::extract_package_name -> &str with \"xyzzy\"",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "4221cd766515ef443a04aa43740a01106afb7a55395efd6001d002ff27360091"
+      },
+      {
+        "name": "src/workspace.rs:833:9: replace Workspace::extract_scoped_package_name -> &str with \"\"",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "e1ddd5d5a2ba3c6c1091bace60601377fb2557f3e3fe05237e205565db1f8031"
+      },
+      {
+        "name": "src/workspace.rs:833:9: replace Workspace::extract_scoped_package_name -> &str with \"xyzzy\"",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "872cd3fe9e2efec3929fc83afef67446d80f2524498669abf953401417ad2ebb"
+      },
+      {
+        "name": "src/workspace.rs:857:9: replace Workspace::extract_subpath -> Option<&str> with None",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "ae1e3d2462621978c715ce952dc17e749d9702f61c0ad29e75ab2ebe963c89c0"
+      },
+      {
+        "name": "src/workspace.rs:857:9: replace Workspace::extract_subpath -> Option<&str> with Some(\"\")",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "ae0a726ac9838de6a720090d5c13e0dc4ad0a63ac1bc64a5a71c0a7765aa4052"
+      },
+      {
+        "name": "src/workspace.rs:857:9: replace Workspace::extract_subpath -> Option<&str> with Some(\"xyzzy\")",
+        "outcome": "CaughtMutant",
+        "diff_sha256": "3b18edd9a2295f63024059dc0d5c903259de2487b782bab9554497c9dcf48804"
+      }
+    ],
+    "scope_limit": "Fresh execution selects workspace/tsconfig only. Earlier broader campaigns retain their source bindings."
+  },
+  "crap": {
+    "artifact": {
+      "path": "target/tooling/workspace-aliases/crap-report.json",
+      "sha256": "451e766abbccd0e23678d5e9865c1175280d98092e7ac94d6fc11d2c8cf6a7e5"
+    },
+    "maximum": 28,
+    "functions": 306,
+    "functions_above_30": 0,
+    "changed_helpers": [
+      {
+        "file": "src/workspace.rs",
+        "function": "Workspace::map_aliases",
+        "line": 603,
+        "cyclomatic": 13.0,
+        "coverage": 89.1891891891892,
+        "crap": 13.213531281464078,
+        "crate": "jscycles",
+        "uncovered": [
+          {
+            "start": 611,
+            "end": 611
+          },
+          {
+            "start": 614,
+            "end": 614
+          },
+          {
+            "start": 620,
+            "end": 620
+          },
+          {
+            "start": 625,
+            "end": 625
+          },
+          {
+            "start": 650,
+            "end": 650
+          },
+          {
+            "start": 658,
+            "end": 658
+          },
+          {
+            "start": 673,
+            "end": 673
+          },
+          {
+            "start": 679,
+            "end": 679
+          }
+        ]
+      },
+      {
+        "file": "src/workspace.rs",
+        "function": "Workspace::resolve_alias_target",
+        "line": 694,
+        "cyclomatic": 10.0,
+        "coverage": 80.76923076923077,
+        "crap": 10.711197086936732,
+        "crate": "jscycles",
+        "uncovered": [
+          {
+            "start": 716,
+            "end": 719
+          },
+          {
+            "start": 723,
+            "end": 723
+          }
+        ]
+      },
+      {
+        "file": "src/workspace.rs",
+        "function": "Workspace::resolve_package_name",
+        "line": 797,
+        "cyclomatic": 3.0,
+        "coverage": 84.61538461538461,
+        "crap": 3.0327719617660445,
+        "crate": "jscycles",
+        "uncovered": [
+          {
+            "start": 810,
+            "end": 812
+          }
+        ]
+      },
+      {
+        "file": "src/tsconfig.rs",
+        "function": "TsConfig::can_resolve_exact_aliases_directly",
+        "line": 135,
+        "cyclomatic": 2.0,
+        "coverage": 100.0,
+        "crap": 2.0,
+        "crate": "jscycles"
+      },
+      {
+        "file": "src/tsconfig.rs",
+        "function": "PathAlias::priority",
+        "line": 67,
+        "cyclomatic": 1.0,
+        "coverage": 100.0,
+        "crap": 1.0,
+        "crate": "jscycles"
+      }
+    ],
+    "limit": "Default-feature LLVM line coverage, not branch coverage or correctness proof. The theoretical overflow fallback remains uncovered."
+  },
+  "performance": {
+    "pilot": {
+      "artifact": {
+        "path": "target/tooling/workspace-aliases/pilot-monorepo.json",
+        "sha256": "8a1265a642d32d6297997de9f94c829e8a65033863284e71d3940310107c50e0"
+      },
+      "record": {
+        "schema": 3,
+        "workload": "monorepo",
+        "files": 10000,
+        "packages": 64,
+        "aliases": 4096,
+        "analysis_work_limit": 64000000,
+        "corpus_sha256": "d32d79859c33324532aabd57f77bb0b8a0a0d943dd869850f51d773209f669c4",
+        "warmups": 1,
+        "samples_seconds": [
+          0.2105317919049412,
+          0.21054350002668798,
+          0.21108091599307954,
+          0.21205804217606783,
+          0.2119247920345515,
+          0.20987479109317064,
+          0.21132866712287068,
+          0.2119494997896254,
+          0.20968716591596603
+        ],
+        "median_seconds": 0.21108091599307954,
+        "min_seconds": 0.20968716591596603,
+        "max_seconds": 0.21205804217606783,
+        "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "processor": "arm",
+        "rayon_num_threads": "default",
+        "binary_sha256": "70753b5e9d216411f0522fdd025d84f345b7c8a97fc6a2f2dbd563f608ff6ab3",
+        "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+        "baseline": {
+          "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+          "samples_seconds": [
+            0.24560495815239847,
+            0.24349579098634422,
+            0.24282412510365248,
+            0.2454955419525504,
+            0.2436840410809964,
+            0.23980420781299472,
+            0.24465725012123585,
+            0.24442279199138284,
+            0.24884279211983085
+          ],
+          "median_seconds": 0.24442279199138284
+        },
+        "comparison": {
+          "order": "alternating on the same corpus, one warm-up per binary",
+          "outputs_equal": true,
+          "baseline_median_over_candidate": 1.1579577947226476
+        }
+      }
+    },
+    "final_comparisons": [
+      {
+        "artifact": {
+          "path": "target/tooling/workspace-aliases/final-fan-in.json",
+          "sha256": "1bf3407d27e123cecece9a18727f6a6cc7ac12b88921b2ddaa921128b9e66901"
+        },
+        "record": {
+          "schema": 3,
+          "workload": "fan-in",
+          "files": 10000,
+          "packages": 1,
+          "aliases": 0,
+          "analysis_work_limit": 20000000,
+          "corpus_sha256": "70c5f039569adb689ed4ab30dfb2e7acf197718932e9b3c5c40a43a4b761047d",
+          "warmups": 1,
+          "samples_seconds": [
+            0.13473249995149672,
+            0.13073049997910857,
+            0.13001537509262562,
+            0.1314805829897523,
+            0.13081304193474352,
+            0.13346079201437533,
+            0.12471237499266863,
+            0.12829854199662805,
+            0.1329560000449419,
+            0.13344037486240268,
+            0.12750299996696413,
+            0.1283869999460876,
+            0.13230895902961493,
+            0.1287805000320077,
+            0.12919116602279246,
+            0.13024870888330042,
+            0.12715083314105868,
+            0.12332704197615385,
+            0.13113570888526738,
+            0.1330982088111341,
+            0.12627333402633667
+          ],
+          "median_seconds": 0.13024870888330042,
+          "min_seconds": 0.12332704197615385,
+          "max_seconds": 0.13473249995149672,
+          "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+          "processor": "arm",
+          "rayon_num_threads": "default",
+          "binary_sha256": "70753b5e9d216411f0522fdd025d84f345b7c8a97fc6a2f2dbd563f608ff6ab3",
+          "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+          "baseline": {
+            "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+            "samples_seconds": [
+              0.13283245800994337,
+              0.12667095800861716,
+              0.1274778340011835,
+              0.12351724994368851,
+              0.12697541690431535,
+              0.13427666714414954,
+              0.13128000008873641,
+              0.13356554205529392,
+              0.1310774579178542,
+              0.12772050010971725,
+              0.1316710829269141,
+              0.12776295794174075,
+              0.12741008307784796,
+              0.1283592078834772,
+              0.13270458299666643,
+              0.133982416940853,
+              0.12707674992270768,
+              0.12987583386711776,
+              0.13424887508153915,
+              0.13088266598060727,
+              0.12532020779326558
+            ],
+            "median_seconds": 0.12987583386711776
+          },
+          "comparison": {
+            "order": "alternating on the same corpus, one warm-up per binary",
+            "outputs_equal": true,
+            "baseline_median_over_candidate": 0.9971372075824817
+          }
+        }
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/workspace-aliases/final-call-heavy.json",
+          "sha256": "79dadfa82f11434a9787fe73d6290936d61a240b14877ea46e1e092a37232f17"
+        },
+        "record": {
+          "schema": 3,
+          "workload": "call-heavy",
+          "files": 10000,
+          "packages": 1,
+          "aliases": 0,
+          "analysis_work_limit": 20000000,
+          "corpus_sha256": "3f60a74b9c74e109f076fe2afedce067ce96d2e98e2a61f27ab566decf80c31d",
+          "warmups": 1,
+          "samples_seconds": [
+            0.1406151249539107,
+            0.1432308340445161,
+            0.1427529591601342,
+            0.14225520798936486,
+            0.1431025001220405,
+            0.14185458282008767,
+            0.14089512499049306,
+            0.1411069999448955,
+            0.14244708302430809,
+            0.14109379099681973,
+            0.14914529211819172,
+            0.14234537491574883,
+            0.14258504193276167,
+            0.14173108292743564,
+            0.14310029102489352,
+            0.14168879203498363,
+            0.14251558296382427,
+            0.14226941694505513,
+            0.14519104198552668,
+            0.1422212920151651,
+            0.14293329184874892
+          ],
+          "median_seconds": 0.14234537491574883,
+          "min_seconds": 0.1406151249539107,
+          "max_seconds": 0.14914529211819172,
+          "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+          "processor": "arm",
+          "rayon_num_threads": "default",
+          "binary_sha256": "70753b5e9d216411f0522fdd025d84f345b7c8a97fc6a2f2dbd563f608ff6ab3",
+          "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+          "baseline": {
+            "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+            "samples_seconds": [
+              0.14074716600589454,
+              0.14361883304081857,
+              0.142308457987383,
+              0.1415402910206467,
+              0.14173279190436006,
+              0.14314562501385808,
+              0.14681900013238192,
+              0.14254825003445148,
+              0.1416269161272794,
+              0.14321937505155802,
+              0.13957108301110566,
+              0.14104512496851385,
+              0.1458800840191543,
+              0.14278325019404292,
+              0.14033241709694266,
+              0.14112383383326232,
+              0.14125929190777242,
+              0.1421340829692781,
+              0.14089304208755493,
+              0.14259212487377226,
+              0.14185112505219877
+            ],
+            "median_seconds": 0.14185112505219877
+          },
+          "comparison": {
+            "order": "alternating on the same corpus, one warm-up per binary",
+            "outputs_equal": true,
+            "baseline_median_over_candidate": 0.996527812274599
+          }
+        }
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/workspace-aliases/final-monorepo.json",
+          "sha256": "9c3883abf6c3fe8de29cb359873d6d79db5791b4007132c5583bf20fc22a1fb8"
+        },
+        "record": {
+          "schema": 3,
+          "workload": "monorepo",
+          "files": 10000,
+          "packages": 64,
+          "aliases": 4096,
+          "analysis_work_limit": 64000000,
+          "corpus_sha256": "d32d79859c33324532aabd57f77bb0b8a0a0d943dd869850f51d773209f669c4",
+          "warmups": 1,
+          "samples_seconds": [
+            0.2158690830692649,
+            0.21473033400252461,
+            0.21892604092136025,
+            0.21657291590236127,
+            0.21717441687360406,
+            0.2157529159449041,
+            0.21495270798914135,
+            0.2177918751258403,
+            0.21572416694834828,
+            0.21668391698040068,
+            0.21543816686607897,
+            0.21589783299714327,
+            0.21749470802024007,
+            0.2141394999343902,
+            0.21830724994651973,
+            0.2173918338958174,
+            0.21826074994169176,
+            0.21815499989315867,
+            0.21402091695927083,
+            0.2137170829810202,
+            0.2165577078703791
+          ],
+          "median_seconds": 0.2165577078703791,
+          "min_seconds": 0.2137170829810202,
+          "max_seconds": 0.21892604092136025,
+          "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+          "processor": "arm",
+          "rayon_num_threads": "default",
+          "binary_sha256": "70753b5e9d216411f0522fdd025d84f345b7c8a97fc6a2f2dbd563f608ff6ab3",
+          "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+          "baseline": {
+            "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+            "samples_seconds": [
+              0.25029654102399945,
+              0.24626979092136025,
+              0.25581250013783574,
+              0.24797620787285268,
+              0.24712762492708862,
+              0.24938945891335607,
+              0.24595254217274487,
+              0.2481795409694314,
+              0.2503291249740869,
+              0.24701287504285574,
+              0.24720533308573067,
+              0.24746649991720915,
+              0.25057595898397267,
+              0.2490054580848664,
+              0.24847320886328816,
+              0.2513000420294702,
+              0.24944766610860825,
+              0.25142004201188684,
+              0.2496109998319298,
+              0.25288716703653336,
+              0.24978508288040757
+            ],
+            "median_seconds": 0.24938945891335607
+          },
+          "comparison": {
+            "order": "alternating on the same corpus, one warm-up per binary",
+            "outputs_equal": true,
+            "baseline_median_over_candidate": 1.15160740001288
+          }
+        }
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/workspace-aliases/final-directory-index.json",
+          "sha256": "74facddd1e3382e0821a6d6b014e2d7005d07d011d105758640bd201ed92bc26"
+        },
+        "record": {
+          "schema": 3,
+          "workload": "directory-index",
+          "files": 10000,
+          "packages": 1,
+          "aliases": 0,
+          "analysis_work_limit": 20000000,
+          "corpus_sha256": "b8b8d1a4dcefce146a859c74c873aca3189a7d972b17bf7c2e5ce98050c6a637",
+          "warmups": 1,
+          "samples_seconds": [
+            0.5113645829260349,
+            0.5182105840649456,
+            0.5205638338811696,
+            0.5215599588118494,
+            0.5146077079698443,
+            0.514113208046183,
+            0.5140814590267837,
+            0.5154489579144865,
+            0.5124329999089241,
+            0.5157293749507517,
+            0.5148062910884619,
+            0.5176789578981698,
+            0.5133813749998808,
+            0.5113445410970598,
+            0.51265775016509,
+            0.5166157910134643,
+            0.5218714580405504,
+            0.5162711250595748,
+            0.517366582993418,
+            0.5161271670367569,
+            0.5188012500293553
+          ],
+          "median_seconds": 0.5157293749507517,
+          "min_seconds": 0.5113445410970598,
+          "max_seconds": 0.5218714580405504,
+          "host": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+          "processor": "arm",
+          "rayon_num_threads": "default",
+          "binary_sha256": "70753b5e9d216411f0522fdd025d84f345b7c8a97fc6a2f2dbd563f608ff6ab3",
+          "limitations": "Warm synthetic workload; no madge comparison, cold-cache result, or regression budget.",
+          "baseline": {
+            "binary_sha256": "a25ab7ce10a275bf605bfcb458dbe895402052b86bd6a373051d204a8bf8e581",
+            "samples_seconds": [
+              0.5221162079833448,
+              0.5141152921132743,
+              0.5176131669431925,
+              0.5176084588747472,
+              0.5167963330168277,
+              0.5159136669244617,
+              0.5161854589823633,
+              0.5152622081805021,
+              0.5111334591638297,
+              0.512076040962711,
+              0.5132479581516236,
+              0.5162071657832712,
+              0.5123759580310434,
+              0.516840917058289,
+              0.5141000419389457,
+              0.5159775409847498,
+              0.5089342079591006,
+              0.514805749990046,
+              0.5190495830029249,
+              0.5129283331334591,
+              0.5145118748769164
+            ],
+            "median_seconds": 0.5152622081805021
+          },
+          "comparison": {
+            "order": "alternating on the same corpus, one warm-up per binary",
+            "outputs_equal": true,
+            "baseline_median_over_candidate": 0.9990941629603817
+          }
+        }
+      }
+    ],
+    "hotpath_reports": [
+      {
+        "artifact": {
+          "path": "target/tooling/workspace-aliases/hotpath/fan-in.json",
+          "sha256": "e95cff7ddee232dec7d6e30ec05289e279e227416aa04eec5a79956a97b61070"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T22:25:40Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 10925125,
+        "calls": [
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 1003
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/workspace-aliases/hotpath/call-heavy.json",
+          "sha256": "6728f2d34b9ac5b931dbee81153dffd6df08b30c31cea738499d0ab6763ad0c7"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T22:25:40Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 14093833,
+        "calls": [
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 2000
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 1003
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/workspace-aliases/hotpath/monorepo.json",
+          "sha256": "1e01b11cc4c762cf167e72650157559001ab63eab1da43f1c6e08ab52c3c7088"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T22:25:40Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 22837541,
+        "calls": [
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 16
+          },
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1024
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 16
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::workspace::map_aliases",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::tsconfig::discover_shared",
+            "calls": 16
+          },
+          {
+            "function": "jscycles::tsconfig::load_with_budget",
+            "calls": 17
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 1040
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 16
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 1088
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::elementary",
+            "calls": 1
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "path": "target/tooling/workspace-aliases/hotpath/directory-index.json",
+          "sha256": "1f39e0d905a4313b4dd6ba1d12db74175f3392b2acdeb5308ef7431d6aa8ec8c"
+        },
+        "meta": {
+          "rustc": "1.98.1",
+          "os": "macos-aarch64",
+          "created_at": "2026-11-05T22:25:41Z",
+          "source_root": ""
+        },
+        "elapsed_ns": 47083958,
+        "calls": [
+          {
+            "function": "jscycles::imports::extract_from_file",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles::imports::resolve_import",
+            "calls": 1000
+          },
+          {
+            "function": "jscycles",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::run",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analyze_packages",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::process_package_with_imports",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::extract",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::discovery::discover_explicit",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::analysis::representative",
+            "calls": 1
+          },
+          {
+            "function": "jscycles::imports::should_skip",
+            "calls": 2003
+          },
+          {
+            "function": "jscycles::discovery::finish_packages",
+            "calls": 1
+          }
+        ]
+      }
+    ],
+    "method": "Saved default-feature release binaries, one warmup each and 21 quiet alternating samples on identical corpora after build/test/mutation work finished, before profiling; complete JSON matches byte for byte.",
+    "limits": "Warm local synthetic results; no customer budget, universal speedup, cold-cache or significance claim. Final binary combines setup optimization with the package-name precedence repair."
+  },
+  "package": {
+    "files": 321,
+    "inventory": {
+      "path": "target/tooling/workspace-aliases/package-list-final.log",
+      "sha256": "3dcde194b13d8135f57881d52f7f2738bd406a8d3763f4403d08486111260e90"
+    },
+    "new_regression_file": "tests/workspace_aliases.rs",
+    "verification_exit": 0
+  },
+  "unchanged": {
+    "root_lock_sha256": "f11d920f1ab6d90edc5dd932e8dc7485eda644bbcf59fd652d07ff80ae1f4549",
+    "fuzz_lock_sha256": "bee9c0da0213d611ffdf80b2a58ef6c6eb8381102ba3315f4b187f9e1180ef66",
+    "manifest_sha256": "19945c47de0a6da04feef5ab758b13bcdcd06ad3717862c951bfdf6fa0e8d4d7",
+    "parser_sha256": "9bca23a5afb97288f395731ece574dec2d3e7e6b668ff376f259a49b427ceba6",
+    "note": "No dependency, feature, manifest, compiler/check-command, public doctest or parser/FFI changes. Prior control and sanitizer campaigns retain their own scope."
+  },
+  "limitations": [
+    "Local macOS arm64 execution does not verify another supported platform or GitHub enforcement.",
+    "No full Rust-OE certification, dependency trust extension, commit, push or publication is claimed.",
+    "Parser/FFI, dependencies, manifests, check commands and public doctest examples are unchanged; prior control and sanitizer records remain historical evidence.",
+    "Raw target/ artifacts stay local; this record retains source bindings, exact cases, timing samples and artifact hashes."
+  ],
+  "generator": {
+    "path": "target/tooling/workspace-aliases/write_evidence.py",
+    "sha256": "566b7b6b8b62444fba6ee047f6d6bbd25cb2f6f76c125485ec8884af91cad7aa"
+  }
+}
