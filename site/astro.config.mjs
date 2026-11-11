@@ -5,9 +5,9 @@ import starlight from '@astrojs/starlight';
 const repository = 'https://github.com/ALMaclaine/jscycles';
 
 export default defineConfig({
-  // GitHub Pages project site. For a custom domain, set `site` to it and
-  // remove `base`.
-  site: 'https://almaclaine.github.io',
+  // GitHub Pages project site, served under the account's Pages domain
+  // (almaclaine.github.io redirects there).
+  site: 'https://almaclaine.com',
   base: '/jscycles',
   trailingSlash: 'always',
   // The site has no raster images to optimize; skip the native sharp module.

@@ -72,8 +72,10 @@ that snapshot; see the [verification record](evidence/rust-oe-linux-verification
 Website: `.github/workflows/site.yml` builds `site/` on pull requests and
 deploys it to GitHub Pages on every push to `main` that changes `site/`,
 `docs/` or `README.md`; it is not tied to releases. One-time setup: in the
-repository's Settings → Pages, set Source to "GitHub Actions". A custom
-domain needs `site` changed (and `base` removed) in `site/astro.config.mjs`.
+repository's Settings → Pages, set Source to "GitHub Actions" (done). The
+site is served at https://almaclaine.com/jscycles/ because the account's
+Pages domain is almaclaine.com; `site` and `base` in `site/astro.config.mjs`
+must match the served URL.
 
 These are unsigned build identity records. No SLSA level, trusted-builder
 attestation, byte-for-byte reproducibility, notarization or independent rebuild
