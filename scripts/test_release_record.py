@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import subprocess
-from release_record import ARTIFACTS, binary_identity, build_record, collect_records, digest, release_identity
+from release_record import ARTIFACTS, binary_identity, build_record, collect_records, digest, elf_interpreter, release_identity
 
 
 def executable_header(name):
@@ -170,6 +170,31 @@ class ReleaseRecordTests(unittest.TestCase):
                 self.assertEqual(record['binary_identity'], EXPECTED[name][0])
                 self.assertEqual(record['runner'], EXPECTED[name][1])
                 self.assertTrue(record['smoke_verified'])
+
+    def test_linux_binaries_must_be_static(self):
+        name = 'jscycles-linux-aarch64'
+        binary = self.artifacts / name / name
+        header = bytearray(executable_header(name))
+        header[32:40] = (64).to_bytes(8, 'little')
+        header[54:56] = (56).to_bytes(2, 'little')
+        header[56:58] = (2).to_bytes(2, 'little')
+        load, interp = bytearray(56), bytearray(56)
+        load[:4] = (1).to_bytes(4, 'little')
+        interp[:4] = (3).to_bytes(4, 'little')
+        binary.write_bytes(bytes(header) + load + load)
+        self.assertFalse(elf_interpreter(binary))
+        self.assertEqual(self.build(name)['target'], 'aarch64-unknown-linux-musl')
+        binary.write_bytes(bytes(header) + load + interp)
+        self.assertTrue(elf_interpreter(binary))
+        with self.assertRaisesRegex(ValueError, 'statically linked'):
+            self.build(name)
+        binary.write_bytes(bytes(header) + load)
+        with self.assertRaisesRegex(ValueError, 'Truncated ELF program header'):
+            elf_interpreter(binary)
+        header[54:56] = (32).to_bytes(2, 'little')
+        binary.write_bytes(bytes(header) + load + load)
+        with self.assertRaisesRegex(ValueError, 'program header size'):
+            elf_interpreter(binary)
 
     def test_successful_wrong_version_or_extra_output_is_rejected(self):
         for version, stderr in [(b'jscycles 9.0.0\n', b''), (b'other 0.2.0\n', b''),

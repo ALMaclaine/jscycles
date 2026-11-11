@@ -80,6 +80,7 @@ behavior changes.
 | `src/` | Library and CLI (`main.rs`) |
 | `tests/` | Integration tests and fixtures |
 | `fuzz/` | cargo-fuzz targets |
+| `npm/` | The Node launcher of the `jscycles` npm package (`scripts/npm_packages.py` builds the packages) |
 | `scripts/` | Repository checks, release tooling, benchmarks, differential tests |
 | `xtask/` | `cargo xtask` tasks |
 | `docs/` | User documentation |

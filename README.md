@@ -30,8 +30,21 @@ Summary: 3 packages, 2 with file cycles (5 total), 0 inter-package cycles
 
 ## Install
 
-Prebuilt binaries for Linux (x86-64, ARM64), macOS (Intel, Apple Silicon)
-and Windows (x86-64) are attached to each
+With npm (or pnpm, yarn, bun), as a development dependency:
+
+```sh
+npm install --save-dev jscycles
+npx jscycles
+```
+
+The package runs a prebuilt native binary; npm picks the one for your
+platform from optional dependencies, and nothing runs at install time. Builds
+exist for Linux (x86-64, ARM64; static, so any distribution including
+Alpine), macOS (Intel, Apple Silicon) and Windows (x86-64). If optional
+dependencies are disabled (`--omit=optional`), the binary is missing and
+`jscycles` exits with status 2 saying so.
+
+The same binaries are attached to each
 [GitHub release](https://github.com/ALMaclaine/jscycles/releases), together
 with a `SHA256SUMS` file.
 

@@ -54,6 +54,41 @@ jobs:
       - run: cargo test --workspace --all-targets --all-features --locked --target ${{ matrix.target }}
       - run: cargo test --workspace --doc --all-features --locked --target ${{ matrix.target }}
 
+  static-linux:
+    name: Static Linux build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: "1.98.1"
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: ${{ matrix.target }}
+      - run: sudo apt-get update && sudo apt-get install --yes musl-tools
+      # The same build the release workflow publishes.
+      - run: cargo build --locked --release --target ${{ matrix.target }}
+        env:
+          CC_x86_64_unknown_linux_musl: musl-gcc
+          CC_aarch64_unknown_linux_musl: musl-gcc
+      - name: Require a static binary that finds the known cycle
+        run: |
+          binary=target/${{ matrix.target }}/release/jscycles
+          python3 -B -c "import sys; sys.path.insert(0, 'scripts'); from pathlib import Path; from release_record import elf_interpreter; sys.exit(elf_interpreter(Path('$binary')))"
+          status=0
+          "$binary" --inner --no-tsconfig tests/fixtures/simple-cycle || status=$?
+          test "$status" -eq 1
+
   differential:
     name: Differential ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -148,7 +183,7 @@ jobs:
   required:
     name: Required checks
     if: always()
-    needs: [test, platforms, msrv, guidance, complexity, miri]
+    needs: [test, platforms, static-linux, differential, msrv, guidance, complexity, miri]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

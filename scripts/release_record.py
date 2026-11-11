@@ -15,15 +15,15 @@ import subprocess
 import tomllib
 
 ARTIFACTS = {
-    'jscycles-linux-x86_64': 'x86_64-unknown-linux-gnu',
-    'jscycles-linux-aarch64': 'aarch64-unknown-linux-gnu',
+    'jscycles-linux-x86_64': 'x86_64-unknown-linux-musl',
+    'jscycles-linux-aarch64': 'aarch64-unknown-linux-musl',
     'jscycles-darwin-x86_64': 'x86_64-apple-darwin',
     'jscycles-darwin-aarch64': 'aarch64-apple-darwin',
     'jscycles-windows-x86_64.exe': 'x86_64-pc-windows-msvc',
 }
 TARGETS = {
-    'x86_64-unknown-linux-gnu': ('ELF64', 'x86_64', 'Linux', 'X64'),
-    'aarch64-unknown-linux-gnu': ('ELF64', 'aarch64', 'Linux', 'ARM64'),
+    'x86_64-unknown-linux-musl': ('ELF64', 'x86_64', 'Linux', 'X64'),
+    'aarch64-unknown-linux-musl': ('ELF64', 'aarch64', 'Linux', 'ARM64'),
     'x86_64-apple-darwin': ('Mach-O64', 'x86_64', 'macOS', 'X64'),
     'aarch64-apple-darwin': ('Mach-O64', 'aarch64', 'macOS', 'ARM64'),
     'x86_64-pc-windows-msvc': ('PE32+', 'x86_64', 'Windows', 'X64'),
@@ -60,6 +60,28 @@ def binary_identity(path):
                 if len(pe) == 26 and pe[:6] == b'PE\0\0\x64\x86' and pe[24:26] == b'\x0b\x02':
                     return {'format': 'PE32+', 'arch': 'x86_64'}
     raise ValueError('Unsupported or truncated release binary header')
+
+def elf_interpreter(path):
+    """Whether an ELF64 image names a program interpreter (PT_INTERP), i.e. is
+    dynamically linked. Static Linux binaries run on any distribution, musl or
+    glibc. Reads only the program header table, with bounded sizes."""
+    with path.open('rb') as source:
+        header = source.read(64)
+        if len(header) != 64 or header[:7] != b'\x7fELF\x02\x01\x01':
+            raise ValueError('Unsupported or truncated release binary header')
+        offset = int.from_bytes(header[32:40], 'little')
+        entry_size = int.from_bytes(header[54:56], 'little')
+        count = int.from_bytes(header[56:58], 'little')
+        if count == 0:
+            return False
+        if entry_size != 56:
+            raise ValueError('Unsupported ELF program header size')
+        source.seek(offset)
+        table = source.read(entry_size * count)
+        if len(table) != entry_size * count:
+            raise ValueError('Truncated ELF program header table')
+        return any(int.from_bytes(table[index:index + 4], 'little') == 3
+                   for index in range(0, len(table), entry_size))
 
 def target_identity(target):
     binary_format, architecture, runner_os, runner_arch = TARGETS[target]
@@ -106,6 +128,8 @@ def build_record(root, binary, name, environment):
     expected_binary, expected_runner = target_identity(target)
     if binary_identity(binary) != expected_binary:
         raise ValueError('Release binary architecture/format disagrees with its target')
+    if target.endswith('-linux-musl') and elf_interpreter(binary):
+        raise ValueError('Linux release binary must be statically linked')
     runner = {'os': environment['RUNNER_OS'], 'arch': environment['RUNNER_ARCH']}
     if runner != expected_runner:
         raise ValueError('Release binary must be smoke tested on its native runner')

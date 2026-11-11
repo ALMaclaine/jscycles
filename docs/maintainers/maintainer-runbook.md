@@ -48,6 +48,27 @@ that snapshot; see the [verification record](evidence/rust-oe-linux-verification
    verification and approving maintainer in the release notes/incident record.
    Local tests do not perform or attest this publication step.
 
+6. npm: after the GitHub release, the `npm` job stages one package per binary
+   (`@jscycles/linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`,
+   `win32-x64`) and the `jscycles` launcher package with
+   `scripts/npm_packages.py`, then publishes the platform packages first. A
+   version already on the registry is skipped, so re-running the job after a
+   partial failure completes the set. Publishing uses npm trusted publishing
+   (GitHub OIDC; no token is stored) and npm attaches provenance.
+
+   One-time setup, before the first tagged release that publishes to npm:
+   npm only accepts a trusted publisher for a package that already exists, so
+   the first version of each of the six packages is published by hand.
+   1. Create the `jscycles` organization on npmjs.com (free plan).
+   2. Download the release assets and `SHA256SUMS` into one directory, then
+      run `npm login` and
+      `python3 scripts/npm_packages.py publish --artifacts DIR --sums DIR/SHA256SUMS`
+      from a checkout of the release tag.
+   3. For each of the six packages, open its Settings on npmjs.com, add a
+      trusted publisher (GitHub Actions, repository `ALMaclaine/jscycles`,
+      workflow `release.yml`), and set publishing access to require two-factor
+      authentication and disallow tokens.
+
 These are unsigned build identity records. No SLSA level, trusted-builder
 attestation, byte-for-byte reproducibility, notarization or independent rebuild
 is claimed. Selecting one of those promises requires its own format/verifier,

@@ -16,6 +16,11 @@ results on the same repository, and compare before relying on them in CI.
 
 ### Added
 
+- npm distribution: `npm install --save-dev jscycles` installs the prebuilt
+  binary for the current platform through optional dependencies, with no
+  install script.
+- Linux release binaries are statically linked (musl), so they also run on
+  Alpine and on distributions with an older glibc.
 - `--skip-type-imports` (and `skip_type_imports` in `jscycles.yaml`, globally
   or per package) leaves out imports TypeScript erases: `import type`,
   `export type`, type-position `import()`, and declaration files.
