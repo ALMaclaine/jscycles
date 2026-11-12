@@ -8,7 +8,7 @@ the [upgrade notes](docs/migration-0.2.md).
 
 ## [Unreleased]
 
-## [0.2.0]
+## [0.2.0] - 2026-11-12
 
 Many fixes in this release change which cycles are reported. Most reveal real
 cycles that 0.1 missed; some remove cycles 0.1 invented. Expect different
