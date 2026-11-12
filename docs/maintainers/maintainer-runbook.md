@@ -27,9 +27,10 @@ that snapshot; see the [verification record](evidence/rust-oe-linux-verification
    Ensure the binary package contains only intended source/tests/license material.
 3. The release workflow accepts matching version tags. Manual dispatch must also
    select that tag; dispatch from a branch must fail without publication. Only
-   the release job has contents-write permission. Cargo publication is restricted to crates.io and remains a manual maintainer
-   operation requiring the same preparation and version review. No registry
-   publication token is configured by this project work.
+   the release job has contents-write permission. Registry publication (npm
+   and crates.io) runs in the release workflow after the GitHub release, with
+   trusted publishing; no long-lived registry token is stored once the
+   one-time bootstrap below is complete.
 4. Build each release target natively. Check its executable format/CPU and runner
    against the selected target, exact reported version against Cargo.toml, usable
    help, and the known fixture's cycle witness with typed JSON/exit agreement.
@@ -48,26 +49,34 @@ that snapshot; see the [verification record](evidence/rust-oe-linux-verification
    verification and approving maintainer in the release notes/incident record.
    Local tests do not perform or attest this publication step.
 
-6. npm: after the GitHub release, the `npm` job stages one package per binary
-   (`@jscycles/linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`,
-   `win32-x64`) and the `jscycles` launcher package with
-   `scripts/npm_packages.py`, then publishes the platform packages first. A
-   version already on the registry is skipped, so re-running the job after a
-   partial failure completes the set. Publishing uses npm trusted publishing
-   (GitHub OIDC; no token is stored) and npm attaches provenance.
+6. Registries: after the GitHub release, two jobs publish.
+   - `npm` stages one package per binary (`@jscycles/linux-x64`,
+     `linux-arm64`, `darwin-x64`, `darwin-arm64`, `win32-x64`) and the
+     `jscycles` launcher package with `scripts/npm_packages.py`, then publishes
+     the platform packages first, with provenance.
+   - `crates` runs `cargo publish --locked`.
 
-   One-time setup, before the first tagged release that publishes to npm:
-   npm only accepts a trusted publisher for a package that already exists, so
-   the first version of each of the six packages is published by hand.
+   A version already on a registry is skipped, so re-running a job after a
+   partial failure completes the set. Both authenticate with trusted
+   publishing (GitHub OIDC), so no token is stored.
+
+   One-time bootstrap, for the first release only: a registry accepts a
+   trusted publisher only for a package that already exists, so the first
+   release publishes with temporary tokens, still from CI.
    1. Create the `jscycles` organization on npmjs.com (free plan).
-   2. Download the release assets and `SHA256SUMS` into one directory, then
-      run `npm login` and
-      `python3 scripts/npm_packages.py publish --artifacts DIR --sums DIR/SHA256SUMS`
-      from a checkout of the release tag.
-   3. For each of the six packages, open its Settings on npmjs.com, add a
-      trusted publisher (GitHub Actions, repository `ALMaclaine/jscycles`,
-      workflow `release.yml`), and set publishing access to require two-factor
-      authentication and disallow tokens.
+   2. Create an npm granular access token with read-write permission for the
+      `@jscycles` scope and the `jscycles` package, expiring within a day, and a
+      crates.io API token with the `publish-new` and `publish-update` scopes.
+      Store them as repository secrets, which prompt for the value:
+      `gh secret set NPM_TOKEN` and `gh secret set CARGO_REGISTRY_TOKEN`.
+   3. Push the release tag. Both jobs use the secrets when they are set.
+   4. On npmjs.com, open each of the six packages' Settings, add a trusted
+      publisher (GitHub Actions, repository `ALMaclaine/jscycles`, workflow
+      `release.yml`), and set publishing access to require two-factor
+      authentication and disallow tokens. On crates.io, open the crate's
+      Settings → Trusted Publishing and add the same repository and workflow.
+   5. Delete both secrets (`gh secret delete NPM_TOKEN`,
+      `gh secret delete CARGO_REGISTRY_TOKEN`) and revoke both tokens.
 
 Website: `.github/workflows/site.yml` builds `site/` on pull requests and
 deploys it to GitHub Pages on every push to `main` that changes `site/`,
