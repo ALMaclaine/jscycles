@@ -22,13 +22,16 @@ use jscycles::{Cycle, HumanFormatter, JsonFormatter, PackageResult};
 #[test]
 fn relative_specifiers_cannot_become_workspace_package_edges() {
     let directory = tempfile::tempdir().expect("temporary directory");
-    let root = directory.path();
+    // Canonical, as discovery provides it, so ownership compares like paths.
+    let root = &fs::canonicalize(directory.path()).expect("canonical root");
     fs::write(root.join("entry.ts"), "import './local'; import 'actual';").expect("source");
+    // A member named "." must not capture the relative specifier "./local";
+    // "actual" is a different member, so importing it is a package edge.
     let workspace = Workspace {
-        root: root.to_path_buf(),
+        root: root.clone(),
         format: jscycles::workspace::WorkspaceFormat::Npm,
-        packages: [".", "actual"]
-            .map(|name| (name.to_owned(), root.to_path_buf()))
+        packages: [(".", root.clone()), ("actual", root.join("actual"))]
+            .map(|(name, path)| (name.to_owned(), path))
             .into_iter()
             .collect(),
         aliases: std::collections::HashMap::new(),
