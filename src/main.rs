@@ -586,7 +586,9 @@ fn read_stdin_paths(reader: impl io::Read) -> io::Result<Vec<PathBuf>> {
 /// visible argument labels so Clap can retain its layout and styles without
 /// inserting raw controls into diagnostics or generated suggestions.
 fn cli_matches(arguments: &[std::ffi::OsString]) -> Result<clap::ArgMatches, clap::Error> {
-    let cli = build_cli();
+    // Usage and errors name `jscycles` on every platform, not `jscycles.exe`
+    // or whatever path launched it.
+    let cli = build_cli().bin_name("jscycles");
     cli.clone()
         .try_get_matches_from(arguments)
         .map_err(|original| {
