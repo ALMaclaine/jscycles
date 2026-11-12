@@ -328,6 +328,12 @@ def model(root: Path, resolver: Resolver) -> Expected:
                 return None
             prefix = prefix.rsplit("/", 1)[0]
 
+    # The CLI rejects a scan that selects no package (status 2) rather than
+    # reporting it clean.
+    if not expected.packages and not expected.error:
+        expected.error = "no packages selected"
+        return expected
+
     # Each selected package walks its own directory, leaving nested packages
     # (including filtered ones) and configured-exclude boundaries alone.
     skip = boundaries | set(discovered)

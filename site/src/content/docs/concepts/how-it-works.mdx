@@ -1,0 +1,96 @@
+---
+title: How it works
+description: What jscycles reads, how it resolves imports, and how it chooses which cycles to report.
+---
+
+import TangleDiagram from '../../../components/TangleDiagram.astro';
+
+jscycles is static analysis: it reads and parses files, and never runs them.
+A scan goes through five steps.
+
+## 1. Find packages
+
+Starting from the current directory (or the paths you pass), jscycles finds
+every `package.json` with a `name`. Each is a package, including a workspace
+root and packages nested inside others. It also looks upward for the
+workspace (`pnpm-workspace.yaml`, `package.json` `workspaces`, or tsconfig
+project `references`) to learn which packages are members.
+
+Each source file belongs to its nearest package, so it is analyzed once.
+`node_modules`, `dist`, `build`, `.next` and `.git` directories are skipped.
+
+## 2. Read the imports
+
+Each file is parsed with [tree-sitter](https://tree-sitter.github.io/), using
+the TypeScript, TSX or JavaScript grammar for its extension. These count as
+imports:
+
+- `import … from '…'`, `import '…'`, `export … from '…'`, `export * from '…'`
+- `import('…')` and `require('…')` with a literal string
+- `import x = require('…')`
+- type-only imports (`import type`, `export type`, `import()` in types), unless
+  `--skip-type-imports` is set
+
+A specifier computed at runtime, such as `require(name)`, cannot be followed
+and is skipped. A file with a syntax error stops the scan, since skipping it
+would leave a hole in the graph.
+
+## 3. Resolve each import
+
+Each specifier is resolved to a file the way TypeScript resolves it: relative
+paths, `paths` aliases from the package's `tsconfig.json` (following
+`extends`), extension and `index` lookup, and `.js` specifiers that name a
+`.ts` source. A specifier that names a workspace member, such as
+`@acme/utils` or `@acme/utils/strings`, becomes a dependency between packages.
+
+Anything else (packages from `node_modules`, and specifiers that resolve to no
+file) is not part of the graph. The full rules are in
+[TypeScript projects](../../guides/typescript/#how-a-specifier-finds-its-file).
+
+## 4. Find the tangles
+
+The resolved imports form a graph per package, with files as nodes. jscycles
+finds its strongly connected components: groups of files where every file can
+reach every other by following imports. A group of two or more files, or a
+file that imports itself, is a tangle.
+
+A tangle usually contains many overlapping loops. Here four files form one
+tangle with three loops:
+
+<TangleDiagram />
+
+Tools that list every loop would report all three, and on real code the count
+grows very fast: a few dozen tangled files can contain thousands of loops.
+jscycles reports **one representative loop per tangle**, chosen
+deterministically and starting from the alphabetically first file. Fixing it
+usually splits the tangle; if a loop remains, the next run shows it.
+
+## 5. Find package cycles
+
+Between workspace packages, the graph is small, so jscycles lists **every**
+elementary cycle, each starting from its alphabetically first package. An
+edge exists only where a file actually imports another package; dependencies
+declared in `package.json` but never imported do not count. With `-v`, each
+edge lists the files that create it.
+
+## Guarantees
+
+- **Deterministic.** The same files always produce the same report, byte for
+  byte, regardless of thread scheduling.
+- **No false clean.** Status `0` means the whole selected graph was built and
+  has no cycle. Anything that prevents that (an unreadable file, a syntax
+  error, a bad configuration, a [resource limit](../../reference/analysis-limits/))
+  exits with status `2`.
+- **Bounded.** Every scan has finite quotas for files, bytes, graph size and
+  output, so a huge or hostile checkout fails clearly instead of exhausting
+  memory.
+- **Local.** jscycles runs no project scripts, installs nothing, writes no
+  cache, and makes no network requests.
+
+## What it does not do
+
+It does not type-check, evaluate package `exports` conditions for imports,
+read webpack or Vite configuration, or analyze `.vue`, `.svelte` or `.astro`
+files. A clean result describes the static import graph of the files it read.
+The [product contract](../../reference/product-contract/) states every rule in
+full.

@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { anchor, rewriteLink, splitTitle, usageBlock } from './sync-docs.mjs';
+import { readFileSync } from 'node:fs';
+import { anchor, commandLine, PAGES, rewriteLink, splitTitle, usageBlock } from './sync-docs.mjs';
 
-const titles = { 'analysis-limits.md': 'Analysis limits', 'configuration.md': 'Configuration' };
+const titles = { 'docs/analysis-limits.md': 'Analysis limits', 'docs/configuration.md': 'Configuration' };
 
 test('links between synced docs become site links', () => {
   assert.equal(rewriteLink('configuration.md', 'docs/analysis-limits.md'), '../configuration/');
@@ -20,10 +21,15 @@ test('an anchor naming the target page title links to the page', () => {
   );
 });
 
+test('the changelog is synced, in both directions', () => {
+  assert.equal(rewriteLink('../CHANGELOG.md', 'docs/migration-0.2.md'), '../changelog/');
+  assert.equal(rewriteLink('docs/migration-0.2.md', 'CHANGELOG.md'), '../migration-0-2/');
+});
+
 test('other repository files link to GitHub; URLs and anchors are kept', () => {
   assert.equal(
-    rewriteLink('../CHANGELOG.md', 'docs/migration-0.2.md'),
-    'https://github.com/ALMaclaine/jscycles/blob/main/CHANGELOG.md',
+    rewriteLink('../SECURITY.md', 'docs/migration-0.2.md'),
+    'https://github.com/ALMaclaine/jscycles/blob/main/SECURITY.md',
   );
   assert.equal(
     rewriteLink('maintainers/build-trust.md#x', 'docs/README.md'),
@@ -50,4 +56,19 @@ test('anchors follow GitHub heading slugs', () => {
 test('the usage block is read from the README', () => {
   assert.equal(usageBlock('x\n```text\nUsage: jscycles [OPTIONS]\n```\n'), 'Usage: jscycles [OPTIONS]\n');
   assert.throws(() => usageBlock('no usage'), /Usage: jscycles/);
+});
+
+test('the command-line template needs its usage placeholder', () => {
+  assert.equal(commandLine('a\n{{usage}}\nb', 'Usage: x\n'), 'a\nUsage: x\nb');
+  assert.throws(() => commandLine('no placeholder', 'Usage: x'), /placeholder/);
+});
+
+test('every generated page is ignored by git, and nothing else under reference/', () => {
+  const ignored = readFileSync(new URL('../.gitignore', import.meta.url), 'utf8')
+    .split('\n')
+    .filter((line) => line.startsWith('src/content/docs/reference/'))
+    .map((line) => line.slice('src/content/docs/reference/'.length))
+    .sort();
+  const generated = [...Object.values(PAGES), 'command-line'].map((slug) => `${slug}.md`).sort();
+  assert.deepEqual(ignored, generated);
 });

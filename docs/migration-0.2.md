@@ -188,7 +188,9 @@ documented `jscycles` modules/reexports and the CLI/JSON contract
   current directory. Explicit YAML `null` for a package `extensions`/`ignore`
   override is rejected rather than treated as omitted.
 - Source/configuration errors previously ignored now exit 2; do not interpret
-  any failed report as clean. `--stdin` conflicts with positional operands.
+  any failed report as clean. A scan that selects no package at all also exits
+  2 (`DiscoveryError::NoPackages`, raised by the CLI; library discovery still
+  returns an empty list). `--stdin` conflicts with positional operands.
   `--outer` is a source-graph filter; unused manifest declarations are not edges.
 
 The YAML parser now requires serde-saphyr 2.1.1 after 2.1.0 was yanked. Blank and

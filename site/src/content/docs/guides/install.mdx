@@ -1,0 +1,110 @@
+---
+title: Install
+description: Install jscycles from npm, as a release binary, or with Cargo.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+## With a package manager
+
+Add jscycles as a development dependency, so everyone on the project and CI
+runs the same version:
+
+<Tabs syncKey="pkg">
+  <TabItem label="npm">
+    ```sh
+    npm install --save-dev jscycles
+    npx jscycles
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```sh
+    pnpm add --save-dev jscycles
+    pnpm exec jscycles
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```sh
+    yarn add --dev jscycles
+    yarn jscycles
+    ```
+  </TabItem>
+  <TabItem label="bun">
+    ```sh
+    bun add --dev jscycles
+    bunx jscycles
+    ```
+  </TabItem>
+</Tabs>
+
+To try it once without adding it to the project, run `npx jscycles` in the
+repository.
+
+The `jscycles` package is a small launcher (Node.js 18 or newer) that runs a
+prebuilt native binary. The package manager picks the binary for your platform
+from optional dependencies; nothing is compiled or run at install time.
+
+| Platform | Architectures | npm package |
+| --- | --- | --- |
+| Linux, any distribution including Alpine (statically linked) | x86-64, ARM64 | `@jscycles/linux-x64`, `@jscycles/linux-arm64` |
+| macOS | Intel, Apple Silicon | `@jscycles/darwin-x64`, `@jscycles/darwin-arm64` |
+| Windows | x86-64 | `@jscycles/win32-x64` |
+
+<Aside type="caution" title="Optional dependencies must be installed">
+With `--omit=optional` or `--no-optional`, the binary is missing and
+`jscycles` exits with status 2 saying so. It never reports a clean result
+without having scanned.
+</Aside>
+
+On another platform, install with [Cargo](#with-cargo) and either run that
+binary directly or point the launcher at it with
+`JSCYCLES_BINARY=/path/to/jscycles`.
+
+## As a release binary
+
+Each [GitHub release](https://github.com/ALMaclaine/jscycles/releases) has the
+same binaries, with no Node.js needed, and a `SHA256SUMS` file to check them
+against:
+
+| Platform | File |
+| --- | --- |
+| Linux x86-64 | `jscycles-linux-x86_64` |
+| Linux ARM64 | `jscycles-linux-aarch64` |
+| macOS Intel | `jscycles-darwin-x86_64` |
+| macOS Apple Silicon | `jscycles-darwin-aarch64` |
+| Windows x86-64 | `jscycles-windows-x86_64.exe` |
+
+```sh
+version=v0.2.0
+file=jscycles-linux-x86_64
+base=https://github.com/ALMaclaine/jscycles/releases/download/$version
+curl -sSfLO "$base/$file"
+curl -sSfLO "$base/SHA256SUMS"
+sha256sum --check --ignore-missing SHA256SUMS
+chmod +x "$file"
+sudo mv "$file" /usr/local/bin/jscycles
+```
+
+On macOS, use `shasum -a 256 --check --ignore-missing SHA256SUMS`.
+
+## With Cargo
+
+With a Rust toolchain, 1.93 or newer:
+
+```sh
+cargo install jscycles --locked
+```
+
+From a checkout of the repository: `cargo install --path . --locked`.
+
+## Check the installation
+
+```sh
+jscycles --version
+```
+
+```text
+jscycles 0.2.0
+```
+
+Next: the [quick start](../quick-start/).

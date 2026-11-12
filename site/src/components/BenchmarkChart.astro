@@ -1,0 +1,143 @@
+---
+// Median of five runs after one warm-up, Apple M3 Pro, each repository's
+// `packages` directory, measured with scripts/compare_tools.py. The table on
+// the comparison page has the same numbers; keep them in step.
+const tools = ['jscycles', 'madge', 'dpdm'] as const;
+const results: { repository: string; files: number; seconds: Record<(typeof tools)[number], number> }[] = [
+  { repository: 'nest', files: 1068, seconds: { jscycles: 0.08, madge: 2.04, dpdm: 0.86 } },
+  { repository: 'typeorm', files: 3609, seconds: { jscycles: 0.28, madge: 2.97, dpdm: 1.48 } },
+  { repository: 'excalidraw', files: 631, seconds: { jscycles: 0.11, madge: 2.63, dpdm: 0.87 } },
+  { repository: 'ts-morph', files: 1171, seconds: { jscycles: 0.08, madge: 1.64, dpdm: 0.83 } },
+];
+const max = Math.max(...results.flatMap((r) => tools.map((t) => r.seconds[t])));
+// Leave room after the longest bar for its value label.
+const width = (value: number) => `calc((100% - 3.75rem) * ${(value / max).toFixed(4)})`;
+const format = (value: number) => `${value.toFixed(2)} s`;
+---
+
+<figure class="bench not-content" aria-labelledby="bench-caption">
+  <div class="groups">
+    {
+      results.map((r) => (
+        <div class="group">
+          <div class="repo">
+            <span class="name">{r.repository}</span>
+            <span class="files">{r.files.toLocaleString('en-US')} files</span>
+          </div>
+          {tools.map((tool) => (
+            <div class:list={['row', { hot: tool === 'jscycles' }]}>
+              <span class="tool">{tool}</span>
+              <span class="track">
+                <span
+                  class="bar"
+                  style={`width: ${width(r.seconds[tool])}`}
+                  title={`${tool} on ${r.repository}: ${format(r.seconds[tool])}`}
+                />
+                <span class="value">{format(r.seconds[tool])}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      ))
+    }
+  </div>
+  <figcaption id="bench-caption">
+    Time to find cycles in each repository's <code>packages</code> directory; shorter is faster. Median of
+    five runs on an Apple M3 Pro. <a href={`${import.meta.env.BASE_URL}guides/comparison/#performance`}>Method and table</a>.
+  </figcaption>
+</figure>
+
+<style>
+  .bench {
+    --bench-hot: #c2410c;
+    --bench-muted: hsl(224, 6%, 56%);
+    margin-block: 1.5rem;
+  }
+  :global(:root:not([data-theme='light'])) .bench {
+    --bench-hot: #e4630f;
+  }
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.25rem 2rem;
+  }
+  .group {
+    display: grid;
+    gap: 0.35rem;
+  }
+  .repo {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--sl-color-hairline-light);
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
+  }
+  .name {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .files {
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 4.75rem 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--sl-text-sm);
+    margin: 0;
+  }
+  .tool {
+    color: var(--sl-color-gray-2);
+  }
+  .row.hot .tool {
+    color: var(--sl-color-white);
+    font-weight: 600;
+  }
+  .track {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    margin: 0;
+  }
+  .bar {
+    display: block;
+    flex: none;
+    height: 0.65rem;
+    min-width: 3px;
+    border-radius: 0 4px 4px 0;
+    background: var(--bench-muted);
+  }
+  .row.hot .bar {
+    background: var(--bench-hot);
+  }
+  .value {
+    flex: none;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .row.hot .value {
+    color: var(--sl-color-white);
+    font-weight: 600;
+  }
+  figcaption {
+    margin-top: 1rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+  figcaption code {
+    font-family: var(--__sl-font-mono);
+    font-size: 0.9em;
+    background: var(--sl-color-bg-inline-code);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+  figcaption a {
+    color: var(--sl-color-text-accent);
+  }
+</style>

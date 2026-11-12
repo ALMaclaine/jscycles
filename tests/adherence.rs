@@ -334,7 +334,7 @@ fn verbose_summary_counts_the_displayed_package_cycles() {
     let output = scan(temp.path(), &["--outer", "--verbose"]);
     assert_eq!(output.status.code(), Some(1), "cycle found");
     assert!(
-        String::from_utf8_lossy(&output.stdout).contains("Summary: 1 inter-package cycles"),
+        String::from_utf8_lossy(&output.stdout).contains("Summary: 1 inter-package cycle\n"),
         "summary agrees with detailed cycle output"
     );
 }
@@ -1004,6 +1004,14 @@ fn dot_slash_and_absolute_exclude_and_ignore_patterns_still_apply() {
         r#"{"name":"legacy"}"#,
     )
     .expect("manifest");
+    // A clean package stays selected, so status 0 shows the exclusion took
+    // effect; excluding every package would be a status-2 empty selection.
+    write(
+        temp.path(),
+        "apps/clean/package.json",
+        r#"{"name":"clean"}"#,
+    );
+    write(temp.path(), "apps/clean/a.ts", "export const a = 1;");
     let absolute = temp.path().join("apps/legacy");
     let absolute = absolute.to_str().expect("UTF-8 path").replace('\\', "/");
     for exclude in ["./apps/legacy", absolute.as_str()] {
@@ -1197,6 +1205,13 @@ fn unnamed_member_tsconfig_references_do_not_replace_the_package_manager_root() 
 fn empty_exclude_patterns_and_explicit_operands_are_never_pruned_as_a_whole() {
     let temp = tempfile::tempdir().expect("directory");
     cycle(&temp.path().join("apps/x"));
+    // A clean package outside apps/ keeps the automatic scan non-empty below.
+    write(
+        temp.path(),
+        "libs/clean/package.json",
+        r#"{"name":"clean"}"#,
+    );
+    write(temp.path(), "libs/clean/a.ts", "export const a = 1;");
     for exclude in ["\"\"", "\"./\""] {
         fs::write(
             temp.path().join("jscycles.yaml"),

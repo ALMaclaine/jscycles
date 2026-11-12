@@ -15,8 +15,9 @@ use jscycles::cycles::PackageCycleDetector;
 use jscycles::imports::{ExtractionMode, Import};
 use jscycles::output::{CycleFilter, UnifiedOutputFormatter as _, UnifiedResults};
 use jscycles::{
-    Config, CycleDetector, Discovered, HumanFormatter, ImportExtractor, JscyclesError,
-    JsonFormatter, Package, PackageDiscovery, PackageResult, TsConfig, TsConfigCache, Workspace,
+    Config, CycleDetector, Discovered, DiscoveryError, HumanFormatter, ImportExtractor,
+    JscyclesError, JsonFormatter, Package, PackageDiscovery, PackageResult, TsConfig,
+    TsConfigCache, Workspace,
 };
 
 /// Build the CLI command.
@@ -459,6 +460,12 @@ fn run(matches: &clap::ArgMatches) -> Result<bool, JscyclesError> {
     } else {
         discovery.discover_with_boundaries(&PathBuf::from("."))?
     };
+    if discovered.packages.is_empty() {
+        // An empty selection checked nothing; reporting it as clean would let
+        // a CI job started in the wrong directory pass.
+        let filtered = !(only.is_empty() && exclude.is_empty());
+        return Err(DiscoveryError::NoPackages { filtered }.into());
+    }
     let unified = analyze_packages(&discovered, &opts, matches.get_flag("verbose"))?;
     warn_rejected_tsconfigs(&opts.tsconfig_cache);
     publish_results(&unified, filter, matches, &budget)
@@ -579,7 +586,9 @@ fn read_stdin_paths(reader: impl io::Read) -> io::Result<Vec<PathBuf>> {
 /// visible argument labels so Clap can retain its layout and styles without
 /// inserting raw controls into diagnostics or generated suggestions.
 fn cli_matches(arguments: &[std::ffi::OsString]) -> Result<clap::ArgMatches, clap::Error> {
-    let cli = build_cli();
+    // Usage and errors name `jscycles` on every platform, not `jscycles.exe`
+    // or whatever path launched it.
+    let cli = build_cli().bin_name("jscycles");
     cli.clone()
         .try_get_matches_from(arguments)
         .map_err(|original| {

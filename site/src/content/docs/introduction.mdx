@@ -1,0 +1,93 @@
+---
+title: Why circular imports matter
+description: What a circular import is, the bugs it causes, and what jscycles does about it.
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A circular import is a loop in the module graph: `a.ts` imports `b.ts`, and
+`b.ts` imports `a.ts`, directly or through other files. JavaScript allows it,
+and most loops cause no trouble. A few cause bugs that are hard to trace,
+because they depend on which module happens to load first.
+
+## What goes wrong
+
+When a loop is entered, one module has to run before the modules it imports
+have finished. Whatever that module reads from them during evaluation is not
+there yet.
+
+With ES modules, the binding exists but is uninitialized, so reading it throws:
+
+```ts title="dog.ts"
+import { Animal } from './animal';
+export class Dog extends Animal {}
+```
+
+```ts title="animal.ts"
+import { Dog } from './dog';
+export class Animal {
+  static create() { return new Dog(); }
+}
+```
+
+Import `dog.ts` first and everything works. Import `animal.ts` first and Node
+fails before your code runs:
+
+```text
+ReferenceError: Cannot access 'Animal' before initialization
+```
+
+With CommonJS (`require`), the import returns the other module's exports as
+they are so far, usually an empty object, so the value is silently
+`undefined`. Node prints a warning only when a missing property is read:
+
+```text
+Warning: Accessing non-existent property 'a' of module exports inside circular dependency
+```
+
+Either way, the bug appears only for some entry points, some test orders, or
+some bundler chunk layouts, and moves when unrelated imports change.
+
+Loops cost something even when they never crash:
+
+- **Bundles and hot reload.** Modules in a loop must be evaluated in an order
+  that works, which limits how a bundler can split them into chunks, and
+  editing one file in a loop can force a full page reload instead of a hot
+  update.
+- **Tests and mocks.** Mocking one module in a loop changes the evaluation
+  order of the others.
+- **Monorepo builds.** When packages import each other in a loop, there is no
+  valid build order, and incremental builds and caches lose track of what
+  depends on what.
+- **Design.** A loop means the modules cannot be understood, tested or reused
+  separately. It usually starts with a barrel `index.ts`, or a "utils" module
+  that imports what it is meant to serve.
+
+## What jscycles does
+
+jscycles reads every JavaScript and TypeScript file in a project, resolves each
+import the way TypeScript does, and reports loops at two levels:
+
+- **File cycles**, between files of the same package. For each tangle of files
+  that import each other, it reports one representative loop, so the report
+  reads as a to-do list rather than thousands of overlapping paths.
+- **Package cycles**, between the packages of an npm, yarn, pnpm or bun
+  workspace, with the files that create each dependency.
+
+It exits with status `1` when it finds a cycle, so a CI step fails, and with
+`2` when it cannot finish the scan, so a broken checkout or a file it cannot
+parse never passes as clean. It is a single native binary, fast enough to run
+on every commit (well under a second on a few thousand files).
+
+It does not run your code, type-check it, or draw dependency graphs. See
+[how it works](../concepts/how-it-works/) for exactly what it reads and
+[comparison](../guides/comparison/) for other tools.
+
+## Next steps
+
+<CardGrid>
+  <LinkCard title="Install" href="../guides/install/" description="npm, a release binary, or Cargo." />
+  <LinkCard title="Quick start" href="../guides/quick-start/" description="Run it, read the report, fix the first cycle." />
+  <LinkCard title="Fixing cycles" href="../guides/fixing-cycles/" description="The common shapes of a loop and how to break each." />
+  <LinkCard title="Use in CI" href="../guides/ci/" description="Fail the build when a new cycle appears." />
+</CardGrid>

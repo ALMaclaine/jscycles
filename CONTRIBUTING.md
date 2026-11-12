@@ -76,9 +76,12 @@ behavior changes.
 ## Website
 
 The website in `site/` is published to GitHub Pages from `main` by
-`.github/workflows/site.yml`. Its Reference section is generated from
-`docs/*.md` (and the `--help` text in `README.md`) at build time, so edit
-those files, not the generated pages. With Node.js 22.23 or newer:
+`.github/workflows/site.yml`. Guides and the landing page are written in
+`site/src/content/docs/`. Most reference pages are generated at build time,
+so edit their sources rather than the generated files: `docs/*.md`,
+`CHANGELOG.md`, and for the command line `site/src/templates/command-line.md`
+plus the `--help` text in `README.md` (a test keeps that text in step with the
+binary). `site/.gitignore` lists the generated files. With Node.js 22.23 or newer:
 
 ```sh
 cd site

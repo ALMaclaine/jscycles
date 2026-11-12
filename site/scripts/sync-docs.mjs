@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// Generates the site's Reference pages from the repository's docs/*.md, so
-// docs/ stays the single source: GitHub renders it, the site publishes it.
-// Output goes to src/content/docs/reference/, which is not committed.
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+// Generates part of the site from repository files, so each stays the single
+// source: GitHub renders it, the site publishes it. Reference pages come from
+// docs/*.md and CHANGELOG.md; the command-line page combines
+// src/templates/command-line.md with the usage block in README.md. The
+// generated files are listed in site/.gitignore and are not committed.
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,37 +14,39 @@ const out = join(site, 'src/content/docs/reference');
 const blob = 'https://github.com/ALMaclaine/jscycles/blob/main';
 const edit = 'https://github.com/ALMaclaine/jscycles/edit/main';
 
-// docs/<file> -> reference/<slug>
-const PAGES = {
-  'configuration.md': 'configuration',
-  'package-cycles.md': 'package-cycles',
-  'analysis-limits.md': 'analysis-limits',
-  'product-contract.md': 'product-contract',
-  'migration-0.2.md': 'migration-0-2',
+// Repository path -> reference/<slug>
+export const PAGES = {
+  'docs/configuration.md': 'configuration',
+  'docs/package-cycles.md': 'package-cycles',
+  'docs/analysis-limits.md': 'analysis-limits',
+  'docs/product-contract.md': 'product-contract',
+  'docs/migration-0.2.md': 'migration-0-2',
+  'CHANGELOG.md': 'changelog',
 };
+const COMMAND_LINE = 'command-line';
 
 /** Split off the leading `# Title` line; the site renders the title itself. */
 export function splitTitle(markdown, name) {
   const text = markdown.replace(/^\uFEFF/, '');
   const match = /^# (.+)\n+/.exec(text);
-  if (!match) throw new Error(`docs/${name} must start with a "# Title" line`);
+  if (!match) throw new Error(`${name} must start with a "# Title" line`);
   return { title: match[1].trim(), body: text.slice(match[0].length) };
 }
 
 /**
- * Rewrite a link target written for docs/<from> on GitHub: other synced
- * pages become site links, other repository files become GitHub links, and
- * anchors and absolute URLs are unchanged.
+ * Rewrite a link target written for <from> (a repository path) on GitHub:
+ * other synced pages become site links, other repository files become GitHub
+ * links, and anchors and absolute URLs are unchanged. `titles` maps synced
+ * repository paths to their titles.
  */
 export function rewriteLink(target, from = 'docs/README.md', titles = {}) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('#')) return target;
   const [path, fragment] = target.split(/(?=#)/);
   const resolved = posix.normalize(posix.join(posix.dirname(from), path));
-  const name = resolved.slice('docs/'.length);
-  const synced = resolved.startsWith('docs/') && PAGES[name];
+  const synced = PAGES[resolved];
   if (synced) {
     // The `# Title` heading becomes the page title, so its anchor is the page.
-    const kept = fragment && fragment !== `#${anchor(titles[name] ?? '')}` ? fragment : '';
+    const kept = fragment && fragment !== `#${anchor(titles[resolved] ?? '')}` ? fragment : '';
     return `../${synced}/${kept}`;
   }
   return `${blob}/${resolved}${fragment ?? ''}`;
@@ -92,42 +96,35 @@ export function usageBlock(readme) {
   return match[1];
 }
 
+/** Fill the command-line template's `{{usage}}` placeholder. */
+export function commandLine(template, usage) {
+  if (!template.includes('{{usage}}')) throw new Error('src/templates/command-line.md has no {{usage}} placeholder');
+  return template.replace('{{usage}}', usage.trimEnd());
+}
+
 function main() {
-  rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
+  for (const slug of [...Object.values(PAGES), COMMAND_LINE]) rmSync(join(out, `${slug}.md`), { force: true });
   const sources = Object.fromEntries(
-    Object.keys(PAGES).map((name) => [name, splitTitle(readFileSync(join(repo, 'docs', name), 'utf8'), name)]),
+    Object.keys(PAGES).map((path) => [path, splitTitle(readFileSync(join(repo, path), 'utf8'), path)]),
   );
-  const titles = Object.fromEntries(Object.entries(sources).map(([name, { title }]) => [name, title]));
-  for (const [name, slug] of Object.entries(PAGES)) {
-    const { title, body } = sources[name];
-    const text = rewriteLinks(body, `docs/${name}`, titles);
-    writeFileSync(join(out, `${slug}.md`), page(title, firstParagraph(text), `${edit}/docs/${name}`, text));
+  const titles = Object.fromEntries(Object.entries(sources).map(([path, { title }]) => [path, title]));
+  for (const [path, slug] of Object.entries(PAGES)) {
+    const { title, body } = sources[path];
+    const text = rewriteLinks(body, path, titles);
+    writeFileSync(join(out, `${slug}.md`), page(title, firstParagraph(text), `${edit}/${path}`, text));
   }
-  const readme = readFileSync(join(repo, 'README.md'), 'utf8');
-  const usage = usageBlock(readme);
+  const usage = usageBlock(readFileSync(join(repo, 'README.md'), 'utf8'));
+  const template = join(site, 'src/templates/command-line.md');
+  if (!existsSync(template)) throw new Error('missing src/templates/command-line.md');
   writeFileSync(
-    join(out, 'command-line.md'),
+    join(out, `${COMMAND_LINE}.md`),
     page(
       'Command line',
-      'Every jscycles option and exit status.',
-      `${edit}/README.md`,
-      `Output of \`jscycles --help\`:
-
-\`\`\`text
-${usage}\`\`\`
-
-## Exit status
-
-| Status | Meaning |
-| --- | --- |
-| \`0\` | The scan completed and found no cycle. |
-| \`1\` | The scan completed and found at least one cycle. |
-| \`2\` | The scan could not complete: bad configuration, an unreadable file, a syntax error, or a resource limit. A failed scan never reports clean. |
-
-Options that also exist in \`jscycles.yaml\` take precedence over it; see
-[configuration](../configuration/#precedence).
-`,
+      'Every jscycles option, argument and exit status.',
+      `${edit}/site/src/templates/command-line.md`,
+      // The template is site content, so its links are already site links.
+      commandLine(readFileSync(template, 'utf8'), usage),
     ),
   );
   console.log(`sync-docs: wrote ${Object.keys(PAGES).length + 1} reference pages`);

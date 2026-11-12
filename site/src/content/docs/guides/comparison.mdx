@@ -3,22 +3,31 @@ title: Comparison with other tools
 description: How jscycles differs from madge, dpdm, eslint-plugin-import and Nx, with benchmarks.
 ---
 
+import BenchmarkChart from '../../../components/BenchmarkChart.astro';
+
+## Other tools
+
 - **[madge](https://github.com/pahen/madge)** draws dependency graphs as
-  images, reads webpack configuration, and lists every cycle. jscycles does
-  none of these. It does report package cycles in monorepos, follows tsconfig
-  `extends` chains and workspace aliases, and fails rather than reporting
-  clean when a file cannot be parsed.
+  images, reads webpack configuration, finds orphans, and lists every cycle.
+  jscycles does none of these. It does report package cycles in monorepos,
+  follows tsconfig `extends` chains and workspace aliases, and fails rather
+  than reporting clean when a file cannot be parsed.
 - **[dpdm](https://github.com/acrazing/dpdm)** prints dependency trees from
-  given entry files and can skip type dependencies (`-T`).
+  given entry files and can skip type dependencies (`-T`). jscycles analyzes
+  every file of every package instead of following entry points.
 - **[eslint-plugin-import `no-cycle`](https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-cycle.md)**
   reports cycles inline in the editor, at a higher cost per lint run.
 - **[Nx module boundaries](https://nx.dev/features/enforce-module-boundaries)**
-  enforces dependency rules between projects in Nx workspaces.
+  enforce which projects may depend on which in Nx workspaces; they do not
+  look for loops between files inside a project.
 
-Results differ between tools because their resolution rules differ. Compare
-them on your own repository before switching.
+Results differ between tools because their resolution rules and the way they
+count cycles differ. Compare them on your own repository before switching;
+[migrating from madge or dpdm](../migrating/) maps their options to jscycles.
 
 ## Performance
+
+<BenchmarkChart />
 
 Median of five runs after one warm-up, on an Apple M3 Pro (12 cores) running
 macOS, analyzing each repository's `packages` directory with every source
@@ -31,7 +40,8 @@ extension enabled:
 | [excalidraw](https://github.com/excalidraw/excalidraw/tree/701b901a0f1ba3d0b390d9cdf63d112e25abac4b) | 631 | 0.11 s | 2.63 s | 0.87 s |
 | [ts-morph](https://github.com/dsherret/ts-morph/tree/f288183ddb496adc6f4c5b6929830b5b73437185) | 1,171 | 0.08 s | 1.64 s | 0.83 s |
 
-The tools count cycles differently (see [what it finds](../what-it-finds/)),
-so their cycle counts are not comparable. Reproduce with
-`python3 scripts/compare_tools.py` in a checkout; results depend on hardware
-and file cache.
+The tools count cycles differently (see
+[how it works](../../concepts/how-it-works/#4-find-the-tangles)), so their
+cycle counts are not comparable. Reproduce with
+`python3 scripts/compare_tools.py` in a checkout of jscycles; results depend
+on hardware and file cache.
