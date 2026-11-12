@@ -54,13 +54,15 @@ package, so a file is analyzed once, in the package that owns it.
 
 ## What makes a package depend on another
 
-A file in `@acme/web` that imports `@acme/core` by name, including a subpath
-such as `@acme/core/format`, or through a tsconfig path alias that points into
-`packages/core`, is an edge from `@acme/web` to `@acme/core`.
+A file in `@acme/web` that imports `@acme/core` is an edge from `@acme/web` to
+`@acme/core`, however the import is spelled: by name (including a subpath such
+as `@acme/core/format`), through a tsconfig path alias that points into
+`packages/core`, or by a relative path into its directory
+(`../../core/src/x`).
 
-Dependencies listed in `package.json` but never imported are not edges, and
-neither are relative imports that reach into another package's directory
-(`../../core/src/x`). Import other packages by name.
+Dependencies listed in `package.json` but never imported are not edges.
+Importing by name is still the better practice: a relative path into another
+package bypasses its `exports` and breaks once the packages are published.
 
 ## See the files behind an edge
 

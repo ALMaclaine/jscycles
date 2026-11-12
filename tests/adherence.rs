@@ -2017,3 +2017,129 @@ fn type_only_imports_can_be_left_out() {
     write(root, "packages/a/q.d.ts", "export * from (");
     assert_eq!(status(root, &["--skip-type-imports"]), Some(2));
 }
+
+/// Package cycles named by `--json`, as `a -> b -> a` strings.
+fn package_cycles(root: &Path, args: &[&str]) -> Vec<String> {
+    let output = scan(root, &[&["--json"], args].concat());
+    assert!(
+        output.status.code().is_some_and(|code| code <= 1),
+        "{output:?}"
+    );
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).expect("JSON");
+    report
+        .pointer("/package_cycles")
+        .and_then(serde_json::Value::as_array)
+        .expect("package cycles")
+        .iter()
+        .map(|cycle| {
+            cycle
+                .pointer("/packages")
+                .and_then(serde_json::Value::as_array)
+                .expect("packages")
+                .iter()
+                .map(|name| name.as_str().expect("name"))
+                .collect::<Vec<_>>()
+                .join(" -> ")
+        })
+        .collect()
+}
+
+fn two_member_workspace(root: &Path) {
+    write(
+        root,
+        "package.json",
+        r#"{"name":"root","private":true,"workspaces":["packages/*"]}"#,
+    );
+    write(root, "packages/a/package.json", r#"{"name":"a"}"#);
+    write(root, "packages/b/package.json", r#"{"name":"b"}"#);
+}
+
+/// A file reached in another member through a relative path or a wildcard
+/// file alias is a dependency on that member, as if imported by name; a loop
+/// built only from such imports is a package cycle in every mode.
+#[test]
+fn relative_and_file_alias_imports_into_another_member_are_package_edges() {
+    let temp = tempfile::tempdir().expect("directory");
+    let root = temp.path();
+    two_member_workspace(root);
+    write(root, "packages/a/src/x.ts", "import '../../b/src/y';");
+    write(root, "packages/b/src/y.ts", "import '../../a/src/x';");
+    for mode in [&[][..], &["--outer"][..], &["-v"][..]] {
+        assert_eq!(
+            package_cycles(root, mode),
+            ["a -> b -> a"],
+            "relative, {mode:?}"
+        );
+    }
+    assert_eq!(
+        status(root, &["--inner"]),
+        Some(0),
+        "no file cycle in either package"
+    );
+
+    // Evidence names the importing file; a relative import has no subpath.
+    let output = scan(root, &["--json", "-v", "--outer"]);
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).expect("JSON");
+    let file = report
+        .pointer("/package_cycles/0/edges/0/files/0")
+        .expect("edge evidence");
+    assert!(
+        file.pointer("/path")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|path| path.ends_with("x.ts")),
+        "{file}"
+    );
+    assert!(file.get("subpath").is_none(), "{file}");
+
+    write(
+        root,
+        "tsconfig.json",
+        r#"{"compilerOptions":{"baseUrl":".","paths":{"@a-src/*":["packages/a/src/*"]}}}"#,
+    );
+    write(root, "packages/b/src/y.ts", "import '@a-src/x';");
+    for mode in [&[][..], &["--outer"][..]] {
+        assert_eq!(
+            package_cycles(root, mode),
+            ["a -> b -> a"],
+            "file alias, {mode:?}"
+        );
+    }
+}
+
+/// The nearest package root owns a file, so an import of a file in a named
+/// non-member package nested inside a member is not an edge to that member,
+/// and imports inside one package stay file imports.
+#[test]
+fn files_owned_by_a_nested_non_member_or_the_importer_are_not_member_edges() {
+    let temp = tempfile::tempdir().expect("directory");
+    let root = temp.path();
+    two_member_workspace(root);
+    write(
+        root,
+        "packages/b/vendor/inner/package.json",
+        r#"{"name":"inner"}"#,
+    );
+    write(
+        root,
+        "packages/b/vendor/inner/z.ts",
+        "import '../../../a/src/x';",
+    );
+    write(
+        root,
+        "packages/a/src/x.ts",
+        "import '../../b/vendor/inner/z';",
+    );
+    assert!(
+        package_cycles(root, &[]).is_empty(),
+        "inner is not a member"
+    );
+    assert!(package_cycles(root, &["--outer"]).is_empty());
+
+    write(root, "packages/a/src/x.ts", "import './w';");
+    write(root, "packages/a/src/w.ts", "import './x';");
+    assert!(
+        package_cycles(root, &[]).is_empty(),
+        "a file cycle, not a package edge"
+    );
+    assert_eq!(status(root, &["--inner"]), Some(1));
+}

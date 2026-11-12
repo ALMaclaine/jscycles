@@ -349,6 +349,20 @@ Model decisions recorded: one tsconfig per package (analysis-limits.md), and
 duplicate workspace member names are an error even when unselected. After the
 fixes, 3,000 and 2,000-case runs and the 10,000-case gate are clean.
 
+## 2026-11-12: cross-package file imports are package edges
+
+The recorded limit on cycles made only of cross-package relative imports
+(sixth and seventh follow-ups) was a false clean, and R02 now closes it: an
+import resolving to a file owned by another member, through a relative path or
+a file alias, is an edge to that member. The nearest package root or excluded
+boundary owns a file, matching the existing exact-alias rule. `--outer`
+resolves fully and keeps package edges, so it stays a filter of the default
+graph. Regression tests: `tests/adherence.rs`
+`relative_and_file_alias_imports_into_another_member_are_package_edges` and
+`files_owned_by_a_nested_non_member_or_the_importer_are_not_member_edges`. The
+differential model applies the same rule; seed 1 (1,000 cases) and 6,000 cases
+on disjoint seeds agree.
+
 ## Stop condition and remaining obligations
 
 The intended local stop condition is a reconciled ledger, a complete passing

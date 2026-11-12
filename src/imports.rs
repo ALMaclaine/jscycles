@@ -441,9 +441,20 @@ impl ImportExtractor {
             return Ok(None);
         }
         if self.mode == ExtractionMode::WorkspaceOnly {
-            let import = self.create_workspace_import(specifier, file_path);
-            self.budget.check()?;
-            return Ok(import);
+            // A file in another member reached by a relative path or file
+            // alias is a package edge too, so resolve fully and keep only
+            // package targets.
+            let target = self.resolve_import(file_path, specifier)?;
+            if !matches!(target, ImportTarget::WorkspacePackage { .. }) {
+                return Ok(None);
+            }
+            self.reserve_import(specifier, file_path)?;
+            self.admit_target(&target)?;
+            return Ok(Some(Import {
+                source: file_path.to_path_buf(),
+                target,
+                specifier: specifier.to_owned(),
+            }));
         }
         self.reserve_import(specifier, file_path)?;
         let target = self.resolve_import(file_path, specifier)?;
@@ -453,35 +464,6 @@ impl ImportExtractor {
             target,
             specifier: specifier.to_owned(),
         }))
-    }
-
-    /// Create an import only when it targets a workspace package.
-    fn create_workspace_import(&self, specifier: &str, file_path: &Path) -> Option<Import> {
-        if specifier.starts_with('.') || specifier.starts_with('/') {
-            return None;
-        }
-
-        let workspace = self.workspace.as_ref()?;
-        let (package_name, subpath) = workspace.split_specifier(specifier)?;
-
-        self.reserve_import(specifier, file_path).ok()?;
-        self.budget
-            .consume(Resource::GraphBytes, units(package_name.len()))
-            .ok()?;
-        self.budget
-            .consume(Resource::GraphBytes, units(subpath.map_or(0, str::len)))
-            .ok()?;
-        let package_name = package_name.to_owned();
-        let subpath = subpath.map(str::to_owned);
-
-        Some(Import {
-            source: file_path.to_path_buf(),
-            target: ImportTarget::WorkspacePackage {
-                package_name,
-                subpath,
-            },
-            specifier: specifier.to_owned(),
-        })
     }
 
     /// Admit a record and its source/specifier before allocating retained strings.
@@ -535,12 +517,76 @@ impl ImportExtractor {
     #[cfg_attr(feature = "profiling", hotpath::measure)]
     fn resolve_import(&self, from: &Path, specifier: &str) -> Result<ImportTarget, ExtractError> {
         self.budget.check()?;
-        if specifier.starts_with('.') || specifier.starts_with('/') {
+        let target = if specifier.starts_with('.') || specifier.starts_with('/') {
             // Relative cache entries already contain canonical identities. A
             // popular target should not repeat realpath for every incoming edge.
-            return self.resolve_relative_import(from, specifier);
+            self.resolve_relative_import(from, specifier)?
+        } else {
+            self.resolve_external_or_alias(from, specifier)?
+        };
+        self.attribute_to_member(from, target)
+    }
+
+    /// A file resolved into another workspace member, by a relative path or a
+    /// file alias, is a dependency on that member, as if imported by name.
+    /// The nearest package root containing the file owns it: a nested
+    /// non-member package or an excluded directory keeps it a file import.
+    fn attribute_to_member(
+        &self,
+        from: &Path,
+        target: ImportTarget,
+    ) -> Result<ImportTarget, ExtractError> {
+        let (Some(workspace), ImportTarget::Resolved(path)) = (&self.workspace, &target) else {
+            return Ok(target);
+        };
+        if self.owned_by_extracting_package(path)? {
+            return Ok(target);
         }
-        self.resolve_external_or_alias(from, specifier)
+        let units_needed = units(self.owners.len().saturating_add(workspace.packages.len()));
+        self.budget.consume(Resource::Work, units_needed)?;
+        let depth = |root: &Path| root.components().count();
+        let Some((name, member)) = workspace
+            .packages
+            .iter()
+            .filter(|(_, directory)| path.starts_with(directory))
+            .max_by_key(|(_, directory)| depth(directory))
+        else {
+            return Ok(target);
+        };
+        let nearer_owner = self
+            .owners
+            .iter()
+            .any(|root| path.starts_with(root) && depth(root) > depth(member));
+        if nearer_owner || self.is_own_package(workspace, name, from) {
+            return Ok(target);
+        }
+        Ok(ImportTarget::WorkspacePackage {
+            package_name: name.clone(),
+            subpath: None,
+        })
+    }
+
+    /// The package being extracted owns `path`: it lies under the package root
+    /// and under none of the packages nested in it.
+    fn owned_by_extracting_package(&self, path: &Path) -> Result<bool, ExtractError> {
+        let root = self
+            .resolution_cache
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .root
+            .clone();
+        let Some(root) = root else {
+            return Ok(false);
+        };
+        if !path.starts_with(&root) {
+            return Ok(false);
+        }
+        self.budget
+            .consume(Resource::Work, units(self.nested_packages.len()))?;
+        Ok(!self
+            .nested_packages
+            .iter()
+            .any(|nested| path.starts_with(nested)))
     }
 
     /// Resolve an external module, tsconfig alias, or workspace package.

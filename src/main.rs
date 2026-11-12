@@ -480,7 +480,9 @@ fn process_package_with_imports(
     owners: Arc<[PathBuf]>,
 ) -> Result<ProcessedPackage, JscyclesError> {
     // Determine tsconfig
-    let tsconfig = if opts.mode == ProcessMode::WorkspaceOnly || opts.no_tsconfig {
+    // `--outer` resolves file aliases too: an alias into another member is a
+    // package edge.
+    let tsconfig = if opts.no_tsconfig {
         None
     } else if let Some(config) = &opts.explicit_tsconfig {
         Some(Arc::clone(config))
@@ -517,7 +519,8 @@ fn process_package_with_imports(
         extractor = extractor.with_ignore_patterns(ignore.clone());
     }
 
-    // Both output modes analyze actual imports. WorkspaceOnly skips file resolution.
+    // Both output modes analyze actual imports. WorkspaceOnly keeps package
+    // edges only and skips file-cycle search.
     let imports = extractor.extract(&package.path)?;
 
     let mut cycles = if opts.mode == ProcessMode::WorkspaceOnly {

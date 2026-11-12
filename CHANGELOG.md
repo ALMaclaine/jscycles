@@ -57,6 +57,11 @@ results on the same repository, and compare before relying on them in CI.
   scanned paths, or none matching `--only`/`--exclude`) exits 2 instead of
   printing "No packages found." and exiting 0, so a CI job started in the
   wrong directory no longer passes.
+- An import that resolves to a file in another workspace member, through a
+  relative path (`../../b/src/x`) or a wildcard tsconfig alias, is a
+  dependency on that member, as if imported by name. Cycles made of such
+  imports were previously not reported. `--outer` now resolves imports to find
+  them, so it reads tsconfig files too.
 - The human summary uses singular forms ("1 inter-package cycle", "1
   package"), and `--inner` uses the same wording as the default report.
 - Minimum supported Rust version is 1.93.0.
