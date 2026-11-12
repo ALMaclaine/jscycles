@@ -470,3 +470,15 @@ fn an_empty_selection_is_an_error_not_a_clean_scan() {
         "the package itself is clean"
     );
 }
+
+/// Release build records hash `Cargo.lock`, so every runner must check it out
+/// byte for byte the same. `.gitattributes` keeps LF endings on Windows,
+/// where a CRLF checkout once made the release reject the Windows binary.
+#[test]
+fn lockfile_has_lf_line_endings_on_every_platform() {
+    let lock = include_bytes!("../Cargo.lock");
+    assert!(
+        !lock.contains(&b'\r'),
+        "Cargo.lock was checked out with CRLF; check .gitattributes"
+    );
+}

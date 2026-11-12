@@ -218,9 +218,13 @@ packages run no install scripts, and publishing to npm and crates.io happens
 from CI, moving to trusted publishing with no long-lived token after the first
 release.
 
-The first attempt to release 0.2.0 was stopped by this pipeline: two coverage
-files from the test run appeared next to the binaries, the inventory check
-refused to publish, and nothing was released until the cause was fixed.
+The release pipeline stopped the first two attempts to publish 0.2.0, before
+anything was released. First, two coverage files from the test run appeared
+next to the binaries, and the inventory check refused them. Then the Windows
+build recorded a different hash for `Cargo.lock` than the other four, because
+Windows had checked the file out with CRLF line endings, and the identity check
+refused to mix them. Each cause was fixed, and the second now has a test that
+runs on Windows.
 
 ## Why an AI goes this far
 

@@ -1,0 +1,6 @@
+# Lockfiles are hashed into release build records (scripts/release_record.py)
+# and must have identical bytes on every runner. Without this, Windows
+# checkouts convert them to CRLF and the Windows build reports a different
+# lock digest from the others.
+Cargo.lock text eol=lf
+fuzz/Cargo.lock text eol=lf
