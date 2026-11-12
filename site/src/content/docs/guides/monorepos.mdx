@@ -1,0 +1,117 @@
+---
+title: Monorepos and workspaces
+description: How jscycles finds workspace packages, assigns files to them, and reports cycles between them.
+---
+
+import { FileTree, Aside } from '@astrojs/starlight/components';
+
+In a workspace, jscycles checks two things: loops between files inside each
+package, and loops between the packages themselves.
+
+## A typical layout
+
+<FileTree>
+- package.json `"workspaces": ["packages/*", "apps/*"]`
+- tsconfig.json
+- jscycles.yaml optional
+- packages/
+  - core/
+    - package.json `"name": "@acme/core"`
+    - src/
+  - utils/
+    - package.json `"name": "@acme/utils"`
+    - src/
+- apps/
+  - web/
+    - package.json `"name": "@acme/web"`
+    - src/
+</FileTree>
+
+Run `jscycles` at the root. It reports file cycles in `@acme/core`,
+`@acme/utils`, `@acme/web` and the root package, and cycles between the
+workspace members.
+
+## How members are found
+
+jscycles looks upward from the scanned directory for the workspace root and
+reads its member list from the first of:
+
+1. `pnpm-workspace.yaml` (its `packages` globs)
+2. `package.json` `workspaces`, as an array or `{ "packages": [...] }` (npm,
+   yarn, bun)
+3. `tsconfig.json` project `references`
+
+Each member needs a `package.json` with a `name`, and names must be unique; a
+duplicate name is an error rather than a guess. The full rules are in
+[package cycles](../../reference/package-cycles/#finding-the-workspace).
+
+## Which files belong to which package
+
+Every `package.json` with a `name` is a package, including the workspace root
+and packages nested inside other packages. Each file belongs to its nearest
+package, so a file is analyzed once, in the package that owns it.
+`node_modules`, `dist`, `build`, `.next` and `.git` directories are skipped.
+
+## What makes a package depend on another
+
+A file in `@acme/web` that imports `@acme/core` by name, including a subpath
+such as `@acme/core/format`, or through a tsconfig path alias that points into
+`packages/core`, is an edge from `@acme/web` to `@acme/core`.
+
+Dependencies listed in `package.json` but never imported are not edges, and
+neither are relative imports that reach into another package's directory
+(`../../core/src/x`). Import other packages by name.
+
+## See the files behind an edge
+
+```sh
+jscycles --outer -v
+```
+
+```text
+✗ 1 inter-package cycle
+
+  @acme/core -> @acme/utils -> @acme/core
+    @acme/core -> @acme/utils
+      - /repo/packages/core/src/session.ts (imports @acme/utils/strings)
+    @acme/utils -> @acme/core
+      - /repo/packages/utils/src/strings.ts
+
+Summary: 1 inter-package cycles
+```
+
+`--outer` skips the file cycles, which is also faster on large workspaces.
+
+## Checking part of a workspace
+
+`--only`, `--exclude` and path arguments narrow the check, and package cycles
+are found among the selected packages only:
+
+```sh
+jscycles --only "@acme/*"        # members in the @acme scope
+jscycles --exclude "@acme/web"   # everything except one package
+jscycles packages/core           # one directory
+```
+
+<Aside type="caution">
+`jscycles packages/core` checks file cycles in `@acme/core` but cannot see a
+package cycle through `@acme/utils`, because `@acme/utils` was not selected.
+Run from the root to check package cycles.
+</Aside>
+
+## With Turborepo or Nx
+
+jscycles analyzes the whole workspace in one run, so run it once from the root
+rather than as a per-package task:
+
+```json title="package.json"
+{
+  "scripts": {
+    "check:cycles": "jscycles"
+  }
+}
+```
+
+For Nx, [module boundary rules](https://nx.dev/features/enforce-module-boundaries)
+enforce which projects may depend on which; jscycles complements them by
+finding loops between files inside each project.

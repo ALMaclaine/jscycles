@@ -415,3 +415,25 @@ fn closed_stdout_is_an_output_error() {
         );
     }
 }
+
+/// The README's usage block is published as the website's command-line
+/// reference, so it must stay identical to the real `--help` text.
+#[test]
+fn readme_usage_block_matches_help_output() {
+    let output = Command::new(env!("CARGO_BIN_EXE_jscycles"))
+        .arg("--help")
+        .output()
+        .expect("CLI should start");
+    assert!(output.status.success(), "--help should succeed");
+    let help = String::from_utf8(output.stdout).expect("help is UTF-8");
+    let readme = include_str!("../README.md").replace("\r\n", "\n");
+    let (_, after) = readme
+        .split_once("```text\nUsage: jscycles")
+        .expect("README.md has a usage block");
+    let (rest, _) = after.split_once("```").expect("usage block is closed");
+    let usage = format!("Usage: jscycles{rest}");
+    assert!(
+        help.ends_with(&usage),
+        "README.md's usage block differs from `jscycles --help`; replace it with:\n{help}"
+    );
+}

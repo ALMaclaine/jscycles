@@ -1,5 +1,8 @@
 # Documentation
 
+The user documentation is published at [jscycles.dev](https://jscycles.dev/),
+which also renders the pages below.
+
 For users:
 
 - [Configuration](configuration.md): every `jscycles.yaml` key and how options

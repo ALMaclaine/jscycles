@@ -1,0 +1,138 @@
+---
+title: Quick start
+description: Run jscycles on a repository, read the report, fix a cycle and keep it fixed.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+<Steps>
+
+1. **Run it at the root of the repository.**
+
+   ```sh
+   npx jscycles
+   ```
+
+   jscycles finds every package (each `package.json` with a `name`), follows
+   the imports in their files and reports the loops. On a small workspace:
+
+   ```text
+   ✗ 1 inter-package cycle
+     @acme/core -> @acme/utils -> @acme/core
+
+   ✗ @acme/core: 1 cycle
+     src/index.ts -> src/session.ts -> src/user.ts -> src/index.ts
+
+   Summary: 4 packages, 1 with file cycles (1 total), 1 inter-package cycles
+   ```
+
+   The exit status is `1` because cycles were found. It is `0` when there are
+   none and `2` when the scan could not finish.
+
+2. **Read the report.**
+
+   - An **inter-package cycle** lists workspace packages that import each
+     other: here `@acme/core` imports `@acme/utils`, which imports
+     `@acme/core`.
+   - A **file cycle** lists files inside one package, relative to it: here
+     `src/index.ts` imports `src/session.ts`, which imports `src/user.ts`,
+     which imports `src/index.ts` again.
+
+   For each tangle of files that import each other, jscycles shows one loop.
+   When you break it, another loop in the same tangle may appear, so fix and
+   rerun until the package is clean.
+
+3. **See where package cycles come from.**
+
+   ```sh
+   npx jscycles --outer -v
+   ```
+
+   `-v` lists the files whose imports create each edge:
+
+   ```text
+   ✗ 1 inter-package cycle
+
+     @acme/core -> @acme/utils -> @acme/core
+       @acme/core -> @acme/utils
+         - /repo/packages/core/src/session.ts (imports @acme/utils/strings)
+       @acme/utils -> @acme/core
+         - /repo/packages/utils/src/strings.ts
+
+   Summary: 1 inter-package cycles
+   ```
+
+   If `strings.ts` only imports types from `@acme/core`, the loop does not
+   exist at runtime; rerun with `--skip-type-imports` to see only runtime
+   cycles.
+
+4. **Fix a cycle.** The file cycle goes through a barrel: `index.ts`
+   re-exports `./session`, which imports `./user`, which imports
+   `formatName` from `./index`. `user.ts` only needs `./format`, so import it
+   directly:
+
+   ```ts title="packages/core/src/user.ts" del={1} ins={2}
+   import { formatName } from './index';
+   import { formatName } from './format';
+   ```
+
+   Rerun, and `@acme/core` is clean.
+
+   [Fixing cycles](../fixing-cycles/) covers the common shapes of a loop and
+   how to break each.
+
+5. **Keep it fixed.** Add a script and run it in CI:
+
+   ```json title="package.json"
+   {
+     "scripts": {
+       "check:cycles": "jscycles"
+     }
+   }
+   ```
+
+   Any new cycle now fails the build. To roll it out on a codebase that
+   already has many cycles, see [adopting jscycles](../adopting/).
+
+</Steps>
+
+## Common options
+
+```sh
+jscycles packages/core          # one directory
+jscycles --only "@acme/*"       # packages whose name matches a glob
+jscycles --inner                # file cycles only
+jscycles --outer                # package cycles only
+jscycles --skip-type-imports    # runtime imports only
+jscycles --json > cycles.json   # machine-readable report
+```
+
+Every option is in the [command-line reference](../../reference/command-line/).
+
+## Configure it
+
+Settings that should apply on every run go in `jscycles.yaml` at the
+repository root:
+
+```yaml title="jscycles.yaml"
+scan:
+  include: ["packages/*", "apps/*"]
+  exclude: ["**/fixtures"]
+
+defaults:
+  skip_type_imports: true
+
+packages:
+  "@acme/legacy-*":
+    ignore: ["**/*.test.js"]
+```
+
+Unknown keys are an error, so a typo never silently does nothing. For
+completion and validation in editors, start the file with:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ALMaclaine/jscycles/main/jscycles.schema.json
+```
+
+See the [configuration reference](../../reference/configuration/) for every
+key.

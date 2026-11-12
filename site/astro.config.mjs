@@ -9,6 +9,12 @@ export default defineConfig({
   // Pages settings), served from the domain root.
   site: 'https://jscycles.dev',
   trailingSlash: 'always',
+  // Pages that moved when the guides were reorganized.
+  redirects: {
+    '/guides/what-it-finds/': '/concepts/how-it-works/',
+    '/guides/typescript-and-workspaces/': '/guides/typescript/',
+    '/guides/output/': '/reference/json-output/',
+  },
   // The site has no raster images to optimize; skip the native sharp module.
   image: { service: passthroughImageService() },
   integrations: [
@@ -28,31 +34,55 @@ export default defineConfig({
       customCss: ['./src/styles/custom.css'],
       sidebar: [
         {
-          label: 'Guides',
+          label: 'Start here',
           items: [
+            { label: 'Why circular imports matter', slug: 'introduction' },
             { label: 'Install', slug: 'guides/install' },
             { label: 'Quick start', slug: 'guides/quick-start' },
-            { label: 'What it finds', slug: 'guides/what-it-finds' },
+          ],
+        },
+        {
+          label: 'Guides',
+          items: [
+            { label: 'Fixing cycles', slug: 'guides/fixing-cycles' },
+            { label: 'Adopting it on an existing codebase', slug: 'guides/adopting' },
             { label: 'Use in CI', slug: 'guides/ci' },
-            { label: 'TypeScript and workspaces', slug: 'guides/typescript-and-workspaces' },
-            { label: 'Output and JSON', slug: 'guides/output' },
-            { label: 'Troubleshooting', slug: 'guides/troubleshooting' },
+            { label: 'Monorepos and workspaces', slug: 'guides/monorepos' },
+            { label: 'TypeScript projects', slug: 'guides/typescript' },
+            { label: 'Scripting with JSON', slug: 'guides/scripting' },
+            { label: 'Migrating from madge or dpdm', slug: 'guides/migrating' },
+            { label: 'Troubleshooting and FAQ', slug: 'guides/troubleshooting' },
+          ],
+        },
+        {
+          label: 'Concepts',
+          items: [
+            { label: 'How it works', slug: 'concepts/how-it-works' },
             { label: 'Comparison with other tools', slug: 'guides/comparison' },
           ],
         },
         {
-          // Generated from docs/*.md by scripts/sync-docs.mjs.
+          // All but JSON output are generated from docs/, CHANGELOG.md and
+          // README.md by scripts/sync-docs.mjs.
           label: 'Reference',
           items: [
             { label: 'Command line', slug: 'reference/command-line' },
             { label: 'Configuration', slug: 'reference/configuration' },
+            { label: 'JSON output', slug: 'reference/json-output' },
             { label: 'Package cycles', slug: 'reference/package-cycles' },
             { label: 'Analysis limits', slug: 'reference/analysis-limits' },
             { label: 'Product contract', slug: 'reference/product-contract' },
-            { label: 'Upgrading to 0.2', slug: 'reference/migration-0-2' },
           ],
         },
-        { label: 'Changelog', link: `${repository}/blob/main/CHANGELOG.md` },
+        {
+          label: 'Project',
+          items: [
+            { label: 'Changelog', slug: 'reference/changelog' },
+            { label: 'Upgrading to 0.2', slug: 'reference/migration-0-2' },
+            { label: 'Contributing', link: `${repository}/blob/main/CONTRIBUTING.md` },
+            { label: 'Security policy', link: `${repository}/blob/main/SECURITY.md` },
+          ],
+        },
       ],
     }),
   ],

@@ -7,30 +7,55 @@ hero:
   image:
     file: ../../assets/logo.svg
     alt: ''
-  tagline: Find circular imports in JavaScript and TypeScript, between files and between the packages of a monorepo. One native binary, TypeScript-accurate resolution, 5 to 25 times faster than madge and dpdm.
+  tagline: Find circular imports in JavaScript and TypeScript, between files and between the packages of a monorepo. One native binary that resolves imports like TypeScript and runs in well under a second.
   actions:
     - text: Get started
-      link: guides/install/
+      link: guides/quick-start/
       icon: right-arrow
-    - text: View on GitHub
+    - text: Why cycles matter
+      link: introduction/
+      variant: secondary
+    - text: GitHub
       link: https://github.com/ALMaclaine/jscycles
       icon: external
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, LinkCard, Tabs, TabItem } from '@astrojs/starlight/components';
+import BenchmarkChart from '../../components/BenchmarkChart.astro';
 
-## Try it
+## Run it in your repository
 
-```sh
-npm install --save-dev jscycles
-npx jscycles
-```
+<Tabs syncKey="pkg">
+  <TabItem label="npm">
+    ```sh
+    npm install --save-dev jscycles
+    npx jscycles
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```sh
+    pnpm add --save-dev jscycles
+    pnpm exec jscycles
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```sh
+    yarn add --dev jscycles
+    yarn jscycles
+    ```
+  </TabItem>
+  <TabItem label="bun">
+    ```sh
+    bun add --dev jscycles
+    bunx jscycles
+    ```
+  </TabItem>
+</Tabs>
 
 On a checkout of [ts-morph](https://github.com/dsherret/ts-morph):
 
-```text
-$ jscycles packages
+```text title="jscycles packages"
 ✓ No inter-package cycles
 
 ✗ @ts-morph/common: 2 cycles
@@ -44,17 +69,20 @@ $ jscycles packages
 Summary: 3 packages, 2 with file cycles (5 total), 0 inter-package cycles
 ```
 
+The exit status is `1`, so a CI step fails until the cycles are fixed.
+
 ## Why jscycles
 
 <CardGrid>
   <Card title="File and package cycles" icon="random">
     Loops between files inside each package, and between the packages of an
-    npm, yarn, pnpm or bun workspace. One representative cycle per tangle, so
-    the report is a to-do list rather than thousands of overlapping loops.
+    npm, yarn, pnpm or bun workspace. One representative loop per tangle, so
+    the report is a to-do list rather than thousands of overlapping paths.
   </Card>
   <Card title="Resolves like TypeScript" icon="seti:typescript">
     Path aliases, `extends` chains through `node_modules`, declaration files,
-    and `.js` specifiers that point at `.ts` sources.
+    and `.js` specifiers that point at `.ts` sources. Optionally ignores
+    imports that only carry types.
   </Card>
   <Card title="Never a false clean" icon="approve-check">
     Exit status `0` means no cycles, `1` means cycles, `2` means the scan could
@@ -64,18 +92,19 @@ Summary: 3 packages, 2 with file cycles (5 total), 0 inter-package cycles
   <Card title="Fast, with no runtime" icon="rocket">
     A single Rust binary that parses with tree-sitter in parallel. Prebuilt for
     Linux (static, Alpine too), macOS and Windows; nothing runs at install
-    time.
+    time, and it never touches the network.
   </Card>
 </CardGrid>
 
-## How it compares
+## 5 to 25 times faster
 
-Median of five runs on an Apple M3 Pro, analyzing each repository's `packages`
-directory ([method](guides/comparison/#performance)):
+<BenchmarkChart />
 
-| Repository | Source files | jscycles 0.2.0 | madge 8.0.0 | dpdm 3.14.0 |
-| --- | ---: | ---: | ---: | ---: |
-| nest | 1,068 | **0.08 s** | 2.04 s | 0.86 s |
-| typeorm | 3,609 | **0.28 s** | 2.97 s | 1.48 s |
-| excalidraw | 631 | **0.11 s** | 2.63 s | 0.87 s |
-| ts-morph | 1,171 | **0.08 s** | 1.64 s | 0.83 s |
+## Learn more
+
+<CardGrid>
+  <LinkCard title="Why circular imports matter" href="introduction/" description="The bugs they cause, and why they are hard to trace." />
+  <LinkCard title="Fixing cycles" href="guides/fixing-cycles/" description="Barrels, shared helpers, type-only loops and more, with before-and-after code." />
+  <LinkCard title="Use in CI" href="guides/ci/" description="GitHub Actions, GitLab and git hooks, in a few lines." />
+  <LinkCard title="Adopting it on an existing codebase" href="guides/adopting/" description="Stop new cycles today and ratchet the old ones down." />
+</CardGrid>

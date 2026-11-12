@@ -1,0 +1,152 @@
+---
+title: Use in CI
+description: Fail the build on circular imports in GitHub Actions, GitLab CI, and git hooks.
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+jscycles is built to gate a build: it exits with status `1` when it finds a
+cycle and `2` when it cannot finish the scan, and it never reports clean after
+a failure. Any CI system that fails a step on a non-zero status works with no
+extra setup.
+
+## GitHub Actions
+
+<Tabs>
+  <TabItem label="From npm">
+    If jscycles is a development dependency of the project:
+
+    ```yaml title=".github/workflows/cycles.yml"
+    name: Circular imports
+    on: [push, pull_request]
+
+    jobs:
+      jscycles:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: 22
+              cache: npm
+          - run: npm ci
+          - run: npx jscycles
+    ```
+  </TabItem>
+  <TabItem label="Release binary">
+    No Node.js or install step; the binary is checked against the release's
+    `SHA256SUMS`:
+
+    ```yaml title=".github/workflows/cycles.yml"
+    name: Circular imports
+    on: [push, pull_request]
+
+    jobs:
+      jscycles:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+          - name: Install jscycles
+            run: |
+              version=v0.2.0
+              base=https://github.com/ALMaclaine/jscycles/releases/download/$version
+              curl -sSfLO "$base/jscycles-linux-x86_64"
+              curl -sSfLO "$base/SHA256SUMS"
+              sha256sum --check --ignore-missing SHA256SUMS
+              install -m 755 jscycles-linux-x86_64 /usr/local/bin/jscycles
+          - run: jscycles
+    ```
+  </TabItem>
+</Tabs>
+
+## GitLab CI
+
+```yaml title=".gitlab-ci.yml"
+jscycles:
+  image: node:22
+  script:
+    - npm ci
+    - npx jscycles
+```
+
+The Linux binaries are statically linked, so the release-binary steps above
+also work in Alpine images without Node.js.
+
+## Other CI systems
+
+Run `npx jscycles`, or the release binary, as a step. Keep the default exit
+status handling: status `1` (cycles) and `2` (scan failed) must both fail the
+build.
+
+<Aside type="caution">
+Do not append `|| true` or ignore the status to "report only". A scan that
+fails with status 2 has checked nothing. To report without failing, see
+[keep a report](#keep-a-report) below.
+</Aside>
+
+## Git hooks
+
+A pre-commit check catches a cycle before it is pushed. Use `--quiet`, so a
+clean run prints nothing.
+
+<Tabs>
+  <TabItem label="husky">
+    ```sh title=".husky/pre-commit"
+    npx jscycles --quiet
+    ```
+  </TabItem>
+  <TabItem label="lefthook">
+    ```yaml title="lefthook.yml"
+    pre-commit:
+      commands:
+        jscycles:
+          glob: "*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"
+          run: npx jscycles --quiet
+    ```
+  </TabItem>
+  <TabItem label="pre-commit">
+    With jscycles on `PATH`:
+
+    ```yaml title=".pre-commit-config.yaml"
+    repos:
+      - repo: local
+        hooks:
+          - id: jscycles
+            name: jscycles
+            entry: jscycles --quiet
+            language: system
+            pass_filenames: false
+            types_or: [javascript, jsx, ts, tsx]
+    ```
+  </TabItem>
+</Tabs>
+
+jscycles always analyzes the whole project, not only the staged files, since a
+cycle can be closed by a file that did not change. It is fast enough for this
+on most repositories; on a very large one, run it in CI only.
+
+## Keep a report
+
+To save the report as a build artifact, write the JSON and then fail on the
+status:
+
+```yaml
+- name: Check for circular imports
+  run: |
+    status=0
+    npx jscycles --json > cycles.json || status=$?
+    exit $status
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: cycles
+    path: cycles.json
+```
+
+See [scripting with JSON](../scripting/) for what to do with it.
+
+## A codebase that already has cycles
+
+Start with a narrower check that passes today (`--outer`, `--exclude`, or a
+baseline count) and widen it as cycles are fixed. See
+[adopting jscycles](../adopting/).

@@ -1,0 +1,134 @@
+---
+// Four files that import each other form one tangle (a strongly connected
+// component) containing three loops; jscycles reports one of them. The graph
+// matches the example on the "How it works" page, checked with the CLI.
+---
+
+<figure class="tangle not-content">
+  <svg viewBox="0 0 460 240" role="img" aria-labelledby="tangle-title tangle-desc">
+    <title id="tangle-title">One tangle of four files</title>
+    <desc id="tangle-desc">
+      a.ts imports b.ts; b.ts imports c.ts and d.ts; c.ts imports a.ts and b.ts; d.ts imports b.ts and
+      e.ts. a, b, c and d form one tangle with three loops: a to b to c to a, b to c to b, and b to d to
+      b. e.ts is outside the tangle. jscycles reports the loop a to b to c to a.
+    </desc>
+    <defs>
+      <marker id="tangle-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" class="muted-fill"></path>
+      </marker>
+      <marker id="tangle-arrow-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" class="hot-fill"></path>
+      </marker>
+    </defs>
+
+    <path
+      class="region"
+      d="M 42 36 H 424 Q 434 36 434 46 V 100 Q 434 110 424 110 H 262 Q 252 110 246 118 L 194 212 Q 188 222 178 222 H 122 Q 112 222 106 213 L 36 106 Q 32 100 32 92 V 46 Q 32 36 42 36 Z"
+    ></path>
+
+    <g class="edges">
+      <line x1="218.4" y1="96.1" x2="172.5" y2="159.2" class="hot"></line>
+      <line x1="133.5" y1="157.3" x2="87.6" y2="94.3" class="hot"></line>
+      <line x1="98" y1="70" x2="200" y2="70" class="hot"></line>
+      <line x1="161.6" y1="153.8" x2="207.5" y2="90.8"></line>
+      <line x1="258" y1="63" x2="360" y2="63"></line>
+      <line x1="362" y1="77" x2="260" y2="77"></line>
+      <line x1="390" y1="98" x2="390" y2="152"></line>
+    </g>
+
+    <g class="nodes">
+      <circle cx="70" cy="70" r="26" class="in"></circle><text x="70" y="70">a.ts</text>
+      <circle cx="230" cy="70" r="26" class="in"></circle><text x="230" y="70">b.ts</text>
+      <circle cx="150" cy="180" r="26" class="in"></circle><text x="150" y="180">c.ts</text>
+      <circle cx="390" cy="70" r="26" class="in"></circle><text x="390" y="70">d.ts</text>
+      <circle cx="390" cy="180" r="26"></circle><text x="390" y="180">e.ts</text>
+    </g>
+  </svg>
+  <figcaption>
+    <span class="key key-region" aria-hidden="true"></span> One tangle: four files, three overlapping loops.
+    <span class="key key-hot" aria-hidden="true"></span> The loop jscycles reports:{' '}
+    <code>a.ts → b.ts → c.ts → a.ts</code>. <code>e.ts</code> is imported but loops back to nothing.
+  </figcaption>
+</figure>
+
+<style>
+  .tangle {
+    --tangle-hot: #c2410c;
+    --tangle-muted: hsl(224, 6%, 56%);
+    margin-block: 1.5rem;
+  }
+  :global(:root:not([data-theme='light'])) .tangle {
+    --tangle-hot: #e4630f;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    max-width: 30rem;
+    height: auto;
+    margin-inline: auto;
+  }
+  .region {
+    fill: var(--sl-color-accent-low);
+    opacity: 0.55;
+  }
+  .edges line {
+    stroke: var(--tangle-muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+    marker-end: url(#tangle-arrow);
+  }
+  .edges line.hot {
+    stroke: var(--tangle-hot);
+    stroke-width: 3;
+    marker-end: url(#tangle-arrow-hot);
+  }
+  .muted-fill {
+    fill: var(--tangle-muted);
+  }
+  .hot-fill {
+    fill: var(--tangle-hot);
+  }
+  .nodes circle {
+    fill: var(--sl-color-bg);
+    stroke: var(--tangle-muted);
+    stroke-width: 2;
+  }
+  .nodes text {
+    fill: var(--sl-color-white);
+    font: 600 12px var(--sl-font-system-mono, ui-monospace, monospace);
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  figcaption {
+    margin-top: 0.75rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+    text-align: center;
+  }
+  .key {
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    border-radius: 3px;
+    vertical-align: -0.1em;
+    margin-inline: 0.5em 0.25em;
+  }
+  .key-region {
+    background: var(--sl-color-accent-low);
+  }
+  .key-hot {
+    background: var(--tangle-hot);
+    height: 0.25em;
+    vertical-align: 0.2em;
+  }
+  figcaption code {
+    font-family: var(--__sl-font-mono);
+    font-size: 0.9em;
+    background: var(--sl-color-bg-inline-code);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+  figcaption a {
+    color: var(--sl-color-text-accent);
+  }
+</style>
