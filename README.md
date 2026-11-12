@@ -20,6 +20,9 @@ runs 5 to 25 times faster than madge and dpdm.
 
 **Documentation: [jscycles.dev](https://jscycles.dev/)**
 
+Built with an AI coding assistant and checked hard: see
+[Is this AI slop?](https://jscycles.dev/project/is-this-ai-slop/)
+
 ```text
 $ jscycles packages
 ✓ No inter-package cycles
