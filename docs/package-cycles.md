@@ -31,16 +31,21 @@ An edge from package A to package B comes from a file in A that imports B:
 - by name: `import { x } from '@myorg/b'`, including subpaths such as
   `@myorg/b/format` and `require('@myorg/b')`;
 - through a tsconfig path alias whose target lies inside B, such as
-  `"@b": ["packages/b/src/index.ts"]` or `"@b/*": ["packages/b/src/*"]`.
+  `"@b": ["packages/b/src/index.ts"]` or `"@b/*": ["packages/b/src/*"]`;
+- through a relative path into B's directory, such as `../../b/src/x`. Any
+  import that resolves to a file B owns counts, however it is spelled.
+
+The nearest package owns a file: a file in a named package nested inside B,
+or in an excluded directory, is not B's. Importing another package by name is
+still the better practice, since relative paths across packages bypass its
+`exports` and break when the packages are published, but the dependency is
+real either way and jscycles reports the cycle.
 
 These do not create edges:
 
 - `dependencies` in `package.json` that no file imports;
-- a package importing itself by name (that import resolves to its own files);
-- relative imports that reach into another package's directory
-  (`../../b/src/x`). These are not package edges and are not followed across
-  packages, so a cycle made only of them is not reported. Import other
-  packages by name.
+- a package importing itself, by name or by path (those imports resolve to its
+  own files).
 
 With `--skip-type-imports`, `import type` and `export type` between packages
 are left out too.

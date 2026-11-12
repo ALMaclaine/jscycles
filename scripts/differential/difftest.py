@@ -316,6 +316,25 @@ def model(root: Path, resolver: Resolver) -> Expected:
                 if not any(d != member and d.is_relative_to(member) and target.is_relative_to(d) for d in named_dirs):
                     aliases[key] = max(owners)[1]
 
+    def owning_member(target: Path, source: Path, package_dir: Path, nested: set[Path]) -> str | None:
+        """The other workspace member that owns `target`, if any: the nearest
+        package root or excluded boundary containing it decides."""
+        if not workspace:
+            return None
+        if target.is_relative_to(package_dir) and not any(target.is_relative_to(d) for d in nested):
+            return None
+        candidates = [(n, d) for n, d in members.items() if target.is_relative_to(d)]
+        if not candidates:
+            return None
+        member, member_dir = max(candidates, key=lambda item: len(item[1].parts))
+        if any(target.is_relative_to(r) and len(r.parts) > len(member_dir.parts) for r in skip | set(expected.packages.values())):
+            return None
+        own = member_dir == package_dir or (
+            source.is_relative_to(member_dir)
+            and not any(d != member_dir and d.is_relative_to(member_dir) and source.is_relative_to(d)
+                        for d in members.values()))
+        return None if own else member
+
     def split(specifier: str) -> tuple[str, str | None] | None:
         name = package_name_of(specifier)
         if name in members:
@@ -391,8 +410,16 @@ def model(root: Path, resolver: Resolver) -> Expected:
                                 expected.package_edges.add((name, split_result[0]))
                             continue
                     target = resolver.resolve(source, specifier, tsconfig_path)
-                    if target is not None:
-                        edges.add((source, target))
+                    if target is None:
+                        continue
+                    member = owning_member(Path(os.path.realpath(target)), source, package_dir, nested)
+                    if member is not None:
+                        # R02: a file in another member, reached by a relative
+                        # path or a file alias, is an edge to that member.
+                        if member != name:
+                            expected.package_edges.add((name, member))
+                        continue
+                    edges.add((source, target))
     if not workspace:
         expected.package_edges.clear()
     return expected

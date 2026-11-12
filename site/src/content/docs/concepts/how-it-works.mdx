@@ -41,7 +41,9 @@ Each specifier is resolved to a file the way TypeScript resolves it: relative
 paths, `paths` aliases from the package's `tsconfig.json` (following
 `extends`), extension and `index` lookup, and `.js` specifiers that name a
 `.ts` source. A specifier that names a workspace member, such as
-`@acme/utils` or `@acme/utils/strings`, becomes a dependency between packages.
+`@acme/utils` or `@acme/utils/strings`, becomes a dependency between packages,
+and so does any import that resolves to a file another member owns, whether
+through a relative path or an alias.
 
 Anything else (packages from `node_modules`, and specifiers that resolve to no
 file) is not part of the graph. The full rules are in

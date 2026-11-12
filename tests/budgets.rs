@@ -571,3 +571,53 @@ fn outer_mode_without_workspace_does_not_enumerate_file_cycles() {
         "status and filtered report agree"
     );
 }
+
+/// Imports that stay inside their own package never search the workspace's
+/// members for an owner, so the work they cost does not grow with the size of
+/// the workspace.
+#[test]
+fn own_package_imports_cost_the_same_in_small_and_large_workspaces() {
+    let work = |members: usize| {
+        let temp = tempfile::tempdir().expect("directory");
+        let root = temp.path();
+        fs::write(
+            root.join("package.json"),
+            r#"{"name":"root","private":true,"workspaces":["packages/*"]}"#,
+        )
+        .expect("workspace");
+        for member in 0..members {
+            let directory = root.join(format!("packages/m{member}"));
+            fs::create_dir_all(&directory).expect("member");
+            fs::write(
+                directory.join("package.json"),
+                format!(r#"{{"name":"m{member}"}}"#),
+            )
+            .expect("manifest");
+        }
+        let package = root.join("packages/m0");
+        for file in 0..20 {
+            let next = (file + 1) % 20;
+            fs::write(
+                package.join(format!("f{file}.ts")),
+                format!("import './f{next}';"),
+            )
+            .expect("source");
+        }
+        let workspace = jscycles::Workspace::discover(root)
+            .expect("workspace")
+            .expect("found");
+        let budget = AnalysisBudget::new(AnalysisLimits::default()).expect("limits");
+        let imports = jscycles::ImportExtractor::new(vec!["ts".to_owned()], None)
+            .with_workspace(Some(workspace))
+            .with_budget(budget.clone())
+            .extract(&package)
+            .expect("extraction");
+        assert_eq!(
+            imports.len(),
+            20,
+            "every import resolves inside the package"
+        );
+        budget.used(Resource::Work)
+    };
+    assert_eq!(work(2), work(200));
+}

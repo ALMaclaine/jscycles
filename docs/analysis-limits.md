@@ -84,10 +84,11 @@ repository scanning still needs process isolation and OS resource limits.
   or pass the link target as an operand. File symlinks are followed.
 - On Windows, JSON cycle paths use native `\` separators and paths outside a
   package root may print as verbatim `\\?\` paths.
-- A cycle formed only by relative imports that cross package directories (for
-  example `packages/a/x.ts` importing `../b/y` and back) is not reported: each
-  package analyzes only its own files, and relative paths do not create package
-  edges (R02). Import other packages by name.
+- Package cycles exist only between workspace members. A loop through a
+  package that is not a member (there is no workspace, or a named package is
+  nested inside a member without being listed) is not reported when it crosses
+  that package's boundary, because no package edge is recorded into or out of
+  it, and each package analyzes only its own files.
 - A `package.json` operand selects that package alone without discovering
   packages nested in it, so it analyzes their files too. Pass the directory to
   get nearest-package ownership.
