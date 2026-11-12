@@ -276,6 +276,22 @@ mod tests {
     }
 
     #[test]
+    fn yaml_errors_are_one_line_with_position_and_reason() {
+        let error = Config::parse("scan: {inclde: [x]}").expect_err("unknown key is rejected");
+        let message = error.to_string();
+        assert!(!message.contains('\n'), "one line: {message:?}");
+        assert!(
+            message.contains("line 1 column 8") && message.contains("unknown field `inclde`"),
+            "position and reason are kept: {message:?}"
+        );
+        assert!(
+            std::error::Error::source(&error)
+                .is_some_and(|source| source.to_string().contains('\n')),
+            "the full parser error stays available as the source"
+        );
+    }
+
+    #[test]
     fn test_parse_yaml() {
         let yaml = r#"
 scan:

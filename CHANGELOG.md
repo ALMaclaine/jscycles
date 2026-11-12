@@ -53,6 +53,12 @@ results on the same repository, and compare before relying on them in CI.
   `build/` or `node_modules/` directory (common in CI) is no longer skipped
   and reported clean.
 - Configuration, source and filesystem errors exit 2 instead of being ignored.
+- A scan that selects no package (no `package.json` with a `name` under the
+  scanned paths, or none matching `--only`/`--exclude`) exits 2 instead of
+  printing "No packages found." and exiting 0, so a CI job started in the
+  wrong directory no longer passes.
+- The human summary uses singular forms ("1 inter-package cycle", "1
+  package"), and `--inner` uses the same wording as the default report.
 - Minimum supported Rust version is 1.93.0.
 
 ### Fixed
@@ -67,6 +73,8 @@ results on the same repository, and compare before relying on them in CI.
   directory's index, not a sibling `<dir>.ts`.
 - Windows: cycle members outside their package are shown as `C:\...`, not
   with the internal `\\?\` prefix.
+- A `jscycles.yaml` parse error is shown on one line with its position and
+  reason, instead of a source excerpt with literal `\n` sequences.
 
 ## [0.1.1] - 2026-03-26
 

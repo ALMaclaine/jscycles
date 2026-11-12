@@ -295,9 +295,11 @@ impl HumanFormatter {
         let with_cycles = results.packages_with_cycles();
         let total_cycles = results.total_cycles();
 
+        let packages = counted(total, "package", "packages");
+        let cycles = counted(total_cycles, "total cycle", "total cycles");
         writeln!(
             writer,
-            "Summary: {total} packages checked, {with_cycles} with cycles, {total_cycles} total cycles"
+            "Summary: {packages} checked, {with_cycles} with cycles, {cycles}"
         )
     }
 
@@ -466,22 +468,27 @@ impl HumanFormatter {
             results.package_cycles_with_files.len()
         };
 
+        let packages = counted(total_pkgs, "package", "packages");
+        let package_cycles = counted(pkg_cycles, "inter-package cycle", "inter-package cycles");
         match filter {
             CycleFilter::All => writeln!(
                 writer,
-                "Summary: {total_pkgs} packages, {with_file_cycles} with file cycles \
-                ({total_file_cycles} total), {pkg_cycles} inter-package cycles"
+                "Summary: {packages}, {with_file_cycles} with file cycles \
+                ({total_file_cycles} total), {package_cycles}"
             ),
             CycleFilter::Inner => writeln!(
                 writer,
-                "Summary: {total_pkgs} packages, {with_file_cycles} with cycles, \
-                {total_file_cycles} total file cycles"
+                "Summary: {packages}, {with_file_cycles} with file cycles \
+                ({total_file_cycles} total)"
             ),
-            CycleFilter::Outer => {
-                writeln!(writer, "Summary: {pkg_cycles} inter-package cycles")
-            },
+            CycleFilter::Outer => writeln!(writer, "Summary: {package_cycles}"),
         }
     }
+}
+
+/// `count` followed by the singular or plural noun.
+fn counted(count: usize, singular: &str, plural: &str) -> String {
+    format!("{count} {}", if count == 1 { singular } else { plural })
 }
 
 impl OutputFormatter for HumanFormatter {
@@ -759,6 +766,13 @@ impl UnifiedOutputFormatter for JsonFormatter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn counts_use_the_singular_only_for_one() {
+        assert_eq!(counted(0, "package", "packages"), "0 packages");
+        assert_eq!(counted(1, "package", "packages"), "1 package");
+        assert_eq!(counted(2, "package", "packages"), "2 packages");
+    }
 
     #[test]
     fn cycle_members_outside_the_package_are_shown_absolute_in_user_form() {

@@ -123,7 +123,7 @@ Colors are used only when standard output is a terminal.
 | --- | --- |
 | `0` | The scan completed and found no cycle. |
 | `1` | The scan completed and found at least one cycle. |
-| `2` | The scan could not complete: bad arguments or configuration, an unreadable file, a syntax error, or a [resource limit](../analysis-limits/). Treat any output as invalid. |
+| `2` | The scan could not complete: bad arguments or configuration, no package selected, an unreadable file, a syntax error, or a [resource limit](../analysis-limits/). Treat any output as invalid. |
 
 A failed scan never reports clean, so a CI step can rely on the status alone.
 

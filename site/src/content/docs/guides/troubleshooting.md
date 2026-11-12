@@ -5,19 +5,19 @@ description: Common surprises, error messages, and answers to frequent questions
 
 ## Nothing is found
 
-### "No packages found."
+### "no packages to check"
 
 ```text
-No packages found.
-Summary: 0 packages, 0 with file cycles (0 total), 0 inter-package cycles
+Error: Discovery error: no packages to check: no package.json with a `name` field was found; run from the repository root, pass package directories, or check scan.include
 ```
 
-jscycles analyzes directories whose `package.json` has a `name`. This run
-checked nothing, yet exits with status `0`, so make sure CI runs it from the
-right directory. Run it from the repository root, pass the package directory,
-or check [`scan.include`](../../reference/configuration/#scan). A
-`package.json` without `name` (common at a workspace root) is not a package,
-but its workspace members still are.
+jscycles analyzes directories whose `package.json` has a `name`, and a run
+that finds none has checked nothing, so it fails with status `2` rather than
+passing. Run it from the repository root, pass the package directory, or check
+[`scan.include`](../../reference/configuration/#scan). A `package.json`
+without `name` (common at a workspace root) is not a package, but its
+workspace members still are. "no package name matches --only/--exclude" means
+packages exist but the filters left none.
 
 ### A cycle you expected is not reported
 

@@ -23,7 +23,7 @@ import { Steps } from '@astrojs/starlight/components';
    ✗ @acme/core: 1 cycle
      src/index.ts -> src/session.ts -> src/user.ts -> src/index.ts
 
-   Summary: 4 packages, 1 with file cycles (1 total), 1 inter-package cycles
+   Summary: 4 packages, 1 with file cycles (1 total), 1 inter-package cycle
    ```
 
    The exit status is `1` because cycles were found. It is `0` when there are
@@ -59,7 +59,7 @@ import { Steps } from '@astrojs/starlight/components';
        @acme/utils -> @acme/core
          - /repo/packages/utils/src/strings.ts
 
-   Summary: 1 inter-package cycles
+   Summary: 1 inter-package cycle
    ```
 
    If `strings.ts` only imports types from `@acme/core`, the loop does not

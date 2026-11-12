@@ -437,3 +437,36 @@ fn readme_usage_block_matches_help_output() {
         "README.md's usage block differs from `jscycles --help`; replace it with:\n{help}"
     );
 }
+
+/// A scan that selects no package has checked nothing, so it must not pass as
+/// clean: a CI job started in the wrong directory would otherwise succeed.
+#[test]
+fn an_empty_selection_is_an_error_not_a_clean_scan() {
+    let temp = tempdir().expect("temporary directory");
+    for arguments in [&[][..], &["--json", "--quiet"][..], &["--outer"][..]] {
+        let output = scan(temp.path(), arguments);
+        assert_eq!(output.status.code(), Some(2), "{arguments:?}");
+        assert!(output.stdout.is_empty(), "no report for {arguments:?}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains("no packages to check"), "{stderr}");
+        assert!(!stderr.contains("--only"), "no filter was given: {stderr}");
+    }
+
+    package(temp.path());
+    let output = scan(temp.path(), &["--only", "@nothing/*"]);
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "a filter that matches nothing"
+    );
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("no package name matches --only/--exclude"),
+        "the message names the filters"
+    );
+    assert_eq!(
+        scan(temp.path(), &[]).status.code(),
+        Some(0),
+        "the package itself is clean"
+    );
+}

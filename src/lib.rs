@@ -81,9 +81,17 @@ pub enum ConfigError {
     #[error("Failed to read config file: {0}")]
     Read(#[source] std::io::Error),
 
-    /// Failed to parse config YAML.
-    #[error("Failed to parse config YAML: {0}")]
+    /// Failed to parse config YAML. The message keeps the parser's first
+    /// line (position and reason); its multi-line source excerpt would be
+    /// escaped into one unreadable line by the CLI's control-character
+    /// escaping. The full error remains available as the source.
+    #[error("Failed to parse config YAML: {}", first_line(&.0.to_string()))]
     Parse(#[source] serde_saphyr::Error),
+}
+
+/// The first line of a multi-line message.
+fn first_line(message: &str) -> &str {
+    message.lines().next().unwrap_or_default()
 }
 
 /// Error type for package discovery operations.
@@ -138,6 +146,19 @@ pub enum DiscoveryError {
     /// Missing package name in package.json.
     #[error("Missing 'name' field in package.json at {0}")]
     MissingPackageName(PathBuf),
+
+    /// The scan selected no package, so nothing was checked. The CLI treats
+    /// this as a failure rather than a clean result; library discovery
+    /// itself still returns an empty list.
+    #[error("no packages to check: {}", if *.filtered {
+        "no package name matches --only/--exclude"
+    } else {
+        "no package.json with a `name` field was found; run from the repository root, pass package directories, or check scan.include"
+    })]
+    NoPackages {
+        /// Name filters (`--only`/`--exclude`) removed every package found.
+        filtered: bool,
+    },
 }
 
 /// Error type for import extraction operations.
