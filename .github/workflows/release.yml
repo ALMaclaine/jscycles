@@ -179,8 +179,16 @@ jobs:
     permissions:
       contents: read
       # npm trusted publishing: the registry trusts this workflow's OIDC
-      # identity, so no npm token is stored. Provenance is attached automatically.
+      # identity, so no npm token is stored. The OIDC identity also signs the
+      # provenance statement.
       id-token: write
+    env:
+      # Only for the first release, before the packages exist and a trusted
+      # publisher can be configured; see the maintainer runbook. Remove the
+      # secret afterwards. npm prefers trusted publishing when both work.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Attach provenance for token publishes too (automatic with OIDC only).
+      NPM_CONFIG_PROVENANCE: "true"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -198,5 +206,52 @@ jobs:
         with:
           node-version: "24.22.1"
 
+      - name: Use the bootstrap token, if one is configured
+        if: env.NPM_TOKEN != ''
+        run: npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+
       - name: Publish the platform packages, then jscycles
         run: python3 -B scripts/npm_packages.py publish --artifacts artifacts --out target/npm
+
+  crates:
+    name: Publish to crates.io
+    needs: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # crates.io trusted publishing: exchange this workflow's OIDC identity
+      # for a short-lived publish token.
+      id-token: write
+    env:
+      # Only for the first release, before the crate exists and a trusted
+      # publisher can be configured; see the maintainer runbook.
+      BOOTSTRAP_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: "1.98.1"
+
+      - name: Skip a version that is already published
+        id: published
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          status=$(curl -sS -o /dev/null -w '%{http_code}' -H 'User-Agent: jscycles-release (github.com/ALMaclaine/jscycles)' \
+            "https://crates.io/api/v1/crates/jscycles/$version")
+          case "$status" in
+            200) echo "jscycles $version is already on crates.io"; echo "skip=true" >> "$GITHUB_OUTPUT" ;;
+            404) echo "skip=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "unexpected crates.io status $status" >&2; exit 1 ;;
+          esac
+
+      - name: Get a trusted-publishing token
+        id: auth
+        if: steps.published.outputs.skip == 'false' && env.BOOTSTRAP_TOKEN == ''
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+
+      - name: Publish
+        if: steps.published.outputs.skip == 'false'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ env.BOOTSTRAP_TOKEN || steps.auth.outputs.token }}
+        run: cargo publish --locked
