@@ -1,0 +1,247 @@
+---
+title: Is this AI slop?
+description: How jscycles was built with an AI coding assistant, and the lengths it went to so the result is correct.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Yes, an AI coding assistant built jscycles 0.2, working under a human
+maintainer who decides what ships. Every commit since 0.1.1 (24 of the
+project's 36) is co-authored by it, those commits wrote 58% of today's source
+and test lines, and nearly all of the testing, verification and documentation
+described on this page comes from that work.
+
+"AI slop" is output nobody checked: plausible-looking code, documentation for
+features that do not exist, tests that test nothing. This page shows the
+opposite: what happens when the checking is done by something that never gets
+tired of checking. Every number below comes from a file in the repository, and
+every claim links to something you can read or run.
+
+## By the numbers
+
+| | |
+| ---: | --- |
+| **7,347** | lines of production Rust |
+| **16,447** | lines of tests for them, plus 229 fixture files and 56 snapshots |
+| **521** | individual rules from a published engineering standard, each assessed and recorded with a hash of its text |
+| **9** | follow-up rounds of independent review in a single day, which found more than two dozen defects, each fixed with a named regression test |
+| **970** | deliberately broken versions of the code (mutants), **0** of which went unnoticed by the tests |
+| **4,096** | graphs checked exhaustively against a separate brute-force implementation |
+| **1,000** | randomly generated projects compared with the TypeScript compiler on every change, on Linux and Windows |
+| **1,850,797** | fuzzing executions in one configuration-parser campaign alone |
+| **8** | of the project's own checks proven to fail on a planted defect, and pass again once it is repaired |
+| **56** | machine-readable evidence files (3.6 MB) recording the hashes, timings and counts behind each claim |
+
+None of these techniques was invented for jscycles. What is unusual is doing
+all of them, to this depth, on a command-line tool with seven thousand lines of
+code. Each is tedious enough that a person would reasonably stop well short.
+
+## Review, then review the review
+
+The code was reviewed against its contract in separate passes, each starting
+from the code rather than from the previous review's conclusions. A finding was
+fixed, given a regression test, and recorded with the requirement it violated.
+Then the next review started.
+
+On one day there were
+[nine of these follow-up rounds](https://github.com/ALMaclaine/jscycles/blob/main/docs/maintainers/rust-oe-current-review.md),
+and they found more than two dozen defects. Several were regressions introduced
+by fixes from an earlier round, caught by the next one. Some were the worst
+kind a tool like this can have: cases where jscycles reported **clean** when it
+should not have. One example: a checkout inside a directory named `build` or
+`node_modules`, common in CI, was skipped entirely and reported as having no
+cycles. Each fix names the tests that now pin it, such as
+`excluded_names_above_the_scan_root_do_not_hide_the_checkout`.
+
+Reviews kept finding new defects, round after round. The record says so
+plainly, and the response was not "review harder" but to change method:
+
+> Manual review rounds kept finding new defects, so correctness is now checked
+> against oracles.
+
+## Build an oracle, then prove the oracle works
+
+An oracle is an independent way to compute the right answer. jscycles has
+three, and none of them shares code with it.
+
+**The TypeScript compiler.** [`difftest.py`](https://github.com/ALMaclaine/jscycles/blob/main/scripts/differential/difftest.py)
+generates random projects: workspaces, nested packages, tsconfig and workspace
+aliases, every spelling of a relative path (`./x`, `x/`, `..` detours,
+absolute paths), byte-order marks, unusual extensions, symlinks. A reference
+model resolves every import through TypeScript 5.9.3's own
+`resolveModuleName`, applies the package rules of the
+[product contract](../../reference/product-contract/), and finds every cycle by
+brute force. Any disagreement with `jscycles --json` is automatically shrunk to
+the smallest project that still shows it.
+
+Before the harness was trusted, it was tested: pointed at the older code with
+its known bugs, it caught them in 82 of 100 generated cases. Only then was it
+run on the current code, where it found four defects that nine rounds of review
+had missed. After the fixes, a 10,000-project run came back clean. Today 1,000
+projects run on every pull request, on both Linux and Windows.
+
+**Brute-force graph enumeration.** The cycle algorithms are checked against an
+independent enumerator on
+[all 4,096 directed graphs with four nodes](https://github.com/ALMaclaine/jscycles/blob/main/tests/budgets.rs),
+and on every graph with three nodes under Miri. Which files form a tangle is
+checked against reachability computed separately, so the test cannot agree
+with a bug by sharing it.
+
+**Real repositories.** [`real_repos.py`](https://github.com/ALMaclaine/jscycles/blob/main/scripts/differential/real_repos.py)
+records jscycles' full output on real codebases and reports every difference
+on the next run, so no change in behavior goes unreviewed.
+
+## Test the tests
+
+Code coverage shows which lines a test ran, not whether it would notice them
+being wrong. jscycles uses mutation testing for that:
+[cargo-mutants](https://mutants.rs/) changes the code one small way at a time
+(flips a comparison, deletes a branch, returns a constant) and checks that some
+test fails.
+
+- The full campaign on the release tree produced **970 mutants**: 800 caught by
+  a failing test, 157 that no longer compile, 13 that hung and were each
+  reviewed, and **none missed**.
+- When four newly written modules were first tested this way, 44 of their 271
+  mutants survived. Every one was then either killed with a new test, or shown
+  to be harmless and recorded in
+  [`.cargo/mutants.toml`](https://github.com/ALMaclaine/jscycles/blob/main/.cargo/mutants.toml)
+  by exact line, with the reason it cannot change behavior. Moving that code
+  invalidates the entry and forces a new review.
+- The campaign hashes all 313 inputs it depends on, so a result cannot be
+  reused after the code changes. A mutant that times out is retried alone,
+  with a fresh build, before it may count as caught.
+- When one campaign ground to a halt, the cause was tracked down rather than
+  worked around: macOS had kept every mutant's debug objects in one directory,
+  759,209 files after about 770 mutants, until listing it stalled the compiler.
+  The script was fixed and the campaign run again.
+
+## Test the checks
+
+A check that can never fail is worse than none, because it looks like
+protection. So the checks themselves are tested.
+[`verify-controls.py`](https://github.com/ALMaclaine/jscycles/blob/main/scripts/verify-controls.py)
+copies the project to a disposable directory, and runs each check three times:
+on the passing copy, on a copy with a deliberately planted defect, and on the
+repaired copy. The planted defects include an unformatted file, a stale
+lockfile, a wrong example in the API documentation, an implicit unsafe
+operation, a dependency with an unapproved license, and edited guidance files.
+Each check must pass, fail and pass again. Seven more sets of these controls
+cover individual features.
+
+## Fuzzing and Miri
+
+- **Fuzzing** with libFuzzer under sanitizers covers four targets: the
+  configuration parser, source syntax, text adapters, and graph semantics.
+  Generated graphs are checked against independent path-enumeration and
+  reachability oracles, and generated source is checked in seven JavaScript,
+  twenty TypeScript and eighteen TSX forms per string value. One configuration
+  campaign alone ran 1,850,797 inputs.
+- **[Miri](https://github.com/rust-lang/miri)** interprets 69 tests of the
+  graph, text, reporting, path and concurrency code, to catch undefined
+  behavior that normal tests cannot see. Unsafe code is forbidden in the
+  project regardless.
+
+## Every rule written down, every claim recorded
+
+- **A contract.** The [product contract](../../reference/product-contract/)
+  states thirteen requirements, from which file belongs to which package to
+  how each of the twelve Unicode bidirectional control characters is escaped in
+  output, and names the tests that establish each.
+- **A standard, rule by rule.** The project follows Rust-OE, a published Rust
+  engineering standard. All 521 of its rules are recorded individually: what
+  the rule says (with a hash of its text, so a changed rule is noticed),
+  whether it applies, what was decided and where the evidence is.
+- **Evidence, not assertions.** Each quality claim has a machine-readable
+  record in [`docs/maintainers/evidence/`](https://github.com/ALMaclaine/jscycles/tree/main/docs/maintainers/evidence):
+  hashes of the binary and inputs, toolchain versions, counts and timings.
+- **Honest about what is not done.** The record keeps open obligations that
+  need facts about people and settings it cannot check, such as a verified
+  private security-report route and a rehearsed recovery. It states that no
+  contact, reviewer or setting is invented to close them, and that full
+  adherence to the standard is therefore not claimed.
+
+## Performance claims that hold up
+
+When a change is claimed to be faster, the old and new binaries run
+alternately, 21 times each, on the same 10,000-file corpus, and their JSON
+output must be identical byte for byte. A result is reported only for the
+workload measured. The
+[benchmarks against madge and dpdm](../../guides/comparison/#performance) name
+the exact commit of each repository and the script that reproduces them.
+
+## The compiler is not allowed to be lenient
+
+- Clippy's `pedantic`, `nursery` and `cargo` groups are errors, not warnings,
+  along with 31 more individual lints; 32 compiler lints are `forbid` or
+  `deny`, including `unsafe_code`.
+- An exception is a narrow `#[expect(...)]` or `#[allow(...)]` on the one item
+  concerned, and one without a written reason is itself an error.
+- A complexity gate (CRAP score) fails any function that is both complex and
+  poorly tested.
+
+## Never a false clean
+
+The most damaging bug a cycle checker can have is passing when it should fail,
+so jscycles treats it as a design rule:
+
+- Status `0` means the whole selected graph was built and has no cycle. An
+  unreadable file, a syntax error, a bad configuration, an exhausted resource
+  limit, or a scan that found no packages at all exits `2`.
+- Every scan runs under finite quotas for files, bytes, graph size and output,
+  and each quota has a test that exhausts it through the real command line.
+- Output is deterministic, byte for byte, and fully built before anything is
+  written.
+
+## Documentation checked against the binary
+
+AI-written documentation is where slop usually shows. Here:
+
+- Every example output on this site was captured by running the current
+  binary. Doing so caught three mistakes in the first drafts of these pages,
+  and several rough edges in the tool itself (a scan that found no packages
+  passed, a configuration error printed literal `\n` sequences, "1
+  inter-package cycles"), which were fixed rather than documented.
+- A test fails if the README's `--help` text differs from the binary's. On its
+  first run in CI it caught that Windows printed `jscycles.exe`, which was then
+  fixed in the binary.
+- The reference pages are generated from the repository's own documents, and
+  the build fails on any broken link or anchor.
+
+## A release that refuses to cut corners
+
+Each release binary is built natively for its platform; its file format, CPU,
+version and a scan of a known cycle are verified, and its hash is recorded with
+the source commit, toolchain and workflow run. Every GitHub Action is pinned to
+a full commit hash, dependencies are locked and checked with cargo-deny, the npm
+packages run no install scripts, and publishing to npm and crates.io happens
+from CI, moving to trusted publishing with no long-lived token after the first
+release.
+
+The first attempt to release 0.2.0 was stopped by this pipeline: two coverage
+files from the test run appeared next to the binaries, the inventory check
+refused to publish, and nothing was released until the cause was fixed.
+
+## Why an AI goes this far
+
+None of this needed genius. It needed the willingness to do the boring part
+again, every time, completely: run the 1,000-project comparison after each
+change, look at every one of 970 mutants, re-run every documented command,
+write down the reason for every exception, keep reviewing after the ninth
+round. People are capable of all of it, and almost nobody does it for a tool
+this size, because the motivation runs out long before the checklist does.
+
+An assistant's motivation does not run out. It also makes confident mistakes,
+which is exactly why nothing above rests on its word: every claim is checked
+by a test, an oracle, a hash or a planted defect that a machine runs.
+
+<Aside title="Where the limits are">
+Checking is not proof. Fuzzing and differential tests sample the input space
+rather than cover it, the native tree-sitter parser is trusted, and jscycles is
+static analysis of the files it reads, not a type checker or a runtime. Known
+gaps are listed in
+[analysis limits](../../reference/analysis-limits/#known-analysis-limits). If
+you find a case where jscycles is wrong,
+[please report it](https://github.com/ALMaclaine/jscycles/issues): every bug
+becomes a regression test.
+</Aside>
