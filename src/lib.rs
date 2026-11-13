@@ -1,7 +1,23 @@
 //! Find circular imports between files and workspace packages in JavaScript and TypeScript projects.
 //!
-//! `jscycles` is a CLI tool that detects circular dependencies within JS/TS packages,
-//! with file-level and workspace-package cycle detection.
+//! `jscycles` is both a command-line tool and a library. To embed the whole
+//! analysis, the same one the command runs, use [`Scan`]:
+//!
+//! ```no_run
+//! use jscycles::Scan;
+//!
+//! # fn main() -> Result<(), jscycles::JscyclesError> {
+//! let report = Scan::new("path/to/repo").run()?;
+//! if report.has_cycles() {
+//!     std::io::Write::write_all(&mut std::io::stdout(), &report.to_human(false)?)?;
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! See the [`scan`] module for the options and results. The lower-level
+//! modules ([`discovery`], [`imports`], [`graph`], [`cycles`]) are the parts a
+//! scan is built from, for callers that supply their own import graph:
 //!
 //! ```
 //! use jscycles::{CycleDetector, DependencyGraph, Import, ImportTarget};
@@ -31,6 +47,7 @@ pub mod discovery;
 pub mod graph;
 pub mod imports;
 pub mod output;
+pub mod scan;
 pub mod tsconfig;
 pub mod workspace;
 
@@ -319,5 +336,6 @@ pub use output::{
     CycleFilter, HumanFormatter, JsonFormatter, OutputFormatter, PackageResult, Results,
     UnifiedOutputFormatter, UnifiedResults,
 };
+pub use scan::{Scan, ScanReport, TsConfigSource};
 pub use tsconfig::{TsConfig, TsConfigCache};
 pub use workspace::{Workspace, WorkspaceFormat};

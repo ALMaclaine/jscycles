@@ -327,7 +327,6 @@ fn components<K: Label, M: Meter>(
 }
 
 #[cfg_attr(feature = "profiling", hotpath::measure)]
-
 pub(crate) fn representative<K: Label, M: Meter>(
     graph: &Indexed<K>,
     meter: &M,
@@ -468,7 +467,6 @@ fn circuit<K: Label, M: Meter>(
 }
 
 #[cfg_attr(feature = "profiling", hotpath::measure)]
-
 pub(crate) fn elementary<K: Label, M: Meter>(
     graph: &Indexed<K>,
     meter: &M,

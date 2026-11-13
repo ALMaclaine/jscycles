@@ -8,6 +8,24 @@ the [upgrade notes](docs/migration-0.2.md).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-13
+
+### Added
+
+- An embedding API: `jscycles::Scan` runs the complete analysis the command
+  performs (discovery, workspaces, tsconfig aliases, package ownership and
+  limits) and returns a `ScanReport` with the results, `has_cycles()`, the
+  ignored tsconfig files, and the command's JSON or human output. The command
+  is now built on it, and a test checks that both give identical output. See
+  [embedding in Rust](https://jscycles.dev/guides/rust-library/) and the
+  runnable `check` example.
+- A default `cli` feature for the command-line binary. Libraries can depend on
+  jscycles with `default-features = false` and skip its argument parser.
+
+### Changed
+
+- `Config`, `ScanConfig` and `DefaultsConfig` implement `Clone`.
+
 ## [0.3.0] - 2026-11-13
 
 ### Changed
@@ -114,7 +132,8 @@ results on the same repository, and compare before relying on them in CI.
 
 Initial release.
 
-[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ALMaclaine/jscycles/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ALMaclaine/jscycles/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ALMaclaine/jscycles/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ALMaclaine/jscycles/compare/v0.1.1...v0.2.0
