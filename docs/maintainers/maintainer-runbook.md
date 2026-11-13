@@ -57,7 +57,13 @@ that snapshot; see the [verification record](evidence/rust-oe-linux-verification
    - `crates` runs `cargo publish --locked`.
 
    A version already on a registry is skipped, so re-running a job after a
-   partial failure completes the set. Both authenticate with trusted
+   partial failure completes the set. If the crates job cannot be re-run
+   because the fix needs a source change (crates.io rejected the first 0.2.0
+   attempt for its metadata), merge the fix and run the manual
+   `.github/workflows/publish-crate.yml` from `main`: it publishes the current
+   version only if its GitHub release exists and the version is not yet on
+   crates.io. `scripts/test_crate_metadata.py` checks crates.io's metadata
+   rules, which `cargo publish --dry-run` does not. Both authenticate with trusted
    publishing (GitHub OIDC), so no token is stored.
 
    One-time bootstrap, for the first release only: a registry accepts a

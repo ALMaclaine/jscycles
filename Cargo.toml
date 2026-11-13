@@ -123,7 +123,7 @@ readme = "README.md"
 include = ["src/**", "tests/**", "/README.md", "/CHANGELOG.md", "/jscycles.schema.json", "/LICENSE-*", "/clippy.toml", "/rustfmt.toml", "Cargo.toml", "Cargo.lock"]
 repository = "https://github.com/ALMaclaine/jscycles"
 license.workspace = true
-keywords = ["javascript", "typescript", "circular-dependencies", "static-analysis"]
+keywords = ["javascript", "typescript", "circular-imports", "dependency-cycles", "static-analysis"]
 categories = ["development-tools", "command-line-utilities"]
 
 [profile.release]
