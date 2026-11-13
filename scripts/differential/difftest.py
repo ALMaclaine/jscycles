@@ -317,23 +317,25 @@ def model(root: Path, resolver: Resolver) -> Expected:
                     aliases[key] = max(owners)[1]
 
     def owning_member(target: Path, source: Path, package_dir: Path, nested: set[Path]) -> str | None:
-        """The other workspace member that owns `target`, if any: the nearest
-        package root or excluded boundary containing it decides."""
-        if not workspace:
-            return None
+        """The other package that owns `target`, if any: the nearest scanned
+        package, workspace member or excluded boundary containing it decides.
+        Package edges from files need no workspace."""
         if target.is_relative_to(package_dir) and not any(target.is_relative_to(d) for d in nested):
             return None
-        candidates = [(n, d) for n, d in members.items() if target.is_relative_to(d)]
+        named = list(expected.packages.items()) + (list(members.items()) if workspace else [])
+        candidates = [(n, d) for n, d in named if target.is_relative_to(d)]
         if not candidates:
             return None
-        member, member_dir = max(candidates, key=lambda item: len(item[1].parts))
-        if any(target.is_relative_to(r) and len(r.parts) > len(member_dir.parts) for r in skip | set(expected.packages.values())):
-            return None
-        own = member_dir == package_dir or (
-            source.is_relative_to(member_dir)
-            and not any(d != member_dir and d.is_relative_to(member_dir) and source.is_relative_to(d)
+        owner, owner_dir = max(candidates, key=lambda item: len(item[1].parts))
+        if any(target.is_relative_to(r) and len(r.parts) > len(owner_dir.parts) for r in skip):
+            return None  # an excluded or filtered-out package that is not a member
+        # The location rule (a source inside a member and no nearer member
+        # belongs to it) applies to workspace members only.
+        own = owner_dir == package_dir or (
+            members.get(owner) == owner_dir and source.is_relative_to(owner_dir)
+            and not any(d != owner_dir and d.is_relative_to(owner_dir) and source.is_relative_to(d)
                         for d in members.values()))
-        return None if own else member
+        return None if own else owner
 
     def split(specifier: str) -> tuple[str, str | None] | None:
         name = package_name_of(specifier)
@@ -420,8 +422,6 @@ def model(root: Path, resolver: Resolver) -> Expected:
                             expected.package_edges.add((name, member))
                         continue
                     edges.add((source, target))
-    if not workspace:
-        expected.package_edges.clear()
     return expected
 
 
@@ -586,7 +586,12 @@ def generate(rng: random.Random, root: Path) -> dict[str, str]:
     manifest: dict = {"private": True}
     if root_named:
         manifest["name"] = "root"
-    if rng.random() < 0.25:
+    layout = rng.random()
+    if layout < 0.1:
+        # No workspace: packages are found by discovery alone, and package
+        # edges come only from imports into another package's files.
+        STATS["no_workspace"] += 1
+    elif layout < 0.325:
         files["pnpm-workspace.yaml"] = "packages:\n" + "".join(f"  - {json.dumps(p)}\n" for p in patterns)
     else:
         manifest["workspaces"] = {"packages": patterns} if rng.random() < 0.15 else patterns

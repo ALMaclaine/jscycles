@@ -84,11 +84,10 @@ repository scanning still needs process isolation and OS resource limits.
   or pass the link target as an operand. File symlinks are followed.
 - On Windows, JSON cycle paths use native `\` separators and paths outside a
   package root may print as verbatim `\\?\` paths.
-- Package cycles exist only between workspace members. A loop through a
-  package that is not a member (there is no workspace, or a named package is
-  nested inside a member without being listed) is not reported when it crosses
-  that package's boundary, because no package edge is recorded into or out of
-  it, and each package analyzes only its own files.
+- Without a workspace, a bare import such as `import 'b'` is not an edge to a
+  local package named `b`: Node resolves it through `node_modules`, which
+  jscycles does not read. Imports that reach a local package's files, by a
+  relative path or a tsconfig alias, are edges with or without a workspace.
 - A `package.json` operand selects that package alone without discovering
   packages nested in it, so it analyzes their files too. Pass the directory to
   get nearest-package ownership.

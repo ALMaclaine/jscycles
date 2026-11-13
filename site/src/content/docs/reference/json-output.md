@@ -106,7 +106,7 @@ Without `-v`, each edge's `files` is an empty array.
 
 ## Stability
 
-Within a minor version (all of 0.2.x), existing fields keep their names, types
+Within a minor version (for example, all of 0.3.x), existing fields keep their names, types
 and meaning. New fields may be added, so ignore keys you do not recognize.
 Changes to existing fields come only with a new minor version before 1.0, and
 are listed in the [changelog](../changelog/).

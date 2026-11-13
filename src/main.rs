@@ -2,6 +2,7 @@
 //!
 //! Reports file-level and workspace-package cycles in local checkouts.
 
+use std::collections::HashMap;
 use std::io::{self, IsTerminal as _, Read as _, Write as _};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -168,9 +169,11 @@ struct InputContext {
 /// Controls how much package processing is required for a given CLI mode.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ProcessMode {
-    /// Full import extraction plus file-level cycle detection.
+    /// Full import extraction, file cycles and package cycles.
     Full,
-    /// Only collect workspace-package imports for package-level cycles.
+    /// `--inner`: file cycles only.
+    FilesOnly,
+    /// `--outer`: only package imports, for package cycles.
     WorkspaceOnly,
 }
 
@@ -295,6 +298,8 @@ fn processing_options(
         tsconfig_cache: Arc::new(TsConfigCache::new().with_budget(budget.clone())),
         mode: if matches.get_flag("outer") {
             ProcessMode::WorkspaceOnly
+        } else if matches.get_flag("inner") {
+            ProcessMode::FilesOnly
         } else {
             ProcessMode::Full
         },
@@ -323,6 +328,13 @@ fn analyze_packages(
         .cloned()
         .collect::<Vec<_>>()
         .into();
+    let names: Arc<HashMap<PathBuf, String>> = Arc::new(
+        roots
+            .iter()
+            .cloned()
+            .zip(packages.iter().map(|package| package.name.clone()))
+            .collect(),
+    );
     let processed: Vec<ProcessedPackage> = packages
         .par_iter()
         .zip(&roots)
@@ -341,26 +353,32 @@ fn analyze_packages(
                 // The walk never prunes its own root, so `root` itself may stay.
                 .filter(|other| other.starts_with(root))
                 .cloned();
-            process_package_with_imports(package, opts, nested, Arc::clone(&owners))
+            process_package_with_imports(
+                package,
+                opts,
+                nested,
+                Arc::clone(&owners),
+                Arc::clone(&names),
+            )
         })
         .collect::<Result<Vec<_>, JscyclesError>>()?;
-    let (package_cycles, package_cycles_with_files) = if opts.workspace.is_some() {
-        let groups = processed
-            .iter()
-            .map(|proc| (proc.result.name.as_str(), proc.imports.as_slice()));
-        if verbose {
-            (
-                Vec::new(),
-                PackageCycleDetector::try_detect_imports_with_files(groups, &opts.budget)?,
-            )
-        } else {
-            (
-                PackageCycleDetector::try_detect_imports(groups, &opts.budget)?,
-                Vec::new(),
-            )
-        }
-    } else {
+    // Package edges come from imports into another package's files too, so
+    // package cycles need no workspace.
+    let groups = processed
+        .iter()
+        .map(|proc| (proc.result.name.as_str(), proc.imports.as_slice()));
+    let (package_cycles, package_cycles_with_files) = if opts.mode == ProcessMode::FilesOnly {
         (Vec::new(), Vec::new())
+    } else if verbose {
+        (
+            Vec::new(),
+            PackageCycleDetector::try_detect_imports_with_files(groups, &opts.budget)?,
+        )
+    } else {
+        (
+            PackageCycleDetector::try_detect_imports(groups, &opts.budget)?,
+            Vec::new(),
+        )
     };
     Ok(UnifiedResults {
         file_results: processed.into_iter().map(|proc| proc.result).collect(),
@@ -478,6 +496,7 @@ fn process_package_with_imports(
     opts: &ProcessOptions,
     nested: impl Iterator<Item = PathBuf>,
     owners: Arc<[PathBuf]>,
+    names: Arc<HashMap<PathBuf, String>>,
 ) -> Result<ProcessedPackage, JscyclesError> {
     // Determine tsconfig
     // `--outer` resolves file aliases too: an alias into another member is a
@@ -511,8 +530,9 @@ fn process_package_with_imports(
         .with_budget(opts.budget.clone())
         .with_nested_packages(nested)
         .with_owners(owners)
+        .with_package_names(names)
         .with_mode(match opts.mode {
-            ProcessMode::Full => ExtractionMode::All,
+            ProcessMode::Full | ProcessMode::FilesOnly => ExtractionMode::All,
             ProcessMode::WorkspaceOnly => ExtractionMode::WorkspaceOnly,
         });
     if let Some(ignore) = &package.config.ignore {

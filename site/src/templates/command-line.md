@@ -111,7 +111,7 @@ Report only file cycles, within packages.
 
 ### `--outer`
 
-Report only package cycles, between workspace packages. This also skips
+Report only package cycles, between packages. This also skips
 building file graphs, so it is faster on large repositories. Cannot be combined
 with `--inner`.
 

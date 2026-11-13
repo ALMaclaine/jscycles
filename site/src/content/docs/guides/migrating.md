@@ -20,7 +20,7 @@ if you use those features.
 - **It resolves like TypeScript, without webpack.** Aliases come from
   `tsconfig.json` `paths`, including `extends` chains. webpack and RequireJS
   configuration is not read.
-- **It finds package cycles** between workspace packages, which neither tool
+- **It finds package cycles** between packages, which neither tool
   reports.
 - **It fails on what it cannot read.** A syntax error or an unreadable file
   stops the scan with status 2 instead of being skipped.

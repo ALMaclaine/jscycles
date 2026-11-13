@@ -28,8 +28,8 @@ package, and loops between the packages themselves.
 </FileTree>
 
 Run `jscycles` at the root. It reports file cycles in `@acme/core`,
-`@acme/utils`, `@acme/web` and the root package, and cycles between the
-workspace members.
+`@acme/utils`, `@acme/web` and the root package, and cycles between those
+packages.
 
 ## How members are found
 
@@ -63,6 +63,18 @@ as `@acme/core/format`), through a tsconfig path alias that points into
 Dependencies listed in `package.json` but never imported are not edges.
 Importing by name is still the better practice: a relative path into another
 package bypasses its `exports` and breaks once the packages are published.
+
+## Packages outside the workspace, or no workspace at all
+
+Package cycles do not need a workspace. Every scanned package takes part,
+including the workspace root, packages that are not listed as members, and
+repositories with several packages and no workspace configuration. Imports
+that reach another package's files, by a relative path or a tsconfig alias,
+are edges between them.
+
+What the workspace adds is bare names: only a workspace member can be
+imported as `@acme/core`. Without a workspace, `import 'core'` resolves
+through `node_modules`, so it is not an edge to a local folder named `core`.
 
 ## See the files behind an edge
 

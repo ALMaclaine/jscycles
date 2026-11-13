@@ -2106,11 +2106,12 @@ fn relative_and_file_alias_imports_into_another_member_are_package_edges() {
     }
 }
 
-/// The nearest package root owns a file, so an import of a file in a named
-/// non-member package nested inside a member is not an edge to that member,
-/// and imports inside one package stay file imports.
+/// The nearest package root owns a file: a named package nested inside a
+/// member owns its files even when it is not a workspace member, so a loop
+/// through it is a package cycle with that package. Imports inside one
+/// package stay file imports.
 #[test]
-fn files_owned_by_a_nested_non_member_or_the_importer_are_not_member_edges() {
+fn the_nearest_package_owns_a_file_whether_or_not_it_is_a_member() {
     let temp = tempfile::tempdir().expect("directory");
     let root = temp.path();
     two_member_workspace(root);
@@ -2129,11 +2130,13 @@ fn files_owned_by_a_nested_non_member_or_the_importer_are_not_member_edges() {
         "packages/a/src/x.ts",
         "import '../../b/vendor/inner/z';",
     );
-    assert!(
-        package_cycles(root, &[]).is_empty(),
-        "inner is not a member"
-    );
-    assert!(package_cycles(root, &["--outer"]).is_empty());
+    for mode in [&[][..], &["--outer"][..]] {
+        assert_eq!(
+            package_cycles(root, mode),
+            ["a -> inner -> a"],
+            "inner owns z.ts, not b; {mode:?}"
+        );
+    }
 
     write(root, "packages/a/src/x.ts", "import './w';");
     write(root, "packages/a/src/w.ts", "import './x';");
@@ -2142,4 +2145,32 @@ fn files_owned_by_a_nested_non_member_or_the_importer_are_not_member_edges() {
         "a file cycle, not a package edge"
     );
     assert_eq!(status(root, &["--inner"]), Some(1));
+}
+
+/// Package cycles need no workspace: packages that import each other's files
+/// form a cycle among the scanned packages. An excluded directory is not
+/// analyzed, so imports into it are not edges.
+#[test]
+fn packages_without_a_workspace_form_cycles_through_file_imports() {
+    let temp = tempfile::tempdir().expect("directory");
+    let root = temp.path();
+    write(root, "a/package.json", r#"{"name":"a"}"#);
+    write(root, "b/package.json", r#"{"name":"b"}"#);
+    write(root, "a/src/x.ts", "import '../../b/src/y';");
+    write(root, "b/src/y.ts", "import '../../a/src/x';");
+    for mode in [&[][..], &["--outer"][..], &["-v"][..]] {
+        assert_eq!(package_cycles(root, mode), ["a -> b -> a"], "{mode:?}");
+    }
+    assert_eq!(status(root, &["--inner"]), Some(0));
+    // A bare name is not resolved to a local package without a workspace: it
+    // would come from node_modules.
+    write(root, "b/src/y.ts", "import 'a';");
+    assert!(
+        package_cycles(root, &[]).is_empty(),
+        "bare names need a workspace"
+    );
+
+    write(root, "b/src/y.ts", "import '../../a/src/x';");
+    write(root, "jscycles.yaml", "scan:\n  exclude: [\"b\"]\n");
+    assert!(package_cycles(root, &[]).is_empty(), "b is excluded");
 }

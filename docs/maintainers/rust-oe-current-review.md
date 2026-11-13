@@ -363,6 +363,20 @@ graph. Regression tests: `tests/adherence.rs`
 differential model applies the same rule; seed 1 (1,000 cases) and 6,000 cases
 on disjoint seeds agree.
 
+## 2026-11-13: package edges from files need no workspace
+
+The 2026-11-12 change still recorded loops through non-member packages, or in
+repositories without a workspace, as a limit; that was the same false clean.
+Package edges from imports that resolve into another package's files now use
+every scanned package (plus workspace members), and package cycles are found
+without a workspace. Bare names remain workspace-only, as they resolve through
+`node_modules` otherwise. Regression tests: `tests/adherence.rs`
+`the_nearest_package_owns_a_file_whether_or_not_it_is_a_member` and
+`packages_without_a_workspace_form_cycles_through_file_imports`. The
+differential generator now omits the workspace in about 10% of projects; the
+model applies the member-only location rule as the CLI does. 10,000 cases
+(about 990 without a workspace) agree.
+
 ## Stop condition and remaining obligations
 
 The intended local stop condition is a reconciled ledger, a complete passing

@@ -34,9 +34,9 @@ Work through these in order:
 3. **Are both ends in the scan?** Package cycles are found among the selected
    packages only, so `jscycles packages/a` cannot see a loop through
    `packages/b`.
-4. **Does the loop leave the workspace?** Package cycles exist only between
-   workspace members. A loop through a package that is not listed as a member
-   (or through a repository with no workspace) is not reported.
+4. **Is it a bare import without a workspace?** Without a workspace,
+   `import 'b'` resolves through `node_modules`, so it is not an edge to a
+   local package `b`. Relative paths and aliases into `b`'s files are.
 5. **Is a package a symlink?** Directory symlinks are not followed, so a
    workspace member that is a symlinked directory is not a member.
 6. **Is it only types?** With `--skip-type-imports`, loops made only of
