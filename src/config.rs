@@ -32,7 +32,7 @@ fn default_extensions() -> Vec<String> {
 }
 
 /// Root configuration for jscycles.
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     /// Whole-scan admission and enumeration limits.
@@ -52,7 +52,7 @@ pub struct Config {
 }
 
 /// Configuration for package scanning/discovery.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ScanConfig {
     /// Glob patterns for directories to include in scanning.
@@ -75,7 +75,7 @@ impl Default for ScanConfig {
 }
 
 /// Default settings applied to all packages.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[non_exhaustive]
 pub struct DefaultsConfig {

@@ -88,6 +88,7 @@ The full documentation is at **[jscycles.dev](https://jscycles.dev/)**:
   [monorepos](https://jscycles.dev/guides/monorepos/),
   [TypeScript](https://jscycles.dev/guides/typescript/),
   [scripting with JSON](https://jscycles.dev/guides/scripting/),
+  [embedding in Rust](https://jscycles.dev/guides/rust-library/),
   [migrating from madge or dpdm](https://jscycles.dev/guides/migrating/),
   [troubleshooting](https://jscycles.dev/guides/troubleshooting/)
 - Reference: [configuration](docs/configuration.md),
@@ -143,14 +144,20 @@ counts are not comparable. Reproduce with
 
 ## Library
 
-jscycles is also a Rust library ([docs.rs](https://docs.rs/jscycles)): package
-discovery, import extraction, resolution and cycle detection are public. The
-command-line tool in [`src/main.rs`](src/main.rs) shows how to combine them.
-In particular, pass the boundaries from
-`PackageDiscovery::discover_with_boundaries` to
-`ImportExtractor::with_nested_packages` and `with_owners`, so each file is
-analyzed by its nearest package. Library changes for 0.2 are in the
-[upgrade notes](docs/migration-0.2.md).
+jscycles is also a Rust library. `Scan` runs the same analysis as the command
+and returns the results as data:
+
+```rust
+let report = jscycles::Scan::new("path/to/repo").run()?;
+for cycle in &report.results().package_cycles {
+    println!("{}", cycle.packages.join(" -> "));
+}
+```
+
+Depend on it with `jscycles = { version = "0.4", default-features = false }`
+to leave out the command-line binary. See
+[embedding in Rust](https://jscycles.dev/guides/rust-library/) and the API
+reference on [docs.rs](https://docs.rs/jscycles).
 
 ## Contributing
 

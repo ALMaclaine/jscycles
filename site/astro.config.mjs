@@ -50,6 +50,7 @@ export default defineConfig({
             { label: 'Monorepos and workspaces', slug: 'guides/monorepos' },
             { label: 'TypeScript projects', slug: 'guides/typescript' },
             { label: 'Scripting with JSON', slug: 'guides/scripting' },
+            { label: 'Embedding in Rust', slug: 'guides/rust-library' },
             { label: 'Migrating from madge or dpdm', slug: 'guides/migrating' },
             { label: 'Troubleshooting and FAQ', slug: 'guides/troubleshooting' },
           ],

@@ -115,12 +115,12 @@ unimplemented = "deny"
 [package]
 name = "jscycles"
 publish = ["crates-io"]
-version = "0.3.0"
+version = "0.4.0"
 edition.workspace = true
 rust-version.workspace = true
 description = "Find circular imports between files and workspace packages in JavaScript and TypeScript projects"
 readme = "README.md"
-include = ["src/**", "tests/**", "/README.md", "/CHANGELOG.md", "/jscycles.schema.json", "/LICENSE-*", "/clippy.toml", "/rustfmt.toml", "Cargo.toml", "Cargo.lock"]
+include = ["src/**", "tests/**", "/examples/**", "/README.md", "/CHANGELOG.md", "/jscycles.schema.json", "/LICENSE-*", "/clippy.toml", "/rustfmt.toml", "Cargo.toml", "Cargo.lock"]
 repository = "https://github.com/ALMaclaine/jscycles"
 license.workspace = true
 keywords = ["javascript", "typescript", "circular-imports", "dependency-cycles", "static-analysis"]
@@ -135,16 +135,23 @@ strip = "symbols"
 [[bin]]
 name = "jscycles"
 path = "src/main.rs"
+required-features = ["cli"]
+
+[[example]]
+name = "check"
 
 [features]
-default = []
+default = ["cli"]
+# The command-line binary. Embedders can turn it off:
+# `jscycles = { version = "...", default-features = false }`.
+cli = ["dep:clap"]
 # Local timing reports are opt-in; normal builds contain no profiler.
 profiling = ["dep:hotpath"]
 
 [dependencies]
 hotpath = { version = "=0.28.6", optional = true, default-features = false, features = ["hotpath"] }
 # CLI
-clap = "4"
+clap = { version = "4", optional = true }
 
 # Config parsing
 serde = { version = "1", features = ["derive"] }
