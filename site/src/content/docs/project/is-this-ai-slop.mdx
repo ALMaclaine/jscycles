@@ -29,6 +29,7 @@ every claim links to something you can read or run.
 | **4,096** | graphs checked exhaustively against a separate brute-force implementation |
 | **1,000** | randomly generated projects compared with the TypeScript compiler on every change, on Linux and Windows |
 | **1,850,797** | fuzzing executions in one configuration-parser campaign alone |
+| **21** | alternating runs of each binary behind every speed claim, with byte-identical output required on every run |
 | **8** | of the project's own checks proven to fail on a planted defect, and pass again once it is repaired |
 | **56** | machine-readable evidence files (3.6 MB) recording the hashes, timings and counts behind each claim |
 
@@ -161,14 +162,92 @@ cover individual features.
   contact, reviewer or setting is invented to close them, and that full
   adherence to the standard is therefore not claimed.
 
-## Performance claims that hold up
+## Profile first, then prove it got faster
 
-When a change is claimed to be faster, the old and new binaries run
-alternately, 21 times each, on the same 10,000-file corpus, and their JSON
-output must be identical byte for byte. A result is reported only for the
-workload measured. The
-[benchmarks against madge and dpdm](../../guides/comparison/#performance) name
-the exact commit of each repository and the script that reproduces them.
+Optimization followed a fixed loop: profile, form a hypothesis, change one
+thing, then measure the old and new binaries against each other. A change that
+did not pay for itself was reverted, and the record says so.
+
+**Profiling the hot path.** `cargo xtask profile` builds jscycles with
+[Hotpath](https://github.com/pawurb/hotpath), an opt-in timing profiler, and
+runs four generated workloads: fan-in (many files importing a few),
+call-heavy (dense `require` and dynamic `import()`), directory indexes (one
+`index.ts` per directory, in a ring) and a monorepo with per-package
+tsconfig inheritance, workspace aliases and a package ring. Each run must
+still find the expected cycles and exit status, and must write a fresh profile
+in which the scanner was actually sampled, so a profile of a broken or
+empty run cannot pass. The profiler is a Cargo feature that the normal build
+does not include, so released binaries contain none of it.
+
+**What the profiles found, and what was done:**
+
+- The patterns that recognize `require` and `import()` calls were compiled
+  again for every file. They are now built once per grammar.
+- Resolving one import canonicalized the same target paths over and over.
+  Each extraction now caches the canonical identities, and the cache is
+  cleared between extractions so one file's results cannot leak into another.
+- With more worker threads, three separate byte-quota reservations per import
+  contended with each other. They are now one checked reservation, which falls
+  back to the original sequence on overflow, so the quota still rejects
+  exactly what it rejected before.
+- Workspace alias mapping reserved quota once per pattern per lookup. It now
+  reserves the total once, with checked overflow.
+- A stack sample during the deep-source test showed repeated tree searches.
+  The extractor now walks the syntax tree once with a single cursor, which
+  also removed three dependencies.
+
+**How a speedup is measured.** Both binaries are saved, built normally (not
+the profiling build), and run alternately, 21 times each after a warm-up, on
+the same generated corpus. Every one of those runs must produce JSON identical
+byte for byte to the other binary's and contain the cycles the generator
+planted, so a faster result that is also a wrong result is impossible to
+report. Each record keeps the hashes of both binaries
+and the corpus, and every individual sample, not just the median:
+
+| Workload | Before | After | Change |
+| --- | ---: | ---: | ---: |
+| 10,000 files, default workers | 148.94 ms | 127.40 ms | 14.5% lower |
+| 1,000 files, default workers | 16.94 ms | 12.96 ms | 23.5% lower |
+| 4,096 workspace aliases | 155.45 ms | 127.57 ms | 17.9% lower |
+| Call-heavy, 10,000 files | 299.92 ms | 271.54 ms | 9.5% lower |
+
+**What was not claimed.** The same records are just as careful about results
+that were not wins:
+
+- The 512-alias workload got about 1% slower with the alias change. That is
+  recorded next to the 17.9% gain on the larger workload.
+- Changes within sample variation, such as directory indexes at 632.14 versus
+  639.29 ms, are reported as "no speedup claimed", not rounded into a win.
+- A profile suggested that setting up the native parser for each file
+  dominated extraction. Reusing parsers was tried, a four-workload pilot found
+  no useful improvement, and the experiment was removed, with the source
+  restored to its exact earlier hashes.
+- A correctness fix is never used as a speed baseline when the code before
+  it gave the wrong answer, because a fast wrong answer proves nothing.
+- Profiler timings are inclusive and overlap across functions and threads, so
+  they are never added up into a claimed speedup. Only end-to-end elapsed time
+  is.
+- Every number is a warm-cache local measurement of that synthetic workload,
+  with no service-level promise and no general "X times faster" claim.
+
+**Measuring the profiler itself.** A profiler that changes what it measures
+gives misleading answers, so its cost was measured too: normal builds,
+profiling builds with the profiler idle, and profiling builds with it active,
+rotated in alternating and reversed order over 21 samples each, after every
+other check had finished so nothing competed for the machine. Idle cost
+nothing measurable (31.90 versus 31.89 ms on 1,000 fan-in files). Active
+profiling added about 10% (35.13 ms).
+
+**Against other tools.** The
+[benchmarks against madge and dpdm](../../guides/comparison/#performance) use
+real open-source repositories pinned to exact commits, report the median of
+five runs after a warm-up, and include the script that reproduces them. They were re-run after later changes to confirm the published
+numbers still held.
+
+Each comparison has a machine-readable record in
+[`docs/maintainers/evidence/`](https://github.com/ALMaclaine/jscycles/tree/main/docs/maintainers/evidence),
+and the full write-up is in the
+[quality engineering record](https://github.com/ALMaclaine/jscycles/blob/main/docs/maintainers/quality-engineering.md).
 
 ## The compiler is not allowed to be lenient
 
@@ -231,6 +310,7 @@ runs on Windows.
 None of this needed genius. It needed the willingness to do the boring part
 again, every time, completely: run the 1,000-project comparison after each
 change, look at every one of 970 mutants, re-run every documented command,
+profile before optimizing and throw away the optimization that did not help,
 write down the reason for every exception, keep reviewing after the ninth
 round. People are capable of all of it, and almost nobody does it for a tool
 this size, because the motivation runs out long before the checklist does.
