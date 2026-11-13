@@ -8,6 +8,19 @@ the [upgrade notes](docs/migration-0.2.md).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-13
+
+### Changed
+
+- Package cycles no longer need a workspace. Every scanned package takes part,
+  including the workspace root, packages that are not listed as workspace
+  members, and repositories with several packages and no workspace
+  configuration: an import that resolves to a file another package owns, by a
+  relative path or a tsconfig alias, is an edge to that package. A loop
+  through such packages was previously not reported. Bare names (`@acme/core`)
+  are still package edges only for workspace members, since without a
+  workspace they resolve through `node_modules`.
+
 ## [0.2.1] - 2026-11-13
 
 No change to analysis or output.
@@ -101,7 +114,8 @@ results on the same repository, and compare before relying on them in CI.
 
 Initial release.
 
-[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ALMaclaine/jscycles/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ALMaclaine/jscycles/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ALMaclaine/jscycles/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/ALMaclaine/jscycles/compare/v0.1.0...v0.1.1

@@ -42,8 +42,8 @@ paths, `paths` aliases from the package's `tsconfig.json` (following
 `extends`), extension and `index` lookup, and `.js` specifiers that name a
 `.ts` source. A specifier that names a workspace member, such as
 `@acme/utils` or `@acme/utils/strings`, becomes a dependency between packages,
-and so does any import that resolves to a file another member owns, whether
-through a relative path or an alias.
+and so does any import that resolves to a file another package owns, whether
+through a relative path or an alias, with or without a workspace.
 
 Anything else (packages from `node_modules`, and specifiers that resolve to no
 file) is not part of the graph. The full rules are in
@@ -69,7 +69,7 @@ usually splits the tangle; if a loop remains, the next run shows it.
 
 ## 5. Find package cycles
 
-Between workspace packages, the graph is small, so jscycles lists **every**
+Between packages, the graph is small, so jscycles lists **every**
 elementary cycle, each starting from its alphabetically first package. An
 edge exists only where a file actually imports another package; dependencies
 declared in `package.json` but never imported do not count. With `-v`, each

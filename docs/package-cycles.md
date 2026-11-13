@@ -1,7 +1,6 @@
 # Package cycles
 
-In a monorepo, a package cycle is a loop of workspace packages that import
-each other: `@myorg/core` imports `@myorg/utils`, which imports
+In a monorepo, a package cycle is a loop of packages that import each other: `@myorg/core` imports `@myorg/utils`, which imports
 `@myorg/core`. Package managers and bundlers usually tolerate these, but they
 make build order ambiguous, defeat incremental builds, and often hide the
 same runtime initialization problems as file cycles.
@@ -22,11 +21,17 @@ this order:
 Globs follow the package managers' rules: `*` matches one directory level,
 `**` any number, and `!pattern` excludes. Each member needs a `package.json`
 with a `name`, and names must be unique; a duplicate is an error rather than
-a guess. Without a workspace, there are no package cycles to report.
+a guess.
+
+The workspace decides which bare names (`@myorg/b`) are local packages.
+Package cycles do not need one: every scanned package (each `package.json`
+with a `name`) takes part, including the workspace root and packages that are
+not listed as members, through imports that reach its files.
 
 ## What creates an edge
 
-An edge from package A to package B comes from a file in A that imports B:
+An edge from package A to package B comes from a file in A that imports B.
+For a workspace member B:
 
 - by name: `import { x } from '@myorg/b'`, including subpaths such as
   `@myorg/b/format` and `require('@myorg/b')`;
@@ -35,8 +40,11 @@ An edge from package A to package B comes from a file in A that imports B:
 - through a relative path into B's directory, such as `../../b/src/x`. Any
   import that resolves to a file B owns counts, however it is spelled.
 
-The nearest package owns a file: a file in a named package nested inside B,
-or in an excluded directory, is not B's. Importing another package by name is
+For any other scanned package B, with or without a workspace, only the last
+two forms apply: a bare name would resolve through `node_modules`.
+
+The nearest package owns a file: a file in a named package nested inside B
+belongs to that package, and a file in an excluded directory to none. Importing another package by name is
 still the better practice, since relative paths across packages bypass its
 `exports` and break when the packages are published, but the dependency is
 real either way and jscycles reports the cycle.

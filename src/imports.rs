@@ -97,6 +97,10 @@ pub struct ImportExtractor {
     /// a file link belongs to the owner of its target.
     owners: Arc<[PathBuf]>,
 
+    /// Names of the scanned packages by canonical root, so an import that
+    /// resolves into another package's files is a dependency on it.
+    package_names: Arc<HashMap<PathBuf, String>>,
+
     /// Leave out imports erased from JavaScript output.
     skip_type_imports: bool,
 
@@ -118,6 +122,7 @@ impl ImportExtractor {
             invalid_ignore: None,
             nested_packages: HashSet::new(),
             owners: Arc::from(Vec::new()),
+            package_names: Arc::new(HashMap::new()),
             skip_type_imports: false,
             resolution_cache: Arc::new(Mutex::new(ResolutionEntries::default())),
             budget: AnalysisBudget::default(),
@@ -204,6 +209,15 @@ impl ImportExtractor {
     #[must_use]
     pub fn with_owners(mut self, owners: Arc<[PathBuf]>) -> Self {
         self.owners = owners;
+        self
+    }
+
+    /// Share the names of the scanned packages, keyed by canonical root. An
+    /// import that resolves to a file another of these packages owns becomes
+    /// a package dependency, with or without a workspace.
+    #[must_use]
+    pub fn with_package_names(mut self, names: Arc<HashMap<PathBuf, String>>) -> Self {
+        self.package_names = names;
         self
     }
 
@@ -524,40 +538,64 @@ impl ImportExtractor {
         } else {
             self.resolve_external_or_alias(from, specifier)?
         };
-        self.attribute_to_member(from, target)
+        self.attribute_to_owner(from, target)
     }
 
-    /// A file resolved into another workspace member, by a relative path or a
-    /// file alias, is a dependency on that member, as if imported by name.
-    /// The nearest package root containing the file owns it: a nested
-    /// non-member package or an excluded directory keeps it a file import.
-    fn attribute_to_member(
+    /// A file resolved into another package, by a relative path or a file
+    /// alias, is a dependency on that package, as if imported by name. The
+    /// nearest package root or excluded boundary containing the file owns it:
+    /// an excluded directory, or a package outside the scan that is not a
+    /// workspace member, keeps it a file import. No workspace is required.
+    fn attribute_to_owner(
         &self,
         from: &Path,
         target: ImportTarget,
     ) -> Result<ImportTarget, ExtractError> {
-        let (Some(workspace), ImportTarget::Resolved(path)) = (&self.workspace, &target) else {
+        let ImportTarget::Resolved(path) = &target else {
             return Ok(target);
         };
         if self.owned_by_extracting_package(path)? {
             return Ok(target);
         }
-        let units_needed = units(self.owners.len().saturating_add(workspace.packages.len()));
+        let members = self
+            .workspace
+            .as_deref()
+            .map(|workspace| &workspace.packages);
+        let units_needed = units(
+            self.owners
+                .len()
+                .saturating_add(self.package_names.len())
+                .saturating_add(members.map_or(0, HashMap::len)),
+        );
         self.budget.consume(Resource::Work, units_needed)?;
         let depth = |root: &Path| root.components().count();
-        let Some((name, member)) = workspace
-            .packages
+        let Some((root, name)) = self
+            .package_names
             .iter()
-            .filter(|(_, directory)| path.starts_with(directory))
-            .max_by_key(|(_, directory)| depth(directory))
+            .map(|(root, name)| (root.as_path(), name))
+            .chain(
+                members
+                    .into_iter()
+                    .flatten()
+                    .map(|(name, root)| (root.as_path(), name)),
+            )
+            .filter(|(root, _)| path.starts_with(root))
+            .max_by_key(|(root, _)| depth(root))
         else {
             return Ok(target);
         };
-        let nearer_owner = self
+        let nearer_boundary = self
             .owners
             .iter()
-            .any(|root| path.starts_with(root) && depth(root) > depth(member));
-        if nearer_owner || self.is_own_package(workspace, name, from) {
+            .any(|owner| path.starts_with(owner) && depth(owner) > depth(root));
+        let own = self
+            .extracting_root()
+            .is_some_and(|extracting| extracting == root)
+            || self
+                .workspace
+                .as_deref()
+                .is_some_and(|workspace| self.is_own_package(workspace, name, from));
+        if nearer_boundary || own {
             return Ok(target);
         }
         Ok(ImportTarget::WorkspacePackage {
@@ -566,16 +604,19 @@ impl ImportExtractor {
         })
     }
 
-    /// The package being extracted owns `path`: it lies under the package root
-    /// and under none of the packages nested in it.
-    fn owned_by_extracting_package(&self, path: &Path) -> Result<bool, ExtractError> {
-        let root = self
-            .resolution_cache
+    /// Canonical root of the package being extracted, once extraction began.
+    fn extracting_root(&self) -> Option<PathBuf> {
+        self.resolution_cache
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .root
-            .clone();
-        let Some(root) = root else {
+            .clone()
+    }
+
+    /// The package being extracted owns `path`: it lies under the package root
+    /// and under none of the packages nested in it.
+    fn owned_by_extracting_package(&self, path: &Path) -> Result<bool, ExtractError> {
+        let Some(root) = self.extracting_root() else {
             return Ok(false);
         };
         if !path.starts_with(&root) {
