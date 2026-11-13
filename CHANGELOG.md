@@ -8,6 +8,18 @@ the [upgrade notes](docs/migration-0.2.md).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-13
+
+No change to analysis or output.
+
+### Changed
+
+- Release publishing to npm and crates.io runs from CI through trusted
+  publishing, with no stored registry token. npm packages carry provenance.
+- The crate's keywords are `circular-imports` and `dependency-cycles` (the
+  0.2.0 keyword was too long for crates.io, so 0.2.0 on crates.io was
+  published from a commit that already contained this fix).
+
 ## [0.2.0] - 2026-11-12
 
 Many fixes in this release change which cycles are reported. Most reveal real
@@ -89,7 +101,8 @@ results on the same repository, and compare before relying on them in CI.
 
 Initial release.
 
-[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/ALMaclaine/jscycles/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ALMaclaine/jscycles/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/ALMaclaine/jscycles/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ALMaclaine/jscycles/releases/tag/v0.1.0

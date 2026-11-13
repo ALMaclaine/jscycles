@@ -115,7 +115,7 @@ unimplemented = "deny"
 [package]
 name = "jscycles"
 publish = ["crates-io"]
-version = "0.2.0"
+version = "0.2.1"
 edition.workspace = true
 rust-version.workspace = true
 description = "Find circular imports between files and workspace packages in JavaScript and TypeScript projects"
