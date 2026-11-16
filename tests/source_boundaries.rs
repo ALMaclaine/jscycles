@@ -7,6 +7,7 @@
 use std::fs;
 use std::io;
 use std::io::ErrorKind;
+#[cfg(unix)]
 use std::os::unix::fs as unix_fs;
 use std::path;
 use std::path::Path;

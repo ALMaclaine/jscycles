@@ -2,7 +2,9 @@
 #![allow(clippy::expect_used, reason = "Fixture failures must fail the test")]
 
 use std::fs;
+#[cfg(unix)]
 use std::os::unix::fs as unix_fs;
+#[cfg(unix)]
 use std::process;
 
 use budget::{AnalysisBudget, AnalysisLimits, Resource};

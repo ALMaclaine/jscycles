@@ -6,6 +6,7 @@
 
 use std::fs;
 use std::io::Write as _;
+#[cfg(unix)]
 use std::net::Shutdown;
 use std::path::Path;
 use std::process::{Command, Output, Stdio};

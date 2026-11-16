@@ -6,6 +6,7 @@
 
 use std::collections::HashSet;
 use std::fs;
+#[cfg(unix)]
 use std::os::unix::fs as unix_fs;
 use std::path::Path;
 use std::process::Command;

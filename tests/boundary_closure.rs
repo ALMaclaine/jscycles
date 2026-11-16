@@ -4,9 +4,12 @@
     reason = "Setup failures must fail consumer tests"
 )]
 use std::error;
+#[cfg(unix)]
 use std::ffi::OsString;
 use std::fs;
+#[cfg(unix)]
 use std::os::unix::fs as unix_fs;
+#[cfg(unix)]
 use std::path;
 use std::path::Path;
 use std::process::{Command, Output};
@@ -531,7 +534,7 @@ fn config_origin_paths_do_not_undergo_lossy_unicode_conversion() {
     package(&root, "a", "@self");
     let config_dir = temp
         .path()
-        .join(std::ffi::OsString::from_vec(b"config-\xff".to_vec()));
+        .join(OsString::from_vec(b"config-\xff".to_vec()));
     fs::create_dir(&config_dir).expect("non-UTF-8 config directory");
     let config_path = config_dir.join("tsconfig.json");
     for (specifier, mapping) in [

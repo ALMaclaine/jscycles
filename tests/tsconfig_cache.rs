@@ -3,6 +3,7 @@
 
 use std::env;
 use std::fs;
+#[cfg(unix)]
 use std::os::unix::fs as unix_fs;
 use std::path;
 use std::path::Path;
@@ -91,9 +92,9 @@ fn relative_cache_keys_include_the_working_directory() {
                 .expect("contextual load");
             #[cfg(windows)]
             {
-                let current = std::env::current_dir().expect("current directory");
-                if let Some(std::path::Component::Prefix(prefix)) = current.components().next()
-                    && let std::path::Prefix::Disk(drive) | std::path::Prefix::VerbatimDisk(drive) =
+                let current = env::current_dir().expect("current directory");
+                if let Some(path::Component::Prefix(prefix)) = current.components().next()
+                    && let path::Prefix::Disk(drive) | path::Prefix::VerbatimDisk(drive) =
                         prefix.kind()
                 {
                     let drive_relative = format!("{}:tsconfig.json", char::from(drive));
