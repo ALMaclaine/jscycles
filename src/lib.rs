@@ -9,7 +9,7 @@
 //! # fn main() -> Result<(), jscycles::JscyclesError> {
 //! let report = Scan::new("path/to/repo").run()?;
 //! if report.has_cycles() {
-//!     std::io::Write::write_all(&mut std::io::stdout(), &report.to_human(false)?)?;
+//!     std::io::Write::write_all(&mut std::io::stdout(), &report.to_human(jscycles::ColorMode::Plain)?)?;
 //! }
 //! # Ok(())
 //! # }
@@ -20,17 +20,17 @@
 //! scan is built from, for callers that supply their own import graph:
 //!
 //! ```
-//! use jscycles::{CycleDetector, DependencyGraph, Import, ImportTarget};
+//! use jscycles::{cycles, DependencyGraph, Import, ImportTarget};
 //! use std::path::PathBuf;
 //!
-//! let imports = vec![Import {
-//!     source: PathBuf::from("a.ts"),
-//!     target: ImportTarget::Resolved(PathBuf::from("a.ts")),
-//!     specifier: "./a".into(),
-//! }];
-//! let cycles = CycleDetector::detect(&DependencyGraph::from_imports(&imports));
-//! assert_eq!(cycles.len(), 1);
-//! assert_eq!(cycles[0].path, vec![PathBuf::from("a.ts"), PathBuf::from("a.ts")]);
+//! let imports = vec![Import::new(
+//!     PathBuf::from("a.ts"),
+//!     ImportTarget::Resolved(PathBuf::from("a.ts")),
+//!     "./a",
+//! )];
+//! let found = cycles::file_cycles(&DependencyGraph::from_imports(&imports));
+//! assert_eq!(found.len(), 1);
+//! assert_eq!(found[0].path, vec![PathBuf::from("a.ts"), PathBuf::from("a.ts")]);
 //! ```
 
 mod analysis;
@@ -325,15 +325,12 @@ pub enum WorkspaceError {
 pub const DEFAULT_EXTENSIONS: [&str; 8] = ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs"];
 
 pub use config::Config;
-pub use cycles::{
-    Cycle, CycleDetector, PackageCycle, PackageCycleDetector, PackageCycleEdge,
-    PackageCycleWithFiles,
-};
+pub use cycles::{Cycle, PackageCycle, PackageCycleEdge, PackageCycleWithFiles};
 pub use discovery::{Discovered, Package, PackageDiscovery};
 pub use graph::{DependencyGraph, EdgeEvidence, PackageDependencyGraph};
 pub use imports::{Import, ImportExtractor, ImportTarget};
 pub use output::{
-    CycleFilter, HumanFormatter, JsonFormatter, OutputFormatter, PackageResult, Results,
+    ColorMode, CycleFilter, HumanFormatter, JsonFormatter, OutputFormatter, PackageResult, Results,
     UnifiedOutputFormatter, UnifiedResults,
 };
 pub use scan::{Scan, ScanReport, TsConfigSource};

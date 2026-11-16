@@ -107,6 +107,43 @@ configuration/discovery paths before expanding assurance; line coverage includes
 test source and is not a product correctness score.
 
 
+## Library API style pass
+
+The 0.5 library API changes, listed in the [upgrade notes](migration-0.5.md),
+apply the Google Rust style guide's API design rules for library code
+(<https://google.github.io/styleguide/rustguide.html>). They apply API-004,
+API-006, API-007, API-008 and API-010 at the source revision above.
+
+- API-004 (borrowed forms): package override lookups return borrowed slices
+  instead of cloned vectors.
+- API-006 (`?Sized`): the formatter traits take `W: Write + ?Sized`. The
+  caller benefit is that existing `&mut dyn Write` arguments keep compiling.
+  The implementations forward through the sized `&mut W`, so the
+  non-generic bodies are not monomorphized per writer type.
+- API-007 (trait promises): the added `PartialEq`/`Eq`/`Hash` implementations
+  are derived and structural, so equal values hash alike. `Debug` for
+  `ImportExtractor` shows its settings and omits caches
+  (`finish_non_exhaustive`). The crate denies
+  `missing_debug_implementations` so later public types keep `Debug`.
+- API-008 (consumer tests): tests construct results and metadata through the
+  new constructors. A malformed nearest tsconfig is checked as an error from
+  `TsConfig::discover`, and as a recorded rejection from `TsConfigCache`.
+- API-010 (compatibility):
+  - `#[non_exhaustive]` is applied where expansion is concrete:
+    - result and metadata structs, which gain fields as reports grow;
+    - classification enums, which gain variants as resolution and workspace
+      formats grow.
+  - `Config`, `ScanConfig` and `AnalysisLimits` stay exhaustive, because
+    record-update construction is their intended use.
+  - `Config::load_or_default` is removed, and `TsConfig::discover` now
+    reports errors. Both used to report a bad input as a clean default,
+    contrary to the boundary policy in [checks](../tooling/checks.md).
+
+Lint policy exception: Clippy's `missing_const_for_fn` (nursery) conflicts
+with treating public `const fn` as a permanent promise. Each public builder,
+report accessor or graph accessor that may need non-const work carries a narrow
+`#[expect]` with that reason. Plain-data constructors and accessors stay `const`.
+
 ## Subsequent adherence audit
 
 The [adherence record](maintainers/rust-oe-adherence.md) closes concrete selection, output-mode,

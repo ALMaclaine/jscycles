@@ -18,11 +18,10 @@ fn workspace(root: &Path) -> Workspace {
         fs::create_dir_all(&path).expect("package directory");
         let _ = packages.insert(name.to_owned(), fs::canonicalize(path).expect("identity"));
     }
-    Workspace {
-        root: root.to_path_buf(),
-        format: WorkspaceFormat::Npm,
-        packages,
-        aliases: [("sentinel".to_owned(), "a".to_owned())].into(),
+    {
+        let mut workspace = Workspace::new(root.to_path_buf(), WorkspaceFormat::Npm, packages);
+        workspace.aliases = [("sentinel".to_owned(), "a".to_owned())].into();
+        workspace
     }
 }
 
@@ -173,35 +172,16 @@ fn caller_constructed_alias_tables_preserve_first_match_order() {
     let original = workspace(temp.path());
     let a = original.packages.get("a").expect("a").clone();
     let b = original.packages.get("b").expect("b").clone();
-    let exact_a = PathAlias {
-        prefix: "alias".to_owned(),
-        has_wildcard: false,
-        replacements: vec![a],
-    };
-    let exact_b = PathAlias {
-        prefix: "alias".to_owned(),
-        has_wildcard: false,
-        replacements: vec![b.clone()],
-    };
-    let wildcard_b = PathAlias {
-        prefix: String::new(),
-        has_wildcard: true,
-        replacements: vec![b.join("*")],
-    };
-    let empty = PathAlias {
-        prefix: "alias".to_owned(),
-        has_wildcard: false,
-        replacements: vec![],
-    };
+    let exact_a = PathAlias::exact("alias".to_owned(), vec![a]);
+    let exact_b = PathAlias::exact("alias".to_owned(), vec![b.clone()]);
+    let wildcard_b = PathAlias::wildcard(String::new(), vec![b.join("*")]);
+    let empty = PathAlias::exact("alias".to_owned(), vec![]);
     for paths in [
         vec![wildcard_b.clone(), exact_a.clone()],
         vec![exact_b, exact_a],
         vec![empty, wildcard_b],
     ] {
-        let config = TsConfig {
-            base_url: temp.path().to_path_buf(),
-            paths,
-        };
+        let config = TsConfig::new(temp.path().to_path_buf(), paths);
         let mut selected = original.clone();
         selected
             .load_path_aliases(Some(&config), &AnalysisBudget::default())
@@ -217,7 +197,7 @@ fn caller_constructed_alias_tables_preserve_first_match_order() {
             "canonical name follows the same table"
         );
         assert_eq!(
-            selected.get_package_path("alias/subpath"),
+            selected.package_path("alias/subpath"),
             Some(&b),
             "path and name agree"
         );

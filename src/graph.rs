@@ -60,7 +60,11 @@ impl DependencyGraph {
     /// Get all nodes in the graph.
     #[inline]
     #[must_use]
-    pub const fn nodes(&self) -> &HashSet<PathBuf> {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn nodes(&self) -> &HashSet<PathBuf> {
         &self.nodes
     }
 
@@ -92,6 +96,7 @@ impl DependencyGraph {
 
     /// Get the number of edges in the graph.
     #[inline]
+    #[must_use]
     pub fn edge_count(&self) -> usize {
         self.edges.values().map(HashSet::len).sum()
     }
@@ -129,7 +134,11 @@ impl EdgeEvidence {
     /// Get the number of files that contribute to this edge.
     #[inline]
     #[must_use]
-    pub const fn file_count(&self) -> usize {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn file_count(&self) -> usize {
         self.files.len()
     }
 }
@@ -259,7 +268,11 @@ impl PackageDependencyGraph {
     /// Get all nodes in the graph.
     #[inline]
     #[must_use]
-    pub const fn nodes(&self) -> &HashSet<String> {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn nodes(&self) -> &HashSet<String> {
         &self.nodes
     }
 
@@ -291,6 +304,7 @@ impl PackageDependencyGraph {
 
     /// Get the number of edges in the graph.
     #[inline]
+    #[must_use]
     pub fn edge_count(&self) -> usize {
         self.edges.values().map(HashSet::len).sum()
     }

@@ -85,8 +85,8 @@ reads the files afresh.
   instead, and each edge lists the files and import specifiers behind it.
 - `has_cycles()` is true exactly when the command would exit `1`.
 - `to_json()` returns the command's `--json` output, described in the
-  [JSON output reference](../../reference/json-output/). `to_human(color)`
-  returns its human-readable output.
+  [JSON output reference](../../reference/json-output/). `to_human(ColorMode::Plain)`
+  returns its human-readable output; `ColorMode::Ansi` adds terminal colors.
 - `ignored_tsconfigs()` lists automatically found `tsconfig.json` files that
   could not be used, with the reason. Their path aliases were not applied,
   which can hide a cycle, so show these to your users; the command prints them
@@ -115,16 +115,16 @@ you already have an import graph from somewhere else and only need cycle
 detection:
 
 ```rust
-use jscycles::{CycleDetector, DependencyGraph, Import, ImportTarget};
+use jscycles::{cycles, DependencyGraph, Import, ImportTarget};
 use std::path::PathBuf;
 
-let imports = vec![Import {
-    source: PathBuf::from("a.ts"),
-    target: ImportTarget::Resolved(PathBuf::from("a.ts")),
-    specifier: "./a".into(),
-}];
-let cycles = CycleDetector::detect(&DependencyGraph::from_imports(&imports));
-assert_eq!(cycles.len(), 1);
+let imports = vec![Import::new(
+    PathBuf::from("a.ts"),
+    ImportTarget::Resolved(PathBuf::from("a.ts")),
+    "./a",
+)];
+let found = cycles::file_cycles(&DependencyGraph::from_imports(&imports));
+assert_eq!(found.len(), 1);
 ```
 
 To analyze real files, use `Scan` rather than combining the lower-level

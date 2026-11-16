@@ -32,6 +32,26 @@ fn default_extensions() -> Vec<String> {
 }
 
 /// Root configuration for jscycles.
+///
+/// Parse one from YAML, or build it with functional record update syntax so
+/// that fields added later keep their defaults:
+///
+/// ```
+/// use jscycles::{budget::AnalysisLimits, Config};
+///
+/// let config = Config::parse("defaults:\n  extensions: [ts]\n")?;
+/// assert_eq!(config.extensions_for_package("@app/web"), ["ts"]);
+///
+/// let config = Config {
+///     limits: AnalysisLimits {
+///         max_files: 10,
+///         ..AnalysisLimits::default()
+///     },
+///     ..Config::default()
+/// };
+/// assert!(config.validate().is_ok());
+/// # Ok::<(), jscycles::ConfigError>(())
+/// ```
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -210,30 +230,22 @@ impl Config {
             .map_or_else(|| Ok(Self::default()), |_| Self::load(path))
     }
 
-    /// Legacy best-effort loader; defaults on absent, unreadable, or invalid files.
-    ///
-    /// Use [`Self::try_load_or_default`] when a failed configuration must be reported.
-    #[inline]
-    #[must_use]
-    pub fn load_or_default(path: &Path) -> Self {
-        Self::load(path).unwrap_or_default()
-    }
-
     /// Get the effective extensions for a package, considering overrides.
     #[inline]
     #[must_use]
-    pub fn extensions_for_package(&self, package_name: &str) -> Vec<String> {
+    pub fn extensions_for_package(&self, package_name: &str) -> &[String] {
         self.find_matching_package_config(package_name)
-            .and_then(|pkg_config| pkg_config.extensions.clone())
-            .unwrap_or_else(|| self.defaults.extensions.clone())
+            .and_then(|package| package.extensions.as_deref())
+            .unwrap_or(&self.defaults.extensions)
     }
 
     /// Get the ignore patterns for a package.
     #[inline]
     #[must_use]
-    pub fn ignore_for_package(&self, package_name: &str) -> Option<Vec<String>> {
-        let pkg_config = self.find_matching_package_config(package_name)?;
-        pkg_config.ignore.clone()
+    pub fn ignore_for_package(&self, package_name: &str) -> Option<&[String]> {
+        self.find_matching_package_config(package_name)?
+            .ignore
+            .as_deref()
     }
 
     /// Find the first matching package config for a package name.

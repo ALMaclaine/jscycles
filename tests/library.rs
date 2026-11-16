@@ -89,7 +89,9 @@ fn explicit_package_scans_match_the_command_byte_for_byte() {
             let mut human_arguments = flags.clone();
             human_arguments.push(root_text);
             assert_eq!(
-                report.to_human(false).expect("output fits"),
+                report
+                    .to_human(jscycles::ColorMode::Plain)
+                    .expect("output fits"),
                 cli(cwd.path(), &human_arguments).stdout,
                 "human output for {context}"
             );

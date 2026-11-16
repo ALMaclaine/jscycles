@@ -110,9 +110,9 @@ Discovery, workspace/tsconfig loading, and extraction expose budget-aware
 constructors/loaders; the CLI uses one handle throughout. Tsconfig/workspace
 snapshots can be shared through `Arc`. Legacy optional metadata APIs retain
 best-effort return types; callers using those with a shared budget must call
-`check()` before accepting success. Legacy `Config::load_or_default` and the
-infallible workspace-package selection convenience API retain their fallback
-and allocation behavior; they are not the CLI's bounded entry points.
+`check()` before accepting success. The infallible workspace-package selection
+convenience API retains its allocation behavior; it is not one of the CLI's
+bounded entry points.
 
 `TsConfigCache::with_budget` starts empty caches, including when called on a used
 cache or its clone. Values admitted by a previous budget cannot satisfy a new
@@ -179,12 +179,13 @@ not sources, trees, parser state or checkout metadata. They are separate from th
 operation's cumulative input/cache admissions. Source-dependent work, native u32
 length checks, whole-tree rejection and all source-range checks remain unchanged.
 
-`CycleDetector::try_detect_imports` and the package detector's
-`try_detect_imports` / `try_detect_imports_with_files` borrow imports and admit
-graph nodes/edges before allocating their analysis graph. `try_detect` checks
-analysis of a caller-owned graph; the caller already owns and has allocated
-that input. The existing `detect` and `detect_with_files` signatures remain
-infallible and have no quotas; they use the same iterative algorithms. Choose
+`cycles::try_file_cycles_from_imports`, `cycles::try_package_cycles_from_imports`
+and `cycles::try_package_cycles_with_files_from_imports` borrow imports and admit
+graph nodes/edges before allocating their analysis graph. `try_file_cycles` and
+`try_package_cycles` check analysis of a caller-owned graph; the caller already
+owns and has allocated that input. `file_cycles`, `package_cycles` and
+`package_cycles_with_files` remain infallible and have no quotas; they use the
+same iterative algorithms. Choose
 the fallible APIs when bounding search or enumeration is required.
 
 Adding `Config::limits` and quota variants to public error enums changes source

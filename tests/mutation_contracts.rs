@@ -1,7 +1,7 @@
 //! Consumer contracts added after mutation analysis of graph and metadata paths.
 
 use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-use jscycles::cycles::PackageCycleDetector;
+use jscycles::cycles;
 use jscycles::graph::PackageDependencyGraph;
 use jscycles::{Config, TsConfig, TsConfigError};
 use jscycles::{TsConfigCache, Workspace};
@@ -207,7 +207,7 @@ fn package_json_directories_do_not_become_workspace_manifests() {
         "only regular manifest files define packages"
     );
 }
-use jscycles::{CycleDetector, DependencyGraph};
+use jscycles::DependencyGraph;
 
 #[test]
 fn effective_package_settings_preserve_defaults_globs_and_lexical_precedence() {
@@ -244,10 +244,7 @@ packages:
     );
     assert_eq!(
         config.ignore_for_package("@org/lib"),
-        Some(vec![
-            "**/generated/**".to_owned(),
-            "**/*.spec.ts".to_owned()
-        ]),
+        Some(["**/generated/**".to_owned(), "**/*.spec.ts".to_owned()].as_slice()),
         "preserve ignore values and order"
     );
     assert_eq!(
@@ -257,7 +254,7 @@ packages:
     );
     assert_eq!(
         config.ignore_for_package("plain"),
-        Some(vec![]),
+        Some([].as_slice()),
         "explicit empty ignore list differs from absence"
     );
 }
@@ -278,7 +275,7 @@ fn config_text_accepts_the_exact_size_limit_and_rejects_one_more_byte() {
 }
 
 #[test]
-fn configuration_loading_distinguishes_absence_errors_and_best_effort() {
+fn configuration_loading_distinguishes_absence_from_errors() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let path = directory.path().join("jscycles.yaml");
     assert_eq!(
@@ -291,9 +288,12 @@ fn configuration_loading_distinguishes_absence_errors_and_best_effort() {
     );
     std::fs::write(&path, "defaults:\n  extensions: [mjs]\n").expect("valid config");
     assert_eq!(
-        Config::load_or_default(&path).defaults.extensions,
+        Config::try_load_or_default(&path)
+            .expect("valid config")
+            .defaults
+            .extensions,
         ["mjs"],
-        "the compatibility loader must actually load valid settings"
+        "an existing file's settings are loaded"
     );
     // Unix reports ENOTDIR for a path beneath a file; Windows reports the
     // path as not found, which is absence there.
@@ -306,11 +306,6 @@ fn configuration_loading_distinguishes_absence_errors_and_best_effort() {
     assert!(
         Config::try_load_or_default(&path).is_err(),
         "malformed existing input is not absence"
-    );
-    assert_eq!(
-        Config::load_or_default(&path).defaults.extensions,
-        Config::default().defaults.extensions,
-        "legacy best effort retains its documented fallback"
     );
 }
 
@@ -364,7 +359,7 @@ fn public_detectors_return_cycles_in_lexical_order() {
             files.add_edge(PathBuf::from("b"), PathBuf::from("x"));
             packages.add_edge("b".to_owned(), "x".to_owned());
         }
-        let found: Vec<Vec<String>> = CycleDetector::detect(&files)
+        let found: Vec<Vec<String>> = cycles::file_cycles(&files)
             .into_iter()
             .map(|cycle| {
                 cycle
@@ -378,7 +373,7 @@ fn public_detectors_return_cycles_in_lexical_order() {
             found, expected,
             "file SCC completion order is not report order"
         );
-        let package_cycles: Vec<_> = PackageCycleDetector::detect(&packages)
+        let package_cycles: Vec<_> = cycles::package_cycles(&packages)
             .into_iter()
             .map(|cycle| cycle.packages)
             .collect();
@@ -395,7 +390,7 @@ fn multi_file_components_prefer_a_multi_file_witness_over_a_self_import() {
     for (from, to) in [("a", "a"), ("a", "b"), ("b", "a")] {
         graph.add_edge(PathBuf::from(from), PathBuf::from(to));
     }
-    let found = CycleDetector::detect(&graph);
+    let found = cycles::file_cycles(&graph);
     assert_eq!(found.len(), 1, "one cyclic component");
     assert_eq!(
         found[0].path,
@@ -416,7 +411,7 @@ fn long_graph_labels_cannot_bypass_payload_admission() {
     })
     .expect("positive limit");
     assert_eq!(
-        CycleDetector::try_detect(&files, &budget)
+        cycles::try_file_cycles(&files, &budget)
             .expect_err("label cannot fit")
             .resource(),
         Resource::GraphBytes,
@@ -432,7 +427,7 @@ fn long_graph_labels_cannot_bypass_payload_admission() {
     })
     .expect("positive limit");
     assert_eq!(
-        PackageCycleDetector::try_detect(&packages, &package_budget)
+        cycles::try_package_cycles(&packages, &package_budget)
             .expect_err("label cannot fit")
             .resource(),
         Resource::GraphBytes,
@@ -451,7 +446,7 @@ fn long_cycle_labels_cannot_bypass_result_payload_admission() {
     })
     .expect("positive limit");
     assert_eq!(
-        CycleDetector::try_detect(&files, &budget)
+        cycles::try_file_cycles(&files, &budget)
             .expect_err("cycle label cannot fit")
             .resource(),
         Resource::CycleBytes,
@@ -467,7 +462,7 @@ fn long_cycle_labels_cannot_bypass_result_payload_admission() {
     })
     .expect("positive limit");
     assert_eq!(
-        PackageCycleDetector::try_detect(&packages, &package_budget)
+        cycles::try_package_cycles(&packages, &package_budget)
             .expect_err("cycle label cannot fit")
             .resource(),
         Resource::CycleBytes,

@@ -16,8 +16,8 @@ use jscycles::imports::{ExtractionMode, ImportTarget};
 use jscycles::output::{
     CycleFilter, OutputFormatter as _, Results, UnifiedOutputFormatter as _, UnifiedResults,
 };
+use jscycles::{ColorMode, Cycle, HumanFormatter, JsonFormatter, PackageResult};
 use jscycles::{Config, PackageDiscovery};
-use jscycles::{Cycle, HumanFormatter, JsonFormatter, PackageResult};
 
 #[test]
 fn relative_specifiers_cannot_become_workspace_package_edges() {
@@ -27,15 +27,14 @@ fn relative_specifiers_cannot_become_workspace_package_edges() {
     fs::write(root.join("entry.ts"), "import './local'; import 'actual';").expect("source");
     // A member named "." must not capture the relative specifier "./local";
     // "actual" is a different member, so importing it is a package edge.
-    let workspace = Workspace {
-        root: root.clone(),
-        format: jscycles::workspace::WorkspaceFormat::Npm,
-        packages: [(".", root.clone()), ("actual", root.join("actual"))]
+    let workspace = Workspace::new(
+        root.clone(),
+        jscycles::workspace::WorkspaceFormat::Npm,
+        [(".", root.clone()), ("actual", root.join("actual"))]
             .map(|(name, path)| (name.to_owned(), path))
             .into_iter()
             .collect(),
-        aliases: std::collections::HashMap::new(),
-    };
+    );
     let imports = ImportExtractor::new(vec!["ts".to_owned()], None)
         .with_workspace(Some(workspace))
         .with_mode(ExtractionMode::WorkspaceOnly)
@@ -83,13 +82,13 @@ fn legacy_report_totals_and_human_summaries_describe_the_actual_packages() {
         "empty results have no cyclic packages"
     );
     for (name, count) in [("clean", 0), ("single", 1), ("multiple", 2)] {
-        results.packages.push(PackageResult {
-            name: name.to_owned(),
-            path: name.into(),
-            cycles: (0..count)
+        results.packages.push(PackageResult::new(
+            name.to_owned(),
+            name.into(),
+            (0..count)
                 .map(|_| Cycle::new(["a", "b", "a"].map(std::path::PathBuf::from).to_vec()))
                 .collect(),
-        });
+        ));
     }
     assert_eq!(
         results.packages_with_cycles(),
@@ -98,7 +97,7 @@ fn legacy_report_totals_and_human_summaries_describe_the_actual_packages() {
     );
     assert_eq!(results.total_cycles(), 3, "retain every cycle");
     let mut output = Vec::new();
-    HumanFormatter::new(false)
+    HumanFormatter::new(ColorMode::Plain)
         .format(&results, &mut output)
         .expect("human report");
     let text = String::from_utf8(output).expect("UTF-8 report");
@@ -118,16 +117,13 @@ fn human_package_counts_agree_with_the_json_cycle_arrays() {
                 if detailed {
                     results
                         .package_cycles_with_files
-                        .push(PackageCycleWithFiles {
-                            packages,
-                            edges: Vec::new(),
-                        });
+                        .push(PackageCycleWithFiles::new(packages, Vec::new()));
                 } else {
                     results.package_cycles.push(PackageCycle::new(packages));
                 }
             }
             let mut output = Vec::new();
-            HumanFormatter::new(false)
+            HumanFormatter::new(ColorMode::Plain)
                 .format_unified(&results, CycleFilter::Outer, &mut output)
                 .expect("human report");
             let word = if count == 1 { "cycle" } else { "cycles" };
@@ -165,15 +161,14 @@ fn formatter_write_errors_are_never_successful_reports() {
             Ok(())
         }
     }
-    let results = Results {
-        packages: vec![PackageResult {
-            name: "clean".to_owned(),
-            path: ".".into(),
-            cycles: Vec::new(),
-        }],
-    };
+    let mut results = Results::new();
+    results.packages = vec![PackageResult::new(
+        "clean".to_owned(),
+        ".".into(),
+        Vec::new(),
+    )];
     assert!(
-        HumanFormatter::new(false)
+        HumanFormatter::new(ColorMode::Plain)
             .format(&results, &mut RejectWrites)
             .is_err(),
         "even a summary-only write must propagate failure"
@@ -186,7 +181,7 @@ fn formatter_write_errors_are_never_successful_reports() {
     );
     for filter in [CycleFilter::All, CycleFilter::Inner, CycleFilter::Outer] {
         assert!(
-            HumanFormatter::new(false)
+            HumanFormatter::new(ColorMode::Plain)
                 .format_unified(&UnifiedResults::new(), filter, &mut RejectWrites)
                 .is_err(),
             "human {filter:?} write failure"

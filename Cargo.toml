@@ -17,6 +17,7 @@ ffi-unwind-calls = "forbid"
 keyword-idents-2018 = "forbid"
 keyword-idents-2024 = "forbid"
 macro-use-extern-crate = "forbid"
+missing-debug-implementations = "deny"  # public types support `{:?}` (Google Rust style: traits)
 meta-variable-misuse = "forbid"
 missing-abi = "forbid"
 missing-unsafe-on-extern = "forbid"

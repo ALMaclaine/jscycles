@@ -9,11 +9,11 @@ use std::process::Command;
 use std::sync::Arc;
 use std::thread;
 
+use jscycles::DependencyGraph;
 use jscycles::budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
-use jscycles::cycles::PackageCycleDetector;
+use jscycles::cycles;
 use jscycles::graph::PackageDependencyGraph;
 use jscycles::imports::{Import, ImportTarget};
-use jscycles::{CycleDetector, DependencyGraph};
 
 #[test]
 fn admissions_are_exact_checked_and_sticky() {
@@ -303,22 +303,22 @@ fn deep_chain_and_ring_fit_a_small_native_stack() {
                 files.add_edge(PathBuf::from(&pair[0]), PathBuf::from(&pair[1]));
                 packages.add_edge(pair[0].clone(), pair[1].clone());
             }
-            assert!(CycleDetector::detect(&files).is_empty(), "deep file DAG");
+            assert!(cycles::file_cycles(&files).is_empty(), "deep file DAG");
             assert!(
-                PackageCycleDetector::detect(&packages).is_empty(),
+                cycles::package_cycles(&packages).is_empty(),
                 "deep package DAG"
             );
             files.add_edge(PathBuf::from(&names[N - 1]), PathBuf::from(&names[0]));
             packages.add_edge(names[N - 1].clone(), names[0].clone());
             assert_eq!(
-                CycleDetector::try_detect(&files, &AnalysisBudget::default())
+                cycles::try_file_cycles(&files, &AnalysisBudget::default())
                     .expect("bounded file ring")[0]
                     .len(),
                 N,
                 "full ring retained"
             );
             assert_eq!(
-                PackageCycleDetector::try_detect(&packages, &AnalysisBudget::default())
+                cycles::try_package_cycles(&packages, &AnalysisBudget::default())
                     .expect("bounded package ring")[0]
                     .len(),
                 N,
@@ -395,11 +395,11 @@ fn exhaustive_four_vertex_graphs_match_independent_cycle_oracle() {
             }
         }
         let expected = oracle(&edges);
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = cycles::package_cycles(&graph);
         let actual: BTreeSet<_> = cycles.iter().map(|cycle| cycle.packages.clone()).collect();
         assert_eq!(actual, expected, "all elementary cycles for graph {mask}");
         assert_eq!(cycles.len(), actual.len(), "no duplicates for graph {mask}");
-        let representatives = CycleDetector::detect(&files);
+        let representatives = cycles::file_cycles(&files);
         // Reachability defines SCC membership independently of Tarjan.
         let mut reach = edges;
         for via in 0..4 {
@@ -460,7 +460,7 @@ fn dense_cycle_enumeration_stops_at_cycle_or_work_quota() {
     ] {
         let budget = AnalysisBudget::new(limits).expect("limits");
         assert_eq!(
-            PackageCycleDetector::try_detect(&graph, &budget)
+            cycles::try_package_cycles(&graph, &budget)
                 .expect_err("exponential output cut short")
                 .resource(),
             resource,
@@ -478,14 +478,14 @@ fn verbose_evidence_expansion_has_its_own_admission() {
     let imports: Vec<_> = ["b", "a"]
         .into_iter()
         .map(|target| {
-            vec![Import {
-                source: PathBuf::from("very_long_source_path.ts".repeat(100)),
-                specifier: target.to_owned(),
-                target: ImportTarget::WorkspacePackage {
+            vec![Import::new(
+                PathBuf::from("very_long_source_path.ts".repeat(100)),
+                ImportTarget::WorkspacePackage {
                     package_name: target.to_owned(),
                     subpath: None,
                 },
-            }]
+                target.to_owned(),
+            )]
         })
         .collect();
     let budget = AnalysisBudget::new(AnalysisLimits {
@@ -494,7 +494,7 @@ fn verbose_evidence_expansion_has_its_own_admission() {
     })
     .expect("limits");
     assert_eq!(
-        PackageCycleDetector::try_detect_imports_with_files(
+        cycles::try_package_cycles_with_files_from_imports(
             [("a", imports[0].as_slice()), ("b", imports[1].as_slice())],
             &budget
         )

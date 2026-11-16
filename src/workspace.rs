@@ -11,7 +11,8 @@ use crate::WorkspaceError;
 use crate::budget::{AnalysisBudget, Resource, units};
 
 /// Workspace configuration format.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum WorkspaceFormat {
     /// npm/yarn/bun: package.json "workspaces" field.
     Npm,
@@ -30,6 +31,7 @@ enum Membership {
 
 /// A detected monorepo workspace.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Workspace {
     /// Root directory of the workspace.
     pub root: PathBuf,
@@ -91,6 +93,34 @@ struct MinimalPackageJson {
 }
 
 impl Workspace {
+    /// A workspace rooted at `root` whose member packages map names to
+    /// directories, with no tsconfig aliases.
+    ///
+    /// ```
+    /// use jscycles::{Workspace, WorkspaceFormat};
+    /// use std::path::PathBuf;
+    ///
+    /// let workspace = Workspace::new(
+    ///     PathBuf::from("/repo"),
+    ///     WorkspaceFormat::Npm,
+    ///     [("@app/ui".to_owned(), PathBuf::from("/repo/ui"))].into(),
+    /// );
+    /// assert_eq!(
+    ///     workspace.split_specifier("@app/ui/button"),
+    ///     Some(("@app/ui", Some("button")))
+    /// );
+    /// assert_eq!(workspace.package_path("@app/ui"), Some(&PathBuf::from("/repo/ui")));
+    /// ```
+    #[must_use]
+    pub fn new(root: PathBuf, format: WorkspaceFormat, packages: HashMap<String, PathBuf>) -> Self {
+        Self {
+            root,
+            format,
+            packages,
+            aliases: HashMap::new(),
+        }
+    }
+
     /// Discover workspace configuration starting from a directory.
     ///
     /// Searches upward for the workspace root, checking at each directory:
@@ -1041,7 +1071,7 @@ impl Workspace {
     /// Resolves tsconfig path aliases to their actual package paths.
     #[inline]
     #[must_use]
-    pub fn get_package_path(&self, specifier: &str) -> Option<&PathBuf> {
+    pub fn package_path(&self, specifier: &str) -> Option<&PathBuf> {
         let (name, _) = self.split_specifier(specifier)?;
         self.packages.get(name)
     }
@@ -1050,7 +1080,7 @@ impl Workspace {
     ///
     /// If the specifier uses a tsconfig alias, returns the real package name.
     /// Known workspace names take precedence over aliases, matching
-    /// [`Self::get_package_path`]. Otherwise returns the extracted name as-is.
+    /// [`Self::package_path`]. Otherwise returns the extracted name as-is.
     #[inline]
     #[must_use]
     pub fn resolve_package_name<'specifier>(
@@ -1347,7 +1377,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_package_path() {
+    fn test_package_path() {
         let mut packages = HashMap::new();
         let _ = packages.insert("@myorg/utils".to_owned(), PathBuf::from("/pkg/utils"));
         let _ = packages.insert("shared".to_owned(), PathBuf::from("/pkg/shared"));
@@ -1360,19 +1390,19 @@ mod tests {
         };
 
         assert_eq!(
-            workspace.get_package_path("@myorg/utils"),
+            workspace.package_path("@myorg/utils"),
             Some(&PathBuf::from("/pkg/utils")),
             "should get path for workspace package"
         );
 
         assert_eq!(
-            workspace.get_package_path("@myorg/utils/helpers"),
+            workspace.package_path("@myorg/utils/helpers"),
             Some(&PathBuf::from("/pkg/utils")),
             "should get path for workspace package with subpath"
         );
 
         assert_eq!(
-            workspace.get_package_path("nonexistent"),
+            workspace.package_path("nonexistent"),
             None,
             "should return None for nonexistent package"
         );
@@ -1565,7 +1595,7 @@ mod tests {
             "empty workspace has no packages"
         );
         assert!(
-            workspace.get_package_path("any-package").is_none(),
+            workspace.package_path("any-package").is_none(),
             "empty workspace returns no path"
         );
     }
@@ -1882,7 +1912,7 @@ mod tests {
     }
 
     #[test]
-    fn test_tsconfig_aliases_get_package_path() {
+    fn test_tsconfig_aliases_package_path() {
         let fixture_path =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tsconfig-aliases");
 
@@ -1891,7 +1921,7 @@ mod tests {
             .expect("fixture should be a workspace");
 
         // Direct package name
-        let direct_path = workspace.get_package_path("@alias-test/pkg-a");
+        let direct_path = workspace.package_path("@alias-test/pkg-a");
         assert!(
             direct_path.is_some(),
             "direct package name should have path"
@@ -1904,7 +1934,7 @@ mod tests {
         );
 
         // Alias should resolve to same path
-        let alias_path = workspace.get_package_path("@alias-test/package-a");
+        let alias_path = workspace.package_path("@alias-test/package-a");
         assert!(alias_path.is_some(), "alias should resolve to path");
         assert_eq!(
             direct_path, alias_path,

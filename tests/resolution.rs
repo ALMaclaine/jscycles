@@ -358,39 +358,26 @@ fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_impo
     let root = canonical.as_path();
     fs::write(root.join("leaf.ts"), "export const leaf = 1;").expect("leaf source");
     let mut paths: Vec<_> = (0..1024)
-        .map(|number| PathAlias {
-            prefix: format!("@unused/{number}"),
-            has_wildcard: false,
-            replacements: vec![root.join("missing")],
-        })
+        .map(|number| PathAlias::exact(format!("@unused/{number}"), vec![root.join("missing")]))
         .collect();
-    paths.push(PathAlias {
-        prefix: "@used".to_owned(),
-        has_wildcard: false,
-        replacements: vec![root.join("leaf")],
-    });
-    paths.push(PathAlias {
-        prefix: "@missing".to_owned(),
-        has_wildcard: false,
-        replacements: vec![root.join("missing")],
-    });
-    paths.push(PathAlias {
-        prefix: "known".to_owned(),
-        has_wildcard: false,
-        replacements: vec![root.join("leaf")],
-    });
-    let config = TsConfig {
-        base_url: root.to_path_buf(),
-        paths,
-    };
-    let workspace = Workspace {
-        root: root.to_path_buf(),
-        format: jscycles::workspace::WorkspaceFormat::Npm,
-        // A sibling member: a package root at `root` would make `entry.ts`
-        // import its own package, which correctly resolves the file alias.
-        packages: [("known".to_owned(), root.join("packages/known"))].into(),
-        aliases: std::collections::HashMap::new(),
-    };
+    paths.push(PathAlias::exact(
+        "@used".to_owned(),
+        vec![root.join("leaf")],
+    ));
+    paths.push(PathAlias::exact(
+        "@missing".to_owned(),
+        vec![root.join("missing")],
+    ));
+    paths.push(PathAlias::exact(
+        "known".to_owned(),
+        vec![root.join("leaf")],
+    ));
+    let config = TsConfig::new(root.to_path_buf(), paths);
+    let workspace = Workspace::new(
+        root.to_path_buf(),
+        jscycles::workspace::WorkspaceFormat::Npm,
+        [("known".to_owned(), root.join("packages/known"))].into(),
+    );
     let physical = fs::canonicalize(root.join("leaf.ts")).expect("canonical leaf");
     for (specifier, expected) in [
         ("./leaf", ImportTarget::Resolved(physical.clone())),
@@ -443,16 +430,17 @@ fn uncached_alias_searches_still_exhaust_the_work_budget() {
     }
     fs::write(root.join("entry.ts"), source).expect("distinct unmatched imports");
     for replacements in [1, 16] {
-        let config = TsConfig {
-            base_url: root.to_path_buf(),
-            paths: (0..64)
-                .map(|number| PathAlias {
-                    prefix: format!("@unused/{number}"),
-                    has_wildcard: false,
-                    replacements: vec![root.join("missing"); replacements],
+        let config = TsConfig::new(
+            root.to_path_buf(),
+            (0..64)
+                .map(|number| {
+                    PathAlias::exact(
+                        format!("@unused/{number}"),
+                        vec![root.join("missing"); replacements],
+                    )
                 })
                 .collect(),
-        };
+        );
         let budget = AnalysisBudget::new(AnalysisLimits {
             max_work: 10000,
             ..AnalysisLimits::default()

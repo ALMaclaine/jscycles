@@ -34,11 +34,11 @@ use std::sync::Arc;
 use rayon::prelude::*;
 
 use crate::budget::{AnalysisBudget, BoundedReport, Resource};
-use crate::cycles::{CycleDetector, PackageCycleDetector};
+use crate::cycles;
 use crate::imports::{ExtractionMode, Import, ImportExtractor};
 use crate::output::{
-    CycleFilter, HumanFormatter, JsonFormatter, PackageResult, UnifiedOutputFormatter as _,
-    UnifiedResults,
+    ColorMode, CycleFilter, HumanFormatter, JsonFormatter, PackageResult,
+    UnifiedOutputFormatter as _, UnifiedResults,
 };
 use crate::{
     Config, Discovered, DiscoveryError, JscyclesError, Package, PackageDiscovery, TsConfig,
@@ -184,14 +184,22 @@ impl Scan {
     }
 
     /// Ignore type-only imports in every package (`--skip-type-imports`).
-    pub const fn skip_type_imports(mut self, skip: bool) -> Self {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn skip_type_imports(mut self, skip: bool) -> Self {
         self.skip_type_imports = skip;
         self
     }
 
     /// Look for file cycles only ([`CycleFilter::Inner`], `--inner`), package
     /// cycles only ([`CycleFilter::Outer`], `--outer`), or both (the default).
-    pub const fn filter(mut self, filter: CycleFilter) -> Self {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn filter(mut self, filter: CycleFilter) -> Self {
         self.filter = filter;
         self
     }
@@ -200,7 +208,11 @@ impl Scan {
     /// [`UnifiedResults::package_cycles_with_files`] instead of
     /// [`UnifiedResults::package_cycles`], and list clean packages in human
     /// output (`--verbose`).
-    pub const fn verbose(mut self, verbose: bool) -> Self {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn verbose(mut self, verbose: bool) -> Self {
         self.verbose = verbose;
         self
     }
@@ -319,7 +331,11 @@ impl ScanReport {
     /// end with the same node; file paths keep the spelling of the scanned
     /// paths.
     #[must_use]
-    pub const fn results(&self) -> &UnifiedResults {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn results(&self) -> &UnifiedResults {
         &self.results
     }
 
@@ -342,7 +358,11 @@ impl ScanReport {
 
     /// The kinds of cycle the scan looked for.
     #[must_use]
-    pub const fn filter(&self) -> CycleFilter {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn filter(&self) -> CycleFilter {
         self.filter
     }
 
@@ -365,13 +385,13 @@ impl ScanReport {
         Ok(report.finish()?)
     }
 
-    /// The report as the command's human-readable output; `color` adds
-    /// terminal colors.
+    /// The report as the command's human-readable output, with terminal
+    /// colors for [`ColorMode::Ansi`].
     ///
     /// # Errors
     ///
     /// The output-size limit was exceeded.
-    pub fn to_human(&self, color: bool) -> Result<Vec<u8>, JscyclesError> {
+    pub fn to_human(&self, color: ColorMode) -> Result<Vec<u8>, JscyclesError> {
         let mut report = BoundedReport::new(self.budget.clone());
         HumanFormatter::new(color)
             .with_verbose(self.verbose)
@@ -540,11 +560,11 @@ fn analyze_packages(
     } else if verbose {
         (
             Vec::new(),
-            PackageCycleDetector::try_detect_imports_with_files(groups, &opts.budget)?,
+            cycles::try_package_cycles_with_files_from_imports(groups, &opts.budget)?,
         )
     } else {
         (
-            PackageCycleDetector::try_detect_imports(groups, &opts.budget)?,
+            cycles::try_package_cycles_from_imports(groups, &opts.budget)?,
             Vec::new(),
         )
     };
@@ -625,7 +645,7 @@ fn process_package_with_imports(
     let mut cycles = if opts.mode == ProcessMode::WorkspaceOnly {
         Vec::new()
     } else {
-        CycleDetector::try_detect_imports(&imports, &opts.budget)?
+        cycles::try_file_cycles_from_imports(&imports, &opts.budget)?
     };
 
     // Keep paths in the caller's spelling while analysis uses canonical nodes.

@@ -15,6 +15,7 @@ use crate::workspace::Workspace;
 
 /// A discovered JavaScript/TypeScript package.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Package {
     /// Package name from package.json "name" field.
     pub name: String,
@@ -24,6 +25,15 @@ pub struct Package {
 
     /// Merged configuration for this package.
     pub config: PackageConfig,
+}
+
+impl Package {
+    /// The package `name` whose `package.json` is in `path`, analyzed with
+    /// `config`.
+    #[must_use]
+    pub const fn new(name: String, path: PathBuf, config: PackageConfig) -> Self {
+        Self { name, path, config }
+    }
 }
 
 /// Packages selected by discovery, plus directories no package should analyze.

@@ -8,8 +8,8 @@
 use std::path::PathBuf;
 
 use jscycles::{
-    Config, CycleDetector, DependencyGraph, ImportExtractor, PackageDiscovery, TsConfig, Workspace,
-    WorkspaceFormat,
+    Config, DependencyGraph, ImportExtractor, PackageDiscovery, TsConfig, Workspace,
+    WorkspaceFormat, cycles,
 };
 
 #[test]
@@ -43,7 +43,7 @@ fn relative_package_roots_and_absolute_alias_configs_share_graph_nodes() {
         imports.iter().all(|import| import.source.is_absolute()),
         "canonical source-path contract"
     );
-    let cycles = CycleDetector::detect(&DependencyGraph::from_imports(&imports));
+    let cycles = cycles::file_cycles(&DependencyGraph::from_imports(&imports));
     assert_eq!(
         cycles.len(),
         1,
@@ -103,7 +103,7 @@ fn fixture_path(name: &str) -> PathBuf {
 /// Run cycle detection on a fixture and return sorted cycle descriptions.
 fn detect_cycles_in_fixture(fixture_name: &str) -> Vec<String> {
     let path = fixture_path(fixture_name);
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         vec![
             "ts".to_owned(),
@@ -118,7 +118,7 @@ fn detect_cycles_in_fixture(fixture_name: &str) -> Vec<String> {
         .extract(&path)
         .expect("fixture extraction should succeed");
     let graph = DependencyGraph::from_imports(&imports);
-    let cycles = CycleDetector::detect(&graph);
+    let cycles = cycles::file_cycles(&graph);
 
     // Convert cycles to relative path strings for readable snapshots
     let mut cycle_strings: Vec<String> = cycles
@@ -197,14 +197,14 @@ fn test_monorepo_per_package_cycles() {
     let mut results: Vec<(String, Vec<String>)> = packages
         .iter()
         .map(|package| {
-            let tsconfig = TsConfig::discover(&package.path);
+            let tsconfig = TsConfig::discover(&package.path).expect("readable tsconfig");
             let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig);
 
             let imports = extractor
                 .extract(&package.path)
                 .expect("package extraction should succeed");
             let graph = DependencyGraph::from_imports(&imports);
-            let cycles = CycleDetector::detect(&graph);
+            let cycles = cycles::file_cycles(&graph);
 
             let cycle_strs: Vec<String> = cycles
                 .iter()
@@ -237,7 +237,7 @@ fn test_monorepo_per_package_cycles() {
 /// Extract imports from a fixture and return sorted specifiers.
 fn extract_imports_from_fixture(fixture_name: &str) -> Vec<(String, String)> {
     let path = fixture_path(fixture_name);
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         vec![
             "ts".to_owned(),
@@ -273,7 +273,7 @@ fn extract_imports_from_fixture(fixture_name: &str) -> Vec<(String, String)> {
 /// Extract raw imports from a fixture (for graph construction).
 fn extract_raw_imports_from_fixture(fixture_name: &str) -> Vec<jscycles::Import> {
     let path = fixture_path(fixture_name);
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         vec![
             "ts".to_owned(),
@@ -363,7 +363,7 @@ fn test_fixture_tsconfig_complex_imports() {
 // Inter-package cycle detection tests
 // =============================================================================
 
-use jscycles::{PackageCycleDetector, PackageDependencyGraph};
+use jscycles::PackageDependencyGraph;
 
 /// Helper to detect inter-package cycles in a fixture.
 fn detect_inter_package_cycles(fixture_name: &str) -> Vec<String> {
@@ -387,7 +387,7 @@ fn detect_inter_package_cycles(fixture_name: &str) -> Vec<String> {
             .packages
             .get(&pkg_name)
             .expect("package should exist");
-        let tsconfig = TsConfig::discover(pkg_path);
+        let tsconfig = TsConfig::discover(pkg_path).expect("readable tsconfig");
         let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig)
             .with_workspace(Some(workspace.clone()));
 
@@ -402,7 +402,7 @@ fn detect_inter_package_cycles(fixture_name: &str) -> Vec<String> {
     let graph = PackageDependencyGraph::from_imports(&imports_by_package);
 
     // Detect cycles
-    let cycles = PackageCycleDetector::detect(&graph);
+    let cycles = cycles::package_cycles(&graph);
 
     // Format cycles for snapshot
     let mut cycle_strings: Vec<String> = cycles
@@ -585,14 +585,14 @@ fn test_monorepo_with_file_cycle_has_inner_cycle() {
         .find(|p| p.name == "@test/pkg-a")
         .expect("should find pkg-a");
 
-    let tsconfig = TsConfig::discover(&pkg_a.path);
+    let tsconfig = TsConfig::discover(&pkg_a.path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig);
 
     let imports = extractor
         .extract(&pkg_a.path)
         .expect("package extraction should succeed");
     let graph = DependencyGraph::from_imports(&imports);
-    let cycles = CycleDetector::detect(&graph);
+    let cycles = cycles::file_cycles(&graph);
 
     assert!(!cycles.is_empty(), "pkg-a should have internal file cycles");
 }
@@ -736,7 +736,7 @@ fn test_no_cycles_import_extraction() {
 #[test]
 fn test_no_cycles_graph_structure() {
     let path = fixture_path("no-cycles");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         vec![
             "ts".to_owned(),
@@ -810,7 +810,7 @@ fn test_diamond_import_extraction() {
 #[test]
 fn test_diamond_graph_structure() {
     let path = fixture_path("diamond");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         vec![
             "ts".to_owned(),
@@ -957,7 +957,7 @@ fn test_import_styles_reexports() {
 #[test]
 fn test_tsconfig_path_alias_resolution() {
     let path = fixture_path("with-tsconfig");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
 
     assert!(tsconfig.is_some(), "should discover tsconfig.json");
 
@@ -971,7 +971,7 @@ fn test_tsconfig_path_alias_resolution() {
 #[test]
 fn test_tsconfig_base_url_set() {
     let path = fixture_path("with-tsconfig");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
 
     assert!(tsconfig.is_some(), "should discover tsconfig.json");
 }
@@ -979,7 +979,7 @@ fn test_tsconfig_base_url_set() {
 #[test]
 fn test_tsconfig_complex_multiple_aliases() {
     let path = fixture_path("tsconfig-complex");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
 
     assert!(tsconfig.is_some(), "should discover tsconfig.json");
 
@@ -994,7 +994,9 @@ fn test_tsconfig_complex_multiple_aliases() {
 #[test]
 fn test_tsconfig_complex_alias_prefixes() {
     let path = fixture_path("tsconfig-complex");
-    let tsconfig = TsConfig::discover(&path).expect("should discover config");
+    let tsconfig = TsConfig::discover(&path)
+        .expect("readable tsconfig")
+        .expect("should discover config");
 
     let prefixes: Vec<_> = tsconfig.paths.iter().map(|p| p.prefix.as_str()).collect();
 
@@ -1012,7 +1014,9 @@ fn test_tsconfig_complex_alias_prefixes() {
 #[test]
 fn test_tsconfig_extends_three_level_chain() {
     let path = fixture_path("tsconfig-extends");
-    let tsconfig = TsConfig::discover(&path).expect("should discover config");
+    let tsconfig = TsConfig::discover(&path)
+        .expect("readable tsconfig")
+        .expect("should discover config");
 
     // Should have aliases from all three levels
     let prefixes: Vec<_> = tsconfig.paths.iter().map(|p| p.prefix.as_str()).collect();
@@ -1055,7 +1059,7 @@ fn test_tsconfig_extends_import_resolution() {
 #[test]
 fn test_tsconfig_extends_node_modules_discovery() {
     let path = fixture_path("tsconfig-extends-pkg");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
 
     assert!(
         tsconfig.is_some(),
@@ -1066,7 +1070,9 @@ fn test_tsconfig_extends_node_modules_discovery() {
 #[test]
 fn test_tsconfig_extends_node_modules_aliases() {
     let path = fixture_path("tsconfig-extends-pkg");
-    let tsconfig = TsConfig::discover(&path).expect("should discover config");
+    let tsconfig = TsConfig::discover(&path)
+        .expect("readable tsconfig")
+        .expect("should discover config");
 
     let prefixes: Vec<_> = tsconfig.paths.iter().map(|p| p.prefix.as_str()).collect();
 
@@ -1332,12 +1338,12 @@ fn test_monorepo_mock_has_internal_cycles() {
     // Check each package for internal cycles
     let mut found_cycle = false;
     for pkg in &packages {
-        let tsconfig = TsConfig::discover(&pkg.path);
+        let tsconfig = TsConfig::discover(&pkg.path).expect("readable tsconfig");
         let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig);
 
         let imports = extractor.extract(&pkg.path).expect("should succeed");
         let graph = DependencyGraph::from_imports(&imports);
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = cycles::file_cycles(&graph);
 
         if !cycles.is_empty() {
             found_cycle = true;
@@ -1591,7 +1597,7 @@ fn test_workspace_shared_cycle_involves_all_packages() {
 #[test]
 fn test_graph_node_count_simple_cycle() {
     let path = fixture_path("simple-cycle");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         vec![
             "ts".to_owned(),
@@ -1614,7 +1620,7 @@ fn test_graph_node_count_simple_cycle() {
 #[test]
 fn test_graph_edge_count_diamond() {
     let path = fixture_path("diamond");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         vec![
             "ts".to_owned(),
@@ -1642,7 +1648,7 @@ fn test_graph_edge_count_diamond() {
 #[test]
 fn test_non_existent_fixture() {
     let path = fixture_path("non-existent-fixture-that-does-not-exist");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
 
     // TsConfig::discover should return None for non-existent path
     assert!(
@@ -1655,7 +1661,7 @@ fn test_non_existent_fixture() {
 fn test_empty_directory() {
     // Create a temp directory for this test
     let path = fixture_path("no-cycles");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(vec!["ts".to_owned()], tsconfig);
 
     // Extraction should succeed even with minimal files
@@ -1670,7 +1676,7 @@ fn test_empty_directory() {
 #[test]
 fn test_import_extraction_ts_only() {
     let path = fixture_path("simple-cycle");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(vec!["ts".to_owned()], tsconfig);
 
     let imports = extractor.extract(&path).expect("should succeed");
@@ -1689,7 +1695,7 @@ fn test_import_extraction_ts_only() {
 #[test]
 fn test_import_extraction_multiple_extensions() {
     let path = fixture_path("import-styles");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         vec![
             "ts".to_owned(),
@@ -1870,7 +1876,7 @@ fn test_alias_chain_has_cycle() {
 #[test]
 fn test_alias_chain_tsconfig_loaded() {
     let path = fixture_path("alias-chain");
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     assert!(
         tsconfig.is_some(),
         "should load tsconfig.json with path aliases"
@@ -2065,7 +2071,7 @@ fn test_mutual_recursion_has_cycle() {
 
 fn detect_cycles_with_extensions(fixture_name: &str, extensions: Vec<&str>) -> Vec<String> {
     let path = fixture_path(fixture_name);
-    let tsconfig = TsConfig::discover(&path);
+    let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         extensions.into_iter().map(ToOwned::to_owned).collect(),
         tsconfig,
@@ -2075,7 +2081,7 @@ fn detect_cycles_with_extensions(fixture_name: &str, extensions: Vec<&str>) -> V
         .extract(&path)
         .expect("fixture extraction should succeed");
     let graph = DependencyGraph::from_imports(&imports);
-    let cycles = CycleDetector::detect(&graph);
+    let cycles = cycles::file_cycles(&graph);
 
     let mut cycle_strings: Vec<String> = cycles
         .iter()
@@ -2351,7 +2357,7 @@ fn test_graph_isolated_nodes() {
     let graph = DependencyGraph::from_imports(&imports);
 
     assert!(graph.node_count() > 0, "graph should have nodes");
-    let cycles = CycleDetector::detect(&graph);
+    let cycles = cycles::file_cycles(&graph);
     assert!(
         cycles.is_empty(),
         "graph with isolated nodes should have no cycles"
@@ -2362,7 +2368,7 @@ fn test_graph_isolated_nodes() {
 fn test_graph_self_loop_only() {
     let imports = extract_raw_imports_from_fixture("self-loop");
     let graph = DependencyGraph::from_imports(&imports);
-    let cycles = CycleDetector::detect(&graph);
+    let cycles = cycles::file_cycles(&graph);
 
     assert_eq!(
         cycles.len(),
@@ -2456,22 +2462,40 @@ fn test_workspace_packages_have_valid_paths() {
 // =============================================================================
 
 #[test]
-fn test_tsconfig_discovery_of_malformed_config_returns_none() {
-    // Automatic discovery is best-effort (docs/analysis-limits.md): the nearest
-    // config is selected, and a malformed one yields no aliases rather than an
-    // ancestor's. Absence cannot be asserted portably because discovery walks
-    // above the checkout.
+fn test_tsconfig_discovery_of_malformed_config_is_an_error() {
+    // Standalone discovery selects the nearest config and reports a malformed
+    // one instead of treating it as absent or falling back to an ancestor's.
+    // The scan's best-effort discovery is `TsConfigCache`, which records the
+    // rejection (docs/analysis-limits.md).
     let root = tempfile::tempdir().expect("temporary package");
-    std::fs::write(root.path().join("tsconfig.json"), "{").expect("malformed config");
+    let config = root.path().join("tsconfig.json");
+    std::fs::write(&config, "{").expect("malformed config");
     std::fs::create_dir(root.path().join("src")).expect("source directory");
-    assert!(TsConfig::discover(&root.path().join("src")).is_none());
+    let error = TsConfig::discover(&root.path().join("src")).expect_err("malformed nearest config");
+    assert!(
+        matches!(&error, jscycles::TsConfigError::AtPath { path, .. } if path.ends_with("tsconfig.json")),
+        "the error names the malformed file: {error}"
+    );
+    let cache = jscycles::TsConfigCache::new();
+    assert!(
+        cache.discover(&root.path().join("src")).is_none(),
+        "best-effort discovery skips the file"
+    );
+    assert_eq!(
+        cache.rejected().len(),
+        1,
+        "and records why: {:?}",
+        cache.rejected()
+    );
 }
 
 #[test]
 fn test_tsconfig_with_no_paths() {
     let root = tempfile::tempdir().expect("temporary package");
     std::fs::write(root.path().join("tsconfig.json"), "{}").expect("config");
-    let tsconfig = TsConfig::discover(root.path()).expect("nearest config is selected");
+    let tsconfig = TsConfig::discover(root.path())
+        .expect("readable tsconfig")
+        .expect("nearest config is selected");
     assert!(tsconfig.paths.is_empty(), "no paths means no aliases");
     assert!(tsconfig.resolve_alias("anything").is_none());
 }

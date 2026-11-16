@@ -535,14 +535,13 @@ fn alias_results_preserve_native_origin_bytes() {
     let origin = std::path::PathBuf::from(std::ffi::OsString::from_vec(
         b"/jscycles-origin-\xff/source".to_vec(),
     ));
-    let config = jscycles::TsConfig {
-        base_url: origin.clone(),
-        paths: vec![jscycles::tsconfig::PathAlias {
-            prefix: "@/".to_owned(),
-            has_wildcard: true,
-            replacements: vec![origin.join("*.ts")],
-        }],
-    };
+    let config = jscycles::TsConfig::new(
+        origin.clone(),
+        vec![jscycles::tsconfig::PathAlias::wildcard(
+            "@/".to_owned(),
+            vec![origin.join("*.ts")],
+        )],
+    );
     assert_eq!(
         config.resolve_alias("@/module"),
         Some(origin.join("module.ts")),

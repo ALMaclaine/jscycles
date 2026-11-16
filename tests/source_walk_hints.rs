@@ -5,14 +5,14 @@ use std::fs;
 
 use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
 use jscycles::imports::ExtractionMode;
-use jscycles::{CycleDetector, DependencyGraph, Import, ImportExtractor, ImportTarget};
+use jscycles::{DependencyGraph, Import, ImportExtractor, ImportTarget, cycles};
 
 fn extractor() -> ImportExtractor {
     ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], None)
 }
 
 fn has_cycles(imports: &[Import]) -> bool {
-    !CycleDetector::detect(&DependencyGraph::from_imports(imports)).is_empty()
+    !cycles::file_cycles(&DependencyGraph::from_imports(imports)).is_empty()
 }
 
 #[test]

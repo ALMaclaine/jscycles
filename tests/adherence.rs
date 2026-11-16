@@ -223,7 +223,7 @@ fn sequential_extractions_invalidate_filesystem_resolution_cache() {
     fs::write(temp.path().join("b.tsx"), "import './a';").expect("new source b");
     let imports = extractor.extract(temp.path()).expect("new scan");
     assert_eq!(
-        jscycles::CycleDetector::detect(&jscycles::DependencyGraph::from_imports(&imports)).len(),
+        jscycles::cycles::file_cycles(&jscycles::DependencyGraph::from_imports(&imports)).len(),
         1,
         "new files must not reuse cached misses"
     );
@@ -436,12 +436,11 @@ fn infallible_legacy_workspace_selection_does_not_return_budget_truncation() {
     let temp = tempfile::tempdir().expect("directory");
     let project = fs::canonicalize(temp.path()).expect("canonical root");
     fs::create_dir(project.join("a")).expect("member directory");
-    let workspace = jscycles::Workspace {
-        root: project.clone(),
-        format: jscycles::WorkspaceFormat::Npm,
-        packages: std::collections::HashMap::from([("a".to_owned(), project.join("a"))]),
-        aliases: std::collections::HashMap::default(),
-    };
+    let workspace = jscycles::Workspace::new(
+        project.clone(),
+        jscycles::WorkspaceFormat::Npm,
+        std::collections::HashMap::from([("a".to_owned(), project.join("a"))]),
+    );
     let selected = discovery.discover_workspace_packages(&workspace, &[project]);
     assert_eq!(
         selected.len(),

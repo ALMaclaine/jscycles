@@ -28,7 +28,8 @@ struct ResolutionEntries {
 type ResolutionCache = Arc<Mutex<ResolutionEntries>>;
 
 /// Controls which imports are extracted.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[non_exhaustive]
 pub enum ExtractionMode {
     /// Extract and resolve all imports.
     #[default]
@@ -38,7 +39,8 @@ pub enum ExtractionMode {
 }
 
 /// An extracted import statement.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Import {
     /// File containing the import.
     pub source: PathBuf,
@@ -51,7 +53,8 @@ pub struct Import {
 }
 
 /// Classification of an import target.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum ImportTarget {
     /// Successfully resolved to a file path.
     Resolved(PathBuf),
@@ -69,6 +72,18 @@ pub enum ImportTarget {
 
     /// Could not resolve the import.
     Unresolved(String),
+}
+
+impl Import {
+    /// An import of `specifier`, written in `source`, that resolves to `target`.
+    #[must_use]
+    pub fn new(source: PathBuf, target: ImportTarget, specifier: impl Into<String>) -> Self {
+        Self {
+            source,
+            target,
+            specifier: specifier.into(),
+        }
+    }
 }
 
 /// Import extraction engine.
@@ -107,6 +122,21 @@ pub struct ImportExtractor {
     /// Cache for extension resolution to avoid redundant filesystem stat calls.
     resolution_cache: ResolutionCache,
     budget: AnalysisBudget,
+}
+
+impl std::fmt::Debug for ImportExtractor {
+    /// Shows the extraction settings; caches and shared ownership tables are
+    /// omitted.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ImportExtractor")
+            .field("extensions", &self.extensions)
+            .field("tsconfig", &self.tsconfig)
+            .field("workspace", &self.workspace)
+            .field("mode", &self.mode)
+            .field("skip_type_imports", &self.skip_type_imports)
+            .finish_non_exhaustive()
+    }
 }
 
 impl ImportExtractor {
@@ -161,7 +191,11 @@ impl ImportExtractor {
     /// Set extraction mode.
     #[inline]
     #[must_use]
-    pub const fn with_mode(mut self, mode: ExtractionMode) -> Self {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn with_mode(mut self, mode: ExtractionMode) -> Self {
         self.mode = mode;
         self
     }
@@ -226,7 +260,11 @@ impl ImportExtractor {
     /// declaration file (`.d.ts`, `.d.mts`, `.d.cts`). Declaration files are
     /// still parsed, so syntax errors in them still fail.
     #[must_use]
-    pub const fn with_skip_type_imports(mut self, skip: bool) -> Self {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn with_skip_type_imports(mut self, skip: bool) -> Self {
         self.skip_type_imports = skip;
         self
     }

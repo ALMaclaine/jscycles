@@ -134,8 +134,8 @@ against a concurrent hostile filesystem. No project code or package script runs.
 Rayon owns parallel scan completion; a worker error prevents a successful report.
 
 Config parse/read failures and explicitly selected missing configs fail. An
-absent default config uses defaults. The public legacy `Config::load_or_default`
-retains its best-effort fallback; new callers should use `try_load_or_default`.
+absent default config uses defaults. The library's `Config::try_load_or_default`
+has the same contract; the former best-effort `load_or_default` was removed in 0.5.
 Auto-discovered tsconfig and optional workspace aliases remain best-effort for
 ordinary input errors; an exhausted shared budget always fails the scan.
 An explicit `--tsconfig` is validated in every output mode and

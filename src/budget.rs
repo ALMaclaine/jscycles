@@ -7,7 +7,8 @@ use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
 use serde::Deserialize;
 
 /// Units bounded across all stages and parallel workers in one scan.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum Resource {
     /// Files/directories visited, including excluded entries.
     Entries,
@@ -385,6 +386,7 @@ pub(crate) fn units(value: usize) -> u64 {
 }
 
 /// Reports are fully staged under a byte quota before touching stdout.
+#[derive(Debug)]
 pub struct BoundedReport {
     budget: AnalysisBudget,
     bytes: Vec<u8>,
@@ -393,7 +395,11 @@ pub struct BoundedReport {
 impl BoundedReport {
     /// Start an empty report sharing the scan budget.
     #[must_use]
-    pub const fn new(budget: AnalysisBudget) -> Self {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn new(budget: AnalysisBudget) -> Self {
         Self {
             budget,
             bytes: Vec::new(),

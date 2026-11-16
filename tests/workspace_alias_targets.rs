@@ -18,11 +18,10 @@ fn workspace(root: &Path) -> Workspace {
         fs::write(path.join("index.ts"), "").expect("index");
         let _ = packages.insert(name.to_owned(), fs::canonicalize(path).expect("identity"));
     }
-    Workspace {
-        root: root.to_path_buf(),
-        format: WorkspaceFormat::Npm,
-        packages,
-        aliases: [("sentinel".to_owned(), "a".to_owned())].into(),
+    {
+        let mut workspace = Workspace::new(root.to_path_buf(), WorkspaceFormat::Npm, packages);
+        workspace.aliases = [("sentinel".to_owned(), "a".to_owned())].into();
+        workspace
     }
 }
 
@@ -92,26 +91,14 @@ fn ineligible_public_tables_do_not_share_results_by_exact_replacements() {
     let root = fs::canonicalize(temp.path()).expect("root");
     let mut selected = workspace(&root);
     let same = selected.packages.get("a").expect("a").clone();
-    let config = TsConfig {
-        base_url: root.clone(),
-        paths: vec![
-            PathAlias {
-                prefix: String::new(),
-                has_wildcard: true,
-                replacements: vec![root.join("*")],
-            },
-            PathAlias {
-                prefix: "first".to_owned(),
-                has_wildcard: false,
-                replacements: vec![same.clone()],
-            },
-            PathAlias {
-                prefix: "second".to_owned(),
-                has_wildcard: false,
-                replacements: vec![same],
-            },
+    let config = TsConfig::new(
+        root.clone(),
+        vec![
+            PathAlias::wildcard(String::new(), vec![root.join("*")]),
+            PathAlias::exact("first".to_owned(), vec![same.clone()]),
+            PathAlias::exact("second".to_owned(), vec![same]),
         ],
-    };
+    );
     selected
         .load_path_aliases(Some(&config), &AnalysisBudget::default())
         .expect("caller-owned first-match table");

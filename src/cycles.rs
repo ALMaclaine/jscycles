@@ -11,7 +11,8 @@ use crate::graph::{DependencyGraph, EdgeEvidence, PackageDependencyGraph};
 use crate::imports::{Import, ImportTarget};
 
 /// A circular dependency cycle.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub struct Cycle {
     /// Files in the cycle, starting and ending with the same file.
     /// e.g., `[a.ts, b.ts, c.ts, a.ts]`
@@ -45,58 +46,73 @@ impl Cycle {
     }
 }
 
-/// Cycle detection engine using Tarjan's SCC algorithm.
-pub struct CycleDetector;
+/// Return one deterministic representative cycle per cyclic strongly connected
+/// component of a file graph, without recursive traversal.
+///
+/// This compatibility API has no resource quotas; use [`try_file_cycles`] for
+/// bounded input.
+///
+/// ```
+/// use jscycles::{cycles, DependencyGraph};
+/// use std::path::PathBuf;
+///
+/// let mut graph = DependencyGraph::new();
+/// graph.add_edge(PathBuf::from("a.ts"), PathBuf::from("b.ts"));
+/// graph.add_edge(PathBuf::from("b.ts"), PathBuf::from("a.ts"));
+/// let found = cycles::file_cycles(&graph);
+/// assert_eq!(found.len(), 1);
+/// assert_eq!(found[0].len(), 2);
+/// ```
+#[must_use]
+pub fn file_cycles(graph: &DependencyGraph) -> Vec<Cycle> {
+    infallible(run_file_graph(graph, &Unbounded))
+}
 
-impl CycleDetector {
-    /// Return one deterministic representative per cyclic SCC without recursive traversal.
-    /// This compatibility API has no resource quotas; use a try_ method for bounded input.
-    #[must_use]
-    pub fn detect(graph: &DependencyGraph) -> Vec<Cycle> {
-        infallible(Self::run_graph(graph, &Unbounded))
-    }
+fn run_file_graph<M: Meter>(graph: &DependencyGraph, meter: &M) -> Result<Vec<Cycle>, M::Error> {
+    let indexed = Indexed::files(graph, meter)?;
+    let paths = analysis::representative(&indexed, meter)?;
+    Ok(indexed
+        .materialize(paths)
+        .into_iter()
+        .map(Cycle::new)
+        .collect())
+}
 
-    fn run_graph<M: Meter>(graph: &DependencyGraph, meter: &M) -> Result<Vec<Cycle>, M::Error> {
-        let indexed = Indexed::files(graph, meter)?;
-        let paths = analysis::representative(&indexed, meter)?;
-        Ok(indexed
-            .materialize(paths)
-            .into_iter()
-            .map(Cycle::new)
-            .collect())
-    }
+/// [`file_cycles`] for a caller-owned graph, under shared admission, work and
+/// output quotas. Graph construction by the caller is outside this budget.
+///
+/// # Errors
+///
+/// Returns quota exhaustion with no partial result.
+pub fn try_file_cycles(
+    graph: &DependencyGraph,
+    budget: &AnalysisBudget,
+) -> Result<Vec<Cycle>, LimitError> {
+    run_file_graph(graph, budget)
+}
 
-    /// Analyze a caller-owned graph with shared admission/work/output quotas.
-    /// Graph construction by the caller is outside this method's budget.
-    /// # Errors
-    /// Returns quota exhaustion with no partial result.
-    pub fn try_detect(
-        graph: &DependencyGraph,
-        budget: &AnalysisBudget,
-    ) -> Result<Vec<Cycle>, LimitError> {
-        Self::run_graph(graph, budget)
-    }
-
-    /// Build and analyze a file graph, admitting nodes/edges before allocation.
-    /// Inputs remain borrowed; returned paths are owned.
-    /// # Errors
-    /// Returns quota exhaustion with no partial result.
-    pub fn try_detect_imports(
-        imports: &[Import],
-        budget: &AnalysisBudget,
-    ) -> Result<Vec<Cycle>, LimitError> {
-        let indexed = Indexed::imports(imports, budget)?;
-        let paths = analysis::representative(&indexed, budget)?;
-        Ok(indexed
-            .materialize(paths)
-            .into_iter()
-            .map(Cycle::new)
-            .collect())
-    }
+/// Build and analyze a file graph from borrowed imports, admitting nodes and
+/// edges before allocation. Returned paths are owned.
+///
+/// # Errors
+///
+/// Returns quota exhaustion with no partial result.
+pub fn try_file_cycles_from_imports(
+    imports: &[Import],
+    budget: &AnalysisBudget,
+) -> Result<Vec<Cycle>, LimitError> {
+    let indexed = Indexed::imports(imports, budget)?;
+    let paths = analysis::representative(&indexed, budget)?;
+    Ok(indexed
+        .materialize(paths)
+        .into_iter()
+        .map(Cycle::new)
+        .collect())
 }
 
 /// A circular dependency cycle between packages.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub struct PackageCycle {
     /// Package names in the cycle, starting and ending with the same package.
     /// e.g., `["@myorg/a", "@myorg/b", "@myorg/c", "@myorg/a"]`
@@ -131,7 +147,8 @@ impl PackageCycle {
 }
 
 /// An edge in a package cycle with file-level evidence.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct PackageCycleEdge {
     /// Source package name.
     pub from_package: String,
@@ -176,7 +193,8 @@ impl PackageCycleEdge {
 ///
 /// This extends `PackageCycle` to include which specific files create
 /// each edge in the cycle.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct PackageCycleWithFiles {
     /// The package names in the cycle (same as `PackageCycle.packages`).
     pub packages: Vec<String>,
@@ -187,6 +205,12 @@ pub struct PackageCycleWithFiles {
 }
 
 impl PackageCycleWithFiles {
+    /// A package cycle with the evidence for each of its edges, in order.
+    #[must_use]
+    pub const fn new(packages: Vec<String>, edges: Vec<PackageCycleEdge>) -> Self {
+        Self { packages, edges }
+    }
+
     /// Create a new package cycle with files from a basic cycle and graph.
     #[must_use]
     pub fn from_cycle(cycle: &PackageCycle, graph: &PackageDependencyGraph) -> Self {
@@ -231,126 +255,142 @@ impl PackageCycleWithFiles {
     }
 }
 
-/// Enumerate elementary package cycles with iterative Tarjan/Johnson traversal.
-pub struct PackageCycleDetector;
+/// Enumerate every elementary cycle of a package graph with iterative
+/// Tarjan/Johnson traversal.
+///
+/// This compatibility API has no resource quotas; use [`try_package_cycles`]
+/// for bounded input.
+///
+/// ```
+/// use jscycles::{cycles, PackageDependencyGraph};
+///
+/// let mut graph = PackageDependencyGraph::new();
+/// graph.add_edge("@app/a".to_owned(), "@app/b".to_owned());
+/// graph.add_edge("@app/b".to_owned(), "@app/a".to_owned());
+/// let found = cycles::package_cycles(&graph);
+/// assert_eq!(found.len(), 1);
+/// assert_eq!(found[0].packages.first(), found[0].packages.last());
+/// ```
+#[must_use]
+pub fn package_cycles(graph: &PackageDependencyGraph) -> Vec<PackageCycle> {
+    infallible(run_package_graph(graph, &Unbounded))
+}
 
-impl PackageCycleDetector {
-    /// Enumerate all elementary cycles. This compatibility API has no resource quotas.
-    #[must_use]
-    pub fn detect(graph: &PackageDependencyGraph) -> Vec<PackageCycle> {
-        infallible(Self::run_graph(graph, &Unbounded))
-    }
+fn run_package_graph<M: Meter>(
+    graph: &PackageDependencyGraph,
+    meter: &M,
+) -> Result<Vec<PackageCycle>, M::Error> {
+    let indexed = Indexed::packages(graph, meter)?;
+    let paths = analysis::elementary(&indexed, meter)?;
+    Ok(indexed
+        .materialize(paths)
+        .into_iter()
+        .map(PackageCycle::new)
+        .collect())
+}
 
-    fn run_graph<M: Meter>(
-        graph: &PackageDependencyGraph,
-        meter: &M,
-    ) -> Result<Vec<PackageCycle>, M::Error> {
-        let indexed = Indexed::packages(graph, meter)?;
-        let paths = analysis::elementary(&indexed, meter)?;
-        Ok(indexed
-            .materialize(paths)
-            .into_iter()
-            .map(PackageCycle::new)
-            .collect())
-    }
+/// [`package_cycles`] for a caller-owned graph, under shared quotas.
+///
+/// # Errors
+///
+/// Returns quota exhaustion; construction of the caller's graph is outside
+/// this budget.
+pub fn try_package_cycles(
+    graph: &PackageDependencyGraph,
+    budget: &AnalysisBudget,
+) -> Result<Vec<PackageCycle>, LimitError> {
+    run_package_graph(graph, budget)
+}
 
-    /// Analyze a caller-owned package graph with shared quotas.
-    /// # Errors
-    /// Returns quota exhaustion; construction of the caller's graph is outside this budget.
-    pub fn try_detect(
-        graph: &PackageDependencyGraph,
-        budget: &AnalysisBudget,
-    ) -> Result<Vec<PackageCycle>, LimitError> {
-        Self::run_graph(graph, budget)
-    }
+/// Build and analyze package edges directly from borrowed import groups.
+/// No unbounded intermediate package graph or import-vector copy is made.
+///
+/// # Errors
+///
+/// Returns quota exhaustion with no partial result.
+pub fn try_package_cycles_from_imports<'a>(
+    groups: impl IntoIterator<Item = (&'a str, &'a [Import])>,
+    budget: &AnalysisBudget,
+) -> Result<Vec<PackageCycle>, LimitError> {
+    let indexed = PackageAnalysis::build(groups, false, budget)?.graph;
+    let paths = analysis::elementary(&indexed, budget)?;
+    Ok(indexed
+        .materialize(paths)
+        .into_iter()
+        .map(PackageCycle::new)
+        .collect())
+}
 
-    /// Build and analyze package edges directly from borrowed import groups.
-    /// No unbounded intermediate package graph or import-vector copy is made.
-    /// # Errors
-    /// Returns quota exhaustion with no partial result.
-    pub fn try_detect_imports<'a>(
-        groups: impl IntoIterator<Item = (&'a str, &'a [Import])>,
-        budget: &AnalysisBudget,
-    ) -> Result<Vec<PackageCycle>, LimitError> {
-        let indexed = PackageAnalysis::build(groups, false, budget)?.graph;
-        let paths = analysis::elementary(&indexed, budget)?;
-        Ok(indexed
-            .materialize(paths)
-            .into_iter()
-            .map(PackageCycle::new)
-            .collect())
-    }
-
-    /// Enumerate cycles and expand file evidence within the same quotas.
-    /// # Errors
-    /// Returns quota exhaustion, including expansion cost, with no partial result.
-    pub fn try_detect_imports_with_files<'a>(
-        groups: impl IntoIterator<Item = (&'a str, &'a [Import])>,
-        budget: &AnalysisBudget,
-    ) -> Result<Vec<PackageCycleWithFiles>, LimitError> {
-        let indexed = PackageAnalysis::build(groups, true, budget)?;
-        let paths = analysis::elementary(&indexed.graph, budget)?;
-        let mut output = Vec::new();
-        for path in paths {
-            let mut edges = Vec::new();
-            for pair in path.windows(2) {
-                let (Some(from), Some(to)) = (pair.first(), pair.get(1)) else {
-                    continue;
-                };
-                let from_name = indexed.graph.label(*from);
-                let to_name = indexed.graph.label(*to);
-                budget.consume(Resource::Work, 1)?;
-                for name in [from_name, to_name] {
-                    budget.consume(Resource::CycleBytes, units(name.len()))?;
-                    budget.consume(Resource::CycleBytes, units(size_of::<String>()))?;
-                }
-                let mut files = Vec::new();
-                // Several imports of one package from one file are one piece
-                // of evidence; keep the first occurrence's order.
-                let mut seen = std::collections::HashSet::new();
-                if let Some(evidence) = indexed.evidence.get(&(*from, *to)) {
-                    for import in evidence {
-                        if let ImportTarget::WorkspacePackage { subpath, .. } = &import.target {
-                            budget.consume(Resource::Work, 1)?;
-                            if !seen.insert((&import.source, subpath)) {
-                                continue;
-                            }
-                            budget.consume(
-                                Resource::CycleBytes,
-                                units(import.source.as_os_str().as_encoded_bytes().len()),
-                            )?;
-                            budget.consume(
-                                Resource::CycleBytes,
-                                units(size_of::<(PathBuf, Option<String>)>()),
-                            )?;
-                            budget.consume(
-                                Resource::CycleBytes,
-                                units(subpath.as_ref().map_or(0, String::len)),
-                            )?;
-                            files.push((import.source.clone(), subpath.clone()));
+/// [`try_package_cycles_from_imports`], also expanding the files behind each
+/// cycle edge within the same quotas.
+/// # Errors
+/// Returns quota exhaustion, including expansion cost, with no partial result.
+pub fn try_package_cycles_with_files_from_imports<'a>(
+    groups: impl IntoIterator<Item = (&'a str, &'a [Import])>,
+    budget: &AnalysisBudget,
+) -> Result<Vec<PackageCycleWithFiles>, LimitError> {
+    let indexed = PackageAnalysis::build(groups, true, budget)?;
+    let paths = analysis::elementary(&indexed.graph, budget)?;
+    let mut output = Vec::new();
+    for path in paths {
+        let mut edges = Vec::new();
+        for pair in path.windows(2) {
+            let (Some(from), Some(to)) = (pair.first(), pair.get(1)) else {
+                continue;
+            };
+            let from_name = indexed.graph.label(*from);
+            let to_name = indexed.graph.label(*to);
+            budget.consume(Resource::Work, 1)?;
+            for name in [from_name, to_name] {
+                budget.consume(Resource::CycleBytes, units(name.len()))?;
+                budget.consume(Resource::CycleBytes, units(size_of::<String>()))?;
+            }
+            let mut files = Vec::new();
+            // Several imports of one package from one file are one piece
+            // of evidence; keep the first occurrence's order.
+            let mut seen = std::collections::HashSet::new();
+            if let Some(evidence) = indexed.evidence.get(&(*from, *to)) {
+                for import in evidence {
+                    if let ImportTarget::WorkspacePackage { subpath, .. } = &import.target {
+                        budget.consume(Resource::Work, 1)?;
+                        if !seen.insert((&import.source, subpath)) {
+                            continue;
                         }
+                        budget.consume(
+                            Resource::CycleBytes,
+                            units(import.source.as_os_str().as_encoded_bytes().len()),
+                        )?;
+                        budget.consume(
+                            Resource::CycleBytes,
+                            units(size_of::<(PathBuf, Option<String>)>()),
+                        )?;
+                        budget.consume(
+                            Resource::CycleBytes,
+                            units(subpath.as_ref().map_or(0, String::len)),
+                        )?;
+                        files.push((import.source.clone(), subpath.clone()));
                     }
                 }
-                edges.push(PackageCycleEdge {
-                    from_package: from_name.clone(),
-                    to_package: to_name.clone(),
-                    files,
-                });
             }
-            let packages = indexed.graph.materialize_path(path);
-            output.push(PackageCycleWithFiles { packages, edges });
+            edges.push(PackageCycleEdge {
+                from_package: from_name.clone(),
+                to_package: to_name.clone(),
+                files,
+            });
         }
-        Ok(output)
+        let packages = indexed.graph.materialize_path(path);
+        output.push(PackageCycleWithFiles { packages, edges });
     }
+    Ok(output)
+}
 
-    /// Compatibility API for full evidence without quotas.
-    #[must_use]
-    pub fn detect_with_files(graph: &PackageDependencyGraph) -> Vec<PackageCycleWithFiles> {
-        Self::detect(graph)
-            .iter()
-            .map(|cycle| PackageCycleWithFiles::from_cycle(cycle, graph))
-            .collect()
-    }
+/// [`package_cycles`] with the files behind each cycle edge, without quotas.
+#[must_use]
+pub fn package_cycles_with_files(graph: &PackageDependencyGraph) -> Vec<PackageCycleWithFiles> {
+    package_cycles(graph)
+        .iter()
+        .map(|cycle| PackageCycleWithFiles::from_cycle(cycle, graph))
+        .collect()
 }
 
 fn infallible<T>(result: Result<T, Infallible>) -> T {
@@ -371,7 +411,7 @@ mod tests {
         graph.add_edge(PathBuf::from("a.ts"), PathBuf::from("b.ts"));
         graph.add_edge(PathBuf::from("b.ts"), PathBuf::from("a.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert_eq!(cycles.len(), 1, "expected exactly one cycle");
         assert_eq!(
             cycles.first().map(Cycle::len),
@@ -386,7 +426,7 @@ mod tests {
         graph.add_edge(PathBuf::from("a.ts"), PathBuf::from("b.ts"));
         graph.add_edge(PathBuf::from("b.ts"), PathBuf::from("c.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert!(cycles.is_empty(), "expected no cycles");
     }
 
@@ -395,7 +435,7 @@ mod tests {
         let mut graph = DependencyGraph::new();
         graph.add_edge(PathBuf::from("a.ts"), PathBuf::from("a.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert_eq!(cycles.len(), 1, "expected one self-loop cycle");
     }
 
@@ -413,7 +453,7 @@ mod tests {
                 graph.add_edge(from.clone(), to.clone());
             }
         }
-        let normalized = CycleDetector::detect(&graph).remove(0);
+        let normalized = file_cycles(&graph).remove(0);
         assert_eq!(
             normalized
                 .path
@@ -430,7 +470,7 @@ mod tests {
         graph.add_edge("@myorg/a".to_owned(), "@myorg/b".to_owned());
         graph.add_edge("@myorg/b".to_owned(), "@myorg/a".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 1, "expected exactly one package cycle");
         assert_eq!(
             cycles.first().map(PackageCycle::len),
@@ -445,7 +485,7 @@ mod tests {
         graph.add_edge("@myorg/a".to_owned(), "@myorg/b".to_owned());
         graph.add_edge("@myorg/b".to_owned(), "@myorg/c".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert!(cycles.is_empty(), "expected no package cycles");
     }
 
@@ -456,7 +496,7 @@ mod tests {
         graph.add_edge("@myorg/b".to_owned(), "@myorg/c".to_owned());
         graph.add_edge("@myorg/c".to_owned(), "@myorg/a".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 1, "expected exactly one package cycle");
         assert_eq!(
             cycles.first().map(PackageCycle::len),
@@ -521,7 +561,7 @@ mod tests {
         graph.add_edge(PathBuf::from("d.ts"), PathBuf::from("b.ts")); // creates cycle
         graph.add_edge(PathBuf::from("a.ts"), PathBuf::from("e.ts")); // no cycle
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert_eq!(cycles.len(), 1, "should detect exactly one cycle");
         assert_eq!(
             cycles.first().map(Cycle::len),
@@ -539,7 +579,7 @@ mod tests {
         graph.add_edge(PathBuf::from("c.ts"), PathBuf::from("d.ts"));
         graph.add_edge(PathBuf::from("d.ts"), PathBuf::from("c.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert_eq!(cycles.len(), 2, "should detect two independent cycles");
     }
 
@@ -553,7 +593,7 @@ mod tests {
         graph.add_edge(PathBuf::from("b.ts"), PathBuf::from("d.ts"));
         graph.add_edge(PathBuf::from("d.ts"), PathBuf::from("b.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         // The SCC includes all nodes A, B, C, D as they are all reachable in cycles
         assert!(
             !cycles.is_empty(),
@@ -571,7 +611,7 @@ mod tests {
         graph.add_edge(PathBuf::from("d.ts"), PathBuf::from("e.ts"));
         graph.add_edge(PathBuf::from("e.ts"), PathBuf::from("f.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert!(
             cycles.is_empty(),
             "long chain without cycle should produce no cycles"
@@ -589,7 +629,7 @@ mod tests {
         graph.add_edge(PathBuf::from("e.ts"), PathBuf::from("f.ts"));
         graph.add_edge(PathBuf::from("f.ts"), PathBuf::from("d.ts")); // cycle
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert_eq!(cycles.len(), 1, "should detect one cycle at end of chain");
         assert_eq!(
             cycles.first().map(Cycle::len),
@@ -607,7 +647,7 @@ mod tests {
         graph.add_edge(PathBuf::from("b.ts"), PathBuf::from("d.ts"));
         graph.add_edge(PathBuf::from("c.ts"), PathBuf::from("d.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert!(
             cycles.is_empty(),
             "diamond dependency pattern is not a cycle"
@@ -623,7 +663,7 @@ mod tests {
         graph.add_edge(PathBuf::from("b.ts"), PathBuf::from("c.ts"));
         graph.add_edge(PathBuf::from("c.ts"), PathBuf::from("b.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         // All three are in one SCC
         assert!(!cycles.is_empty(), "figure-8 pattern should detect cycles");
     }
@@ -636,7 +676,7 @@ mod tests {
         graph.add_edge(PathBuf::from("m.ts"), PathBuf::from("a.ts"));
         graph.add_edge(PathBuf::from("a.ts"), PathBuf::from("z.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert_eq!(cycles.len(), 1, "should detect one cycle");
 
         let cycle = cycles.first().expect("test should have cycle");
@@ -657,7 +697,7 @@ mod tests {
         graph.add_edge("@pkg/d".to_owned(), "@pkg/e".to_owned());
         graph.add_edge("@pkg/e".to_owned(), "@pkg/a".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 1, "should detect one 5-way cycle");
         assert_eq!(
             cycles.first().map(PackageCycle::len),
@@ -674,7 +714,7 @@ mod tests {
         graph.add_edge("@pkg/a".to_owned(), "@pkg/m".to_owned());
         graph.add_edge("@pkg/m".to_owned(), "@pkg/z".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 1, "should detect one cycle");
 
         let cycle = cycles.first().expect("test should have cycle");
@@ -694,7 +734,7 @@ mod tests {
         graph.add_edge("@pkg/c".to_owned(), "@pkg/d".to_owned());
         graph.add_edge("@pkg/d".to_owned(), "@pkg/c".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 2, "should detect two independent cycles");
     }
 
@@ -709,7 +749,7 @@ mod tests {
         graph.add_edge("@pkg/d".to_owned(), "@pkg/e".to_owned());
         graph.add_edge("@pkg/e".to_owned(), "@pkg/a".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         // Should find BOTH cycles, not just one
         assert_eq!(
             cycles.len(),
@@ -729,7 +769,7 @@ mod tests {
         graph.add_edge("@pkg/b".to_owned(), "@pkg/leaf2".to_owned());
         graph.add_edge("@pkg/c".to_owned(), "@pkg/leaf3".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(
             cycles.len(),
             1,
@@ -745,11 +785,11 @@ mod tests {
     #[test]
     fn test_empty_graph_no_cycles() {
         let graph = DependencyGraph::new();
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert!(cycles.is_empty(), "empty graph should have no cycles");
 
         let pkg_graph = PackageDependencyGraph::new();
-        let pkg_cycles = PackageCycleDetector::detect(&pkg_graph);
+        let pkg_cycles = package_cycles(&pkg_graph);
         assert!(
             pkg_cycles.is_empty(),
             "empty package graph should have no cycles"
@@ -761,7 +801,7 @@ mod tests {
         let mut graph = DependencyGraph::new();
         graph.add_node(PathBuf::from("lonely.ts"));
 
-        let cycles = CycleDetector::detect(&graph);
+        let cycles = file_cycles(&graph);
         assert!(cycles.is_empty(), "single isolated node is not a cycle");
     }
 
@@ -773,9 +813,9 @@ mod tests {
         graph.add_edge(PathBuf::from("a.ts"), PathBuf::from("b.ts"));
         graph.add_edge(PathBuf::from("b.ts"), PathBuf::from("c.ts"));
 
-        let cycles1 = CycleDetector::detect(&graph);
-        let cycles2 = CycleDetector::detect(&graph);
-        let cycles3 = CycleDetector::detect(&graph);
+        let cycles1 = file_cycles(&graph);
+        let cycles2 = file_cycles(&graph);
+        let cycles3 = file_cycles(&graph);
 
         assert_eq!(cycles1, cycles2, "cycle detection should be deterministic");
         assert_eq!(cycles2, cycles3, "cycle detection should be deterministic");
@@ -788,8 +828,8 @@ mod tests {
         graph.add_edge("@pkg/a".to_owned(), "@pkg/b".to_owned());
         graph.add_edge("@pkg/b".to_owned(), "@pkg/c".to_owned());
 
-        let cycles1 = PackageCycleDetector::detect(&graph);
-        let cycles2 = PackageCycleDetector::detect(&graph);
+        let cycles1 = package_cycles(&graph);
+        let cycles2 = package_cycles(&graph);
 
         assert_eq!(
             cycles1, cycles2,
@@ -838,7 +878,7 @@ mod tests {
         graph.add_edge("@pkg/e".to_owned(), "@pkg/f".to_owned());
         graph.add_edge("@pkg/f".to_owned(), "@pkg/e".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 3, "should find all three 2-cycles");
 
         // Verify each cycle has length 2 (3 nodes including repeated start)
@@ -858,7 +898,7 @@ mod tests {
         graph.add_edge("@pkg/d".to_owned(), "@pkg/e".to_owned());
         graph.add_edge("@pkg/e".to_owned(), "@pkg/a".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 2, "should find both 3-cycles in same SCC");
 
         // Verify both cycles have 3 distinct packages
@@ -879,7 +919,7 @@ mod tests {
         graph.add_edge("@pkg/d".to_owned(), "@pkg/e".to_owned());
         graph.add_edge("@pkg/e".to_owned(), "@pkg/c".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(
             cycles.len(),
             2,
@@ -903,7 +943,7 @@ mod tests {
         graph.add_edge("@pkg/b".to_owned(), "@pkg/d".to_owned());
         graph.add_edge("@pkg/d".to_owned(), "@pkg/a".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 2, "should find both overlapping cycles");
     }
 
@@ -917,7 +957,7 @@ mod tests {
         graph.add_edge("@pkg/c".to_owned(), "@pkg/d".to_owned());
         graph.add_edge("@pkg/d".to_owned(), "@pkg/a".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 2, "should find 2-cycle and 3-cycle");
 
         let has_two_cycle = cycles.iter().any(|c| c.len() == 2);
@@ -935,7 +975,7 @@ mod tests {
         graph.add_edge("@pkg/a".to_owned(), "@pkg/b".to_owned());
         graph.add_edge("@pkg/b".to_owned(), "@pkg/c".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
         assert_eq!(cycles.len(), 1, "should find one cycle");
 
         let cycle = cycles.first().expect("test should have one cycle");
@@ -955,7 +995,7 @@ mod tests {
         graph.add_edge("@pkg/a".to_owned(), "@pkg/c".to_owned());
         graph.add_edge("@pkg/c".to_owned(), "@pkg/b".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
 
         // Check for duplicates
         let mut seen = HashSet::new();
@@ -980,7 +1020,7 @@ mod tests {
         graph.add_edge("@pkg/c".to_owned(), "@pkg/b".to_owned());
         graph.add_edge("@pkg/d".to_owned(), "@pkg/c".to_owned());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
 
         // Should find: A<->B, B<->C, C<->D (3 two-cycles) plus longer cycles
         let two_cycle_count = cycles.iter().filter(|c| c.len() == 2).count();
@@ -1066,7 +1106,7 @@ mod tests {
             "@pkg/contexts-user".to_owned(),
         );
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
 
         // Should find multiple cycles including:
         // 1. @pkg/ds <-> @pkg/utils-test-wrappers (2-cycle)
@@ -1121,7 +1161,7 @@ mod tests {
         graph.add_edge("@pkg/d".to_owned(), "@pkg/e".to_owned());
         graph.add_edge("@pkg/e".to_owned(), "@pkg/a".to_owned()); // completes outer ring
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
 
         // Should find:
         // - 2 two-cycles: hub<->a, hub<->c
@@ -1167,7 +1207,7 @@ mod tests {
         graph.add_edge(packages[10].clone(), packages[0].clone());
         graph.add_edge(packages[5].clone(), packages[15].clone());
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
 
         // Should find at least the 2-cycles we explicitly created
         let two_cycle_count = cycles.iter().filter(|c| c.len() == 2).count();
@@ -1200,7 +1240,7 @@ mod tests {
         graph.add_edge("@pkg/p3".to_owned(), "@pkg/p2".to_owned()); // p2 <-> p3
         graph.add_edge("@pkg/p5".to_owned(), "@pkg/p4".to_owned()); // p4 <-> p5
 
-        let cycles = PackageCycleDetector::detect(&graph);
+        let cycles = package_cycles(&graph);
 
         // Must find all 3 two-cycles
         let two_cycles: Vec<_> = cycles.iter().filter(|c| c.len() == 2).collect();
@@ -1375,7 +1415,7 @@ mod tests {
             None,
         );
 
-        let cycles = PackageCycleDetector::detect_with_files(&graph);
+        let cycles = package_cycles_with_files(&graph);
 
         assert_eq!(cycles.len(), 1, "should detect 1 cycle");
 
@@ -1416,7 +1456,7 @@ mod tests {
             None,
         );
 
-        let cycles = PackageCycleDetector::detect_with_files(&graph);
+        let cycles = package_cycles_with_files(&graph);
 
         assert_eq!(cycles.len(), 1, "should detect 1 cycle");
 
@@ -1470,7 +1510,7 @@ mod tests {
             None,
         );
 
-        let cycles = PackageCycleDetector::detect_with_files(&graph);
+        let cycles = package_cycles_with_files(&graph);
 
         assert_eq!(cycles.len(), 1, "should detect 1 cycle");
 
@@ -1504,7 +1544,7 @@ mod tests {
             None,
         );
 
-        let cycles = PackageCycleDetector::detect_with_files(&graph);
+        let cycles = package_cycles_with_files(&graph);
 
         assert!(cycles.is_empty(), "should detect no cycles");
     }

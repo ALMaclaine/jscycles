@@ -61,6 +61,7 @@ fn relative_package_operands_find_ancestor_configuration() {
     for spelling in [package, root.join("sources/runner/../pkg")] {
         assert!(
             TsConfig::discover(&spelling)
+                .expect("readable tsconfig")
                 .expect("standalone ancestor search")
                 .resolve_alias("@target")
                 .expect("selected alias")
@@ -112,6 +113,7 @@ fn relative_cache_keys_include_the_working_directory() {
             );
             assert!(
                 TsConfig::discover(Path::new("pkg"))
+                    .expect("readable tsconfig")
                     .expect("standalone relative search")
                     .resolve_alias("@target")
                     .expect("standalone target")
@@ -458,7 +460,7 @@ fn shared_parent_bytes_keep_each_extends_spelling_origin() {
     fs::write(root.join("decoy.ts"), "").expect("logical ancestor target");
     std::os::unix::fs::symlink("physical/deep", root.join("linked")).expect("directory link");
     for config in [
-        TsConfig::discover(&root.join("linked")),
+        TsConfig::discover(&root.join("linked")).expect("readable tsconfig"),
         cache.discover(&root.join("linked")),
     ] {
         assert_eq!(
@@ -473,6 +475,7 @@ fn shared_parent_bytes_keep_each_extends_spelling_origin() {
     let expected = Some(root.join("physical/pkg/target.ts"));
     assert_eq!(
         TsConfig::discover(&selected)
+            .expect("readable tsconfig")
             .expect("standalone physical search")
             .resolve_alias("@target"),
         expected

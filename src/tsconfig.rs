@@ -88,7 +88,8 @@ impl CompilerOptions {
 }
 
 /// A compiled path alias pattern.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct PathAlias {
     /// The pattern prefix (e.g., "@/" from "@/*").
     pub prefix: String,
@@ -101,6 +102,27 @@ pub struct PathAlias {
 }
 
 impl PathAlias {
+    /// An alias for exactly `name`, as `"name": [...]` in `compilerOptions.paths`.
+    #[must_use]
+    pub const fn exact(name: String, replacements: Vec<PathBuf>) -> Self {
+        Self {
+            prefix: name,
+            has_wildcard: false,
+            replacements,
+        }
+    }
+
+    /// An alias for every specifier starting with `prefix`, as
+    /// `"prefix*": [...]`; each replacement's `*` receives the rest.
+    #[must_use]
+    pub const fn wildcard(prefix: String, replacements: Vec<PathBuf>) -> Self {
+        Self {
+            prefix,
+            has_wildcard: true,
+            replacements,
+        }
+    }
+
     fn priority(&self) -> (bool, std::cmp::Reverse<usize>, &str) {
         (
             self.has_wildcard,
@@ -111,7 +133,24 @@ impl PathAlias {
 }
 
 /// Parsed TypeScript configuration for path resolution.
-#[derive(Debug, Clone)]
+///
+/// ```
+/// use jscycles::tsconfig::{PathAlias, TsConfig};
+/// use std::path::PathBuf;
+///
+/// let config = TsConfig::new(
+///     PathBuf::from("/repo"),
+///     vec![PathAlias::wildcard("@/".to_owned(), vec![PathBuf::from("/repo/src/*")])],
+/// );
+/// // No file exists, so the first candidate is returned.
+/// assert_eq!(
+///     config.resolve_alias("@/util"),
+///     Some(PathBuf::from("/repo/src/util"))
+/// );
+/// assert_eq!(config.resolve_alias("lodash"), None);
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct TsConfig {
     /// Base URL for path resolution.
     pub base_url: PathBuf,
@@ -415,6 +454,12 @@ pub(crate) fn normalize_module_path(path: &Path) -> PathBuf {
 }
 
 impl TsConfig {
+    /// Aliases resolved against `base_url`, matched in order.
+    #[must_use]
+    pub const fn new(base_url: PathBuf, paths: Vec<PathAlias>) -> Self {
+        Self { base_url, paths }
+    }
+
     /// Loaded tables have unique exact entries before wildcard entries. Check
     /// that sufficient invariant once before bypassing a name search. Public
     /// vectors with different ordering, duplicates or empty replacements retain
@@ -764,12 +809,18 @@ impl TsConfig {
 
     /// Discover tsconfig.json by searching from the given directory upward.
     ///
-    /// Returns `None` if no tsconfig.json is found, or if the nearest one (or an
-    /// inherited config) cannot be read or parsed: automatic discovery is
-    /// best-effort. Use [`TsConfig::load`] for strict errors.
+    /// Returns `Ok(None)` if no tsconfig.json is found. [`TsConfigCache`]
+    /// offers the scan's best-effort discovery, which skips and records an
+    /// unusable file instead.
+    ///
+    /// # Errors
+    ///
+    /// The nearest tsconfig.json, or a configuration it extends, cannot be
+    /// read or parsed, or a `..` in the search path cannot be resolved.
     #[inline]
-    pub fn discover(start: &Path) -> Option<Self> {
-        let start = absolute_path(start).ok()?;
+    pub fn discover(start: &Path) -> Result<Option<Self>, TsConfigError> {
+        let start =
+            absolute_path(start).map_err(|error| TsConfigError::Read(error).at_path(start))?;
         let mut current = if start.is_file() {
             start.parent().map(Path::to_path_buf)
         } else {
@@ -777,15 +828,16 @@ impl TsConfig {
         };
 
         while let Some(dir) = current {
-            let dir = resolved_search_path(dir).ok()?;
+            let dir = resolved_search_path(dir.clone())
+                .map_err(|error| TsConfigError::Read(error).at_path(&dir))?;
             let tsconfig_path = dir.join("tsconfig.json");
             if tsconfig_path.exists() {
-                return Self::load(&tsconfig_path).ok();
+                return Self::load(&tsconfig_path).map(Some);
             }
             current = dir.parent().map(Path::to_path_buf);
         }
 
-        None
+        Ok(None)
     }
 
     /// Resolve a path alias to a file or its first declared target candidate.
@@ -979,6 +1031,7 @@ impl TsConfigCache {
 
     /// Discover an immutable shared snapshot. Optional metadata remains best-effort;
     /// callers must check the shared budget before accepting a scan result.
+    #[must_use]
     #[cfg_attr(feature = "profiling", hotpath::measure)]
     pub fn discover_shared(&self, start: &Path) -> Option<Arc<TsConfig>> {
         self.budget.check().ok()?;
@@ -1872,7 +1925,7 @@ mod tests {
         let fixture_path =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tsconfig-extends");
 
-        let config_opt = TsConfig::discover(&fixture_path);
+        let config_opt = TsConfig::discover(&fixture_path).expect("readable tsconfig");
         assert!(
             config_opt.is_some(),
             "should discover tsconfig with extends"
@@ -1892,7 +1945,9 @@ mod tests {
         let fixture_path =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tsconfig-extends");
 
-        let config = TsConfig::discover(&fixture_path).expect("should discover config");
+        let config = TsConfig::discover(&fixture_path)
+            .expect("readable tsconfig")
+            .expect("should discover config");
 
         // Only the child's mappings survive the option replacement.
         let alias_prefixes: Vec<&str> = config.paths.iter().map(|a| a.prefix.as_str()).collect();
@@ -1916,7 +1971,7 @@ mod tests {
         let fixture_path =
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tsconfig-extends-pkg");
 
-        let config_opt = TsConfig::discover(&fixture_path);
+        let config_opt = TsConfig::discover(&fixture_path).expect("readable tsconfig");
         assert!(
             config_opt.is_some(),
             "should discover tsconfig extending from node_modules"

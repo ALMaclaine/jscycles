@@ -21,7 +21,8 @@ fn display_path(path: &std::path::Path, base_path: &std::path::Path) -> PathBuf 
 }
 
 /// Results for a single package.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct PackageResult {
     /// Package name.
     pub name: String,
@@ -34,10 +35,19 @@ pub struct PackageResult {
 }
 
 /// Aggregated results for all packages.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Results {
     /// Per-package results.
     pub packages: Vec<PackageResult>,
+}
+
+impl PackageResult {
+    /// Results for the package `name` rooted at `path`.
+    #[must_use]
+    pub const fn new(name: String, path: PathBuf, cycles: Vec<Cycle>) -> Self {
+        Self { name, path, cycles }
+    }
 }
 
 impl Results {
@@ -83,7 +93,8 @@ impl Default for Results {
 }
 
 /// Filter for which types of cycles to display.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[non_exhaustive]
 pub enum CycleFilter {
     /// Show all cycles (default).
     #[default]
@@ -95,7 +106,8 @@ pub enum CycleFilter {
 }
 
 /// Unified results including both file-level and package-level cycles.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct UnifiedResults {
     /// Per-package file-level results.
     pub file_results: Vec<PackageResult>,
@@ -125,7 +137,11 @@ impl UnifiedResults {
     /// Check if any package-level cycles were found.
     #[inline]
     #[must_use]
-    pub const fn has_package_cycles(&self) -> bool {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn has_package_cycles(&self) -> bool {
         !self.package_cycles.is_empty() || !self.package_cycles_with_files.is_empty()
     }
 
@@ -161,7 +177,7 @@ pub trait OutputFormatter {
     /// # Errors
     ///
     /// Returns an IO error if writing fails.
-    fn format(&self, results: &Results, writer: &mut dyn Write) -> std::io::Result<()>;
+    fn format<W: Write + ?Sized>(&self, results: &Results, writer: &mut W) -> std::io::Result<()>;
 }
 
 /// Trait for unified output formatters (file + package cycles).
@@ -171,21 +187,42 @@ pub trait UnifiedOutputFormatter {
     /// # Errors
     ///
     /// Returns an IO error if writing fails.
-    fn format_unified(
+    fn format_unified<W: Write + ?Sized>(
         &self,
         results: &UnifiedResults,
         filter: CycleFilter,
-        writer: &mut dyn Write,
+        writer: &mut W,
     ) -> std::io::Result<()>;
 }
 
+/// Whether human-readable output carries terminal colors.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[non_exhaustive]
+pub enum ColorMode {
+    /// Plain text, for files, pipes and terminals without color support.
+    #[default]
+    Plain,
+    /// ANSI color escape sequences, for a terminal.
+    Ansi,
+}
+
 /// Human-readable output formatter.
-#[derive(Debug, Default)]
+///
+/// ```
+/// use jscycles::output::{ColorMode, HumanFormatter, UnifiedOutputFormatter as _};
+/// use jscycles::{CycleFilter, UnifiedResults};
+///
+/// let mut text = Vec::new();
+/// HumanFormatter::new(ColorMode::Plain)
+///     .with_verbose(true)
+///     .format_unified(&UnifiedResults::new(), CycleFilter::All, &mut text)?;
+/// assert!(String::from_utf8_lossy(&text).contains("No packages"));
+/// # Ok::<(), std::io::Error>(())
+/// ```
+#[derive(Debug, Clone, Default)]
 pub struct HumanFormatter {
-    /// Whether to use colors (for TTY output).
-    pub use_color: bool,
-    /// Whether to show verbose output (including clean packages).
-    pub verbose: bool,
+    color: ColorMode,
+    verbose: bool,
 }
 
 impl HumanFormatter {
@@ -198,22 +235,37 @@ impl HumanFormatter {
         label(text)
     }
 
-    /// Create a new human formatter.
+    /// Create a human formatter that lists only packages with cycles.
     #[inline]
     #[must_use]
-    pub const fn new(use_color: bool) -> Self {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn new(color: ColorMode) -> Self {
         Self {
-            use_color,
+            color,
             verbose: false,
         }
     }
 
-    /// Set verbose mode (show clean packages).
+    /// Also list packages without cycles.
     #[inline]
     #[must_use]
-    pub const fn with_verbose(mut self, verbose: bool) -> Self {
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "public const is a permanent promise; this API may need non-const work"
+    )]
+    pub fn with_verbose(mut self, verbose: bool) -> Self {
         self.verbose = verbose;
         self
+    }
+
+    const fn colored(&self) -> bool {
+        match self.color {
+            ColorMode::Plain => false,
+            ColorMode::Ansi => true,
+        }
     }
 
     /// Format a cycle path as a string.
@@ -250,7 +302,7 @@ impl HumanFormatter {
         package: &PackageResult,
         writer: &mut dyn Write,
     ) -> std::io::Result<()> {
-        if self.use_color {
+        if self.colored() {
             writeln!(
                 writer,
                 "\x1b[32m✓\x1b[0m {}: no cycles",
@@ -275,7 +327,7 @@ impl HumanFormatter {
         let name = label(&package.name);
         let count = package.cycles.len();
 
-        if self.use_color {
+        if self.colored() {
             writeln!(writer, "\x1b[31m✗\x1b[0m {name}: {count} {cycle_word}")?;
         } else {
             writeln!(writer, "✗ {name}: {count} {cycle_word}")?;
@@ -315,7 +367,7 @@ impl HumanFormatter {
         }
 
         if results.package_cycles.is_empty() {
-            if self.use_color {
+            if self.colored() {
                 writeln!(writer, "\x1b[32m✓\x1b[0m No inter-package cycles")?;
             } else {
                 writeln!(writer, "✓ No inter-package cycles")?;
@@ -323,7 +375,7 @@ impl HumanFormatter {
         } else {
             let count = results.package_cycles.len();
             let cycle_word = if count == 1 { "cycle" } else { "cycles" };
-            if self.use_color {
+            if self.colored() {
                 writeln!(
                     writer,
                     "\x1b[31m✗\x1b[0m {count} inter-package {cycle_word}"
@@ -352,7 +404,7 @@ impl HumanFormatter {
     ) -> std::io::Result<()> {
         let count = results.package_cycles_with_files.len();
         if count == 0 {
-            if self.use_color {
+            if self.colored() {
                 writeln!(writer, "\x1b[32m✓\x1b[0m No inter-package cycles")?;
             } else {
                 writeln!(writer, "✓ No inter-package cycles")?;
@@ -361,7 +413,7 @@ impl HumanFormatter {
         }
 
         let cycle_word = if count == 1 { "cycle" } else { "cycles" };
-        if self.use_color {
+        if self.colored() {
             writeln!(
                 writer,
                 "\x1b[31m✗\x1b[0m {count} inter-package {cycle_word}"
@@ -491,8 +543,8 @@ fn counted(count: usize, singular: &str, plural: &str) -> String {
     format!("{count} {}", if count == 1 { singular } else { plural })
 }
 
-impl OutputFormatter for HumanFormatter {
-    fn format(&self, results: &Results, writer: &mut dyn Write) -> std::io::Result<()> {
+impl HumanFormatter {
+    fn write_results(&self, results: &Results, writer: &mut dyn Write) -> std::io::Result<()> {
         if results.packages.is_empty() {
             writeln!(writer, "No packages found.")?;
             return Ok(());
@@ -509,8 +561,17 @@ impl OutputFormatter for HumanFormatter {
     }
 }
 
-impl UnifiedOutputFormatter for HumanFormatter {
-    fn format_unified(
+impl OutputFormatter for HumanFormatter {
+    fn format<W: Write + ?Sized>(&self, results: &Results, writer: &mut W) -> std::io::Result<()> {
+        // `&mut W` is a sized writer even when `W` is not, so one
+        // non-generic body serves every writer type.
+        let mut writer = writer;
+        self.write_results(results, &mut writer)
+    }
+}
+
+impl HumanFormatter {
+    fn write_unified(
         &self,
         results: &UnifiedResults,
         filter: CycleFilter,
@@ -531,6 +592,20 @@ impl UnifiedOutputFormatter for HumanFormatter {
 
         // Summary
         Self::format_unified_summary(results, filter, writer)
+    }
+}
+
+impl UnifiedOutputFormatter for HumanFormatter {
+    fn format_unified<W: Write + ?Sized>(
+        &self,
+        results: &UnifiedResults,
+        filter: CycleFilter,
+        writer: &mut W,
+    ) -> std::io::Result<()> {
+        // `&mut W` is a sized writer even when `W` is not, so one
+        // non-generic body serves every writer type.
+        let mut writer = writer;
+        self.write_unified(results, filter, &mut writer)
     }
 }
 
@@ -640,8 +715,8 @@ impl JsonFormatter {
     }
 }
 
-impl OutputFormatter for JsonFormatter {
-    fn format(&self, results: &Results, writer: &mut dyn Write) -> std::io::Result<()> {
+impl JsonFormatter {
+    fn write_results(results: &Results, writer: &mut dyn Write) -> std::io::Result<()> {
         let packages: Vec<JsonPackage> =
             results.packages.iter().map(Self::convert_package).collect();
 
@@ -653,6 +728,15 @@ impl OutputFormatter for JsonFormatter {
         serde_json::to_writer_pretty(&mut *writer, &output).map_err(std::io::Error::other)?;
         writeln!(writer)?;
         Ok(())
+    }
+}
+
+impl OutputFormatter for JsonFormatter {
+    fn format<W: Write + ?Sized>(&self, results: &Results, writer: &mut W) -> std::io::Result<()> {
+        // `&mut W` is a sized writer even when `W` is not, so one
+        // non-generic body serves every writer type.
+        let mut writer = writer;
+        Self::write_results(results, &mut writer)
     }
 }
 
@@ -713,9 +797,8 @@ struct JsonUnifiedOutput {
     package_cycles: Vec<JsonPackageCycleWithFiles>,
 }
 
-impl UnifiedOutputFormatter for JsonFormatter {
-    fn format_unified(
-        &self,
+impl JsonFormatter {
+    fn write_unified(
         results: &UnifiedResults,
         filter: CycleFilter,
         writer: &mut dyn Write,
@@ -760,6 +843,20 @@ impl UnifiedOutputFormatter for JsonFormatter {
         serde_json::to_writer_pretty(&mut *writer, &output).map_err(std::io::Error::other)?;
         writeln!(writer)?;
         Ok(())
+    }
+}
+
+impl UnifiedOutputFormatter for JsonFormatter {
+    fn format_unified<W: Write + ?Sized>(
+        &self,
+        results: &UnifiedResults,
+        filter: CycleFilter,
+        writer: &mut W,
+    ) -> std::io::Result<()> {
+        // `&mut W` is a sized writer even when `W` is not, so one
+        // non-generic body serves every writer type.
+        let mut writer = writer;
+        Self::write_unified(results, filter, &mut writer)
     }
 }
 
@@ -818,7 +915,7 @@ mod tests {
                 )],
             });
             let mut output = Vec::new();
-            HumanFormatter::new(false)
+            HumanFormatter::new(ColorMode::Plain)
                 .format(&results, &mut output)
                 .expect("human report");
             let text = String::from_utf8(output).expect("UTF-8 report");
@@ -875,7 +972,7 @@ mod tests {
 
     #[test]
     fn test_human_formatter() {
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let results = Results::new();
         let mut output = Vec::new();
         formatter
@@ -1048,7 +1145,7 @@ mod tests {
 
     #[test]
     fn test_human_formatter_with_cycles() {
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = Results::new();
         results.packages.push(PackageResult {
             name: "@test/pkg".to_owned(),
@@ -1079,7 +1176,7 @@ mod tests {
 
     #[test]
     fn test_human_formatter_with_color() {
-        let formatter = HumanFormatter::new(true).with_verbose(true);
+        let formatter = HumanFormatter::new(ColorMode::Ansi).with_verbose(true);
         let mut results = Results::new();
         results.packages.push(PackageResult {
             name: "@test/pkg".to_owned(),
@@ -1136,7 +1233,7 @@ mod tests {
 
     #[test]
     fn test_unified_human_formatter_all_filter() {
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = UnifiedResults::new();
 
         results.file_results.push(PackageResult {
@@ -1173,7 +1270,7 @@ mod tests {
 
     #[test]
     fn test_unified_human_formatter_inner_filter() {
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = UnifiedResults::new();
 
         results.file_results.push(PackageResult {
@@ -1210,7 +1307,7 @@ mod tests {
 
     #[test]
     fn test_unified_human_formatter_outer_filter() {
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = UnifiedResults::new();
 
         results.file_results.push(PackageResult {
@@ -1359,7 +1456,7 @@ mod tests {
 
     #[test]
     fn test_human_formatter_multiple_cycles() {
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = Results::new();
         results.packages.push(PackageResult {
             name: "@test/pkg".to_owned(),
@@ -1439,7 +1536,7 @@ mod tests {
 
     #[test]
     fn test_human_formatter_no_package_cycles() {
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let results = UnifiedResults::new();
 
         let mut output = Vec::new();
@@ -1456,7 +1553,7 @@ mod tests {
 
     #[test]
     fn test_human_formatter_package_cycle_format() {
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = UnifiedResults::new();
 
         results.package_cycles.push(PackageCycle::new(vec![
@@ -1486,7 +1583,7 @@ mod tests {
     fn test_human_formatter_cycle_with_files() {
         use crate::cycles::{PackageCycleEdge, PackageCycleWithFiles};
 
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = UnifiedResults::new();
 
         // Create a cycle with file details
@@ -1555,7 +1652,7 @@ mod tests {
     fn test_human_formatter_cycle_with_files_multiple_files() {
         use crate::cycles::{PackageCycleEdge, PackageCycleWithFiles};
 
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = UnifiedResults::new();
 
         // Create a cycle with multiple files per edge
@@ -1614,7 +1711,7 @@ mod tests {
     fn test_human_formatter_uses_cycles_with_files_when_available() {
         use crate::cycles::{PackageCycleEdge, PackageCycleWithFiles};
 
-        let formatter = HumanFormatter::new(false);
+        let formatter = HumanFormatter::new(ColorMode::Plain);
         let mut results = UnifiedResults::new();
 
         // Add both basic cycles and cycles with files - should use the detailed version

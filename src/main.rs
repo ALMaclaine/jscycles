@@ -10,7 +10,7 @@ use clap::{Arg, ArgAction, Command};
 
 use jscycles::output::CycleFilter;
 use jscycles::scan::{Scan, ScanReport, TsConfigSource};
-use jscycles::{Config, HumanFormatter, JscyclesError};
+use jscycles::{ColorMode, Config, HumanFormatter, JscyclesError};
 
 /// Build the CLI command.
 fn build_cli() -> Command {
@@ -229,7 +229,11 @@ fn run(matches: &clap::ArgMatches) -> Result<bool, JscyclesError> {
     let bytes = if matches.get_flag("json") {
         report.to_json()?
     } else {
-        report.to_human(io::stdout().is_terminal())?
+        report.to_human(if io::stdout().is_terminal() {
+            ColorMode::Ansi
+        } else {
+            ColorMode::Plain
+        })?
     };
     let mut stdout = io::stdout().lock();
     stdout.write_all(&bytes)?;
