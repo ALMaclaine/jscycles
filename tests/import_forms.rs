@@ -1,7 +1,8 @@
 //! Literal import forms must produce the same observable graph.
-use std::{fs, process::Command};
+use std::fs;
+use std::process::Command;
 
-use jscycles::ImportExtractor;
+use extract::ImportExtractor;
 
 #[test]
 fn literal_call_forms_preserve_real_cycles() {

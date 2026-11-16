@@ -9,6 +9,7 @@
 )]
 
 use std::fs;
+use std::path;
 use std::path::Path;
 use std::process::Command;
 
@@ -20,13 +21,13 @@ fn write(root: &Path, relative: &str, contents: &str) {
 
 /// Workspace with root package, members `a` and `b`, and cycles in
 /// `a/src` (via a tsconfig alias), `a/src/legacy` and `b`.
-fn fixture() -> (tempfile::TempDir, std::path::PathBuf) {
+fn fixture() -> (tempfile::TempDir, path::PathBuf) {
     let temp = tempfile::tempdir().expect("directory");
     let canonical = fs::canonicalize(temp.path()).expect("canonical root");
     // Users spell `C:\x`, not the verbatim `\\?\C:\x` canonical form, in
     // which Windows rejects the `/` these spellings append.
     let spelled = canonical.to_str().expect("UTF-8 path");
-    let root = std::path::PathBuf::from(spelled.strip_prefix(r"\\?\").unwrap_or(spelled));
+    let root = path::PathBuf::from(spelled.strip_prefix(r"\\?\").unwrap_or(spelled));
     write(
         &root,
         "package.json",

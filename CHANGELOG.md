@@ -10,6 +10,12 @@ break compatibility). Library and edge-case details are in the upgrade notes for
 
 ### Changed
 
+- The library is split into small crates, one per part of the analysis,
+  following the Google Rust style guide's code organization rules: embed a
+  scan with `jscycles-scan`, or use `jscycles-cycles`, `jscycles-graph`,
+  `jscycles-config` and the others directly. The `jscycles` crate is now only
+  the command-line binary, so its `cli` feature is gone. The
+  [0.5 upgrade notes](docs/migration-0.5.md) map every old path to its crate.
 - The Rust library API follows the
   [Google Rust style guide](https://google.github.io/styleguide/rustguide.html)'s
   API design rules for library code. This breaks library callers; the command
@@ -17,7 +23,7 @@ break compatibility). Library and edge-case details are in the upgrade notes for
   [0.5 upgrade notes](docs/migration-0.5.md) list every change with its
   replacement. In short:
   - `CycleDetector` and `PackageCycleDetector` are replaced by functions in
-    `jscycles::cycles` (`file_cycles`, `package_cycles`, and their `try_`
+    `jscycles-cycles` (`file_cycles`, `package_cycles`, and their `try_`
     forms).
   - `ScanReport::to_human` and `HumanFormatter::new` take a `ColorMode`
     instead of a `bool`.

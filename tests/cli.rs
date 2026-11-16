@@ -6,10 +6,9 @@
 
 use std::fs;
 use std::io::Write as _;
+use std::net::Shutdown;
 use std::path::Path;
 use std::process::{Command, Output, Stdio};
-
-use tempfile::tempdir;
 
 fn scan(root: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_jscycles"))
@@ -27,7 +26,7 @@ fn package(root: &Path) {
 
 #[test]
 fn argument_errors_escape_controls_and_bidi_without_destroying_usage_layout() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     for character in [
         '\n', '\t', '\u{1b}', '\u{9b}', '\u{061c}', '\u{200e}', '\u{200f}', '\u{202a}', '\u{202b}',
         '\u{202c}', '\u{202d}', '\u{202e}', '\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}',
@@ -62,7 +61,7 @@ fn argument_errors_escape_controls_and_bidi_without_destroying_usage_layout() {
 
 #[test]
 fn valid_paths_keep_their_original_unicode_and_control_characters() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     for name in ["ordinary-λ", "direction-\u{202e}"] {
         let root = temp.path().join(name);
         fs::create_dir(&root).expect("package directory");
@@ -110,7 +109,7 @@ fn workspace(root: &Path, imports_cycle: bool, manifests_cycle: bool) {
 #[test]
 fn adherence_outer_is_a_filter_of_the_same_import_graph() {
     for (imports_cycle, manifests_cycle) in [(true, false), (false, true)] {
-        let temp = tempdir().expect("temporary directory");
+        let temp = tempfile::tempdir().expect("temporary directory");
         workspace(temp.path(), imports_cycle, manifests_cycle);
         for explicit in [false, true] {
             let mut arguments = vec!["--json"];
@@ -144,7 +143,7 @@ fn adherence_outer_is_a_filter_of_the_same_import_graph() {
 
 #[test]
 fn adherence_automatic_scans_use_configured_include_patterns() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     workspace(temp.path(), true, false);
     fs::write(
         temp.path().join("jscycles.yaml"),
@@ -181,7 +180,7 @@ fn adherence_automatic_scans_use_configured_include_patterns() {
 
 #[test]
 fn adherence_alias_cycles_use_consistent_source_paths() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     fs::create_dir(temp.path().join("src")).expect("source directory");
     fs::write(
@@ -237,7 +236,7 @@ fn assert_error(output: &Output) {
 
 #[test]
 fn invalid_configuration_is_not_a_clean_scan() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     for yaml in [
         "scan: [",
@@ -255,7 +254,7 @@ fn invalid_configuration_is_not_a_clean_scan() {
 
 #[test]
 fn explicit_extensions_override_yaml_defaults_and_package_settings() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     fs::write(temp.path().join("a.ts"), "import './a';").expect("cycle source");
     fs::write(
@@ -279,7 +278,7 @@ fn explicit_extensions_override_yaml_defaults_and_package_settings() {
 
 #[test]
 fn optional_absent_config_and_explicit_missing_config_differ() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     let clean = scan(temp.path(), &["--json", "--inner"]);
     assert_eq!(
@@ -301,7 +300,7 @@ fn optional_absent_config_and_explicit_missing_config_differ() {
 
 #[test]
 fn explicit_tsconfig_errors_are_reported_in_outer_mode() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     workspace(temp.path(), false, false);
     let output = scan(temp.path(), &["--outer", "--tsconfig", "missing.json"]);
     assert_error(&output);
@@ -317,20 +316,20 @@ fn explicit_tsconfig_errors_are_reported_in_outer_mode() {
 
 #[test]
 fn missing_scan_root_is_an_error() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     assert_error(&scan(temp.path(), &["does-not-exist", "--inner"]));
 }
 
 #[test]
 fn unsupported_file_operand_is_not_a_clean_scan() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     assert_error(&scan(temp.path(), &["a.ts", "--inner"]));
 }
 
 #[test]
 fn cycles_keep_the_existing_exit_and_json_contract() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     fs::write(temp.path().join("a.ts"), "import './a';").expect("cycle source");
     let output = scan(temp.path(), &["--json", "--inner"]);
@@ -344,7 +343,7 @@ fn cycles_keep_the_existing_exit_and_json_contract() {
 
 #[test]
 fn invalid_utf8_stdin_is_not_silently_truncated() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     let mut child = Command::new(env!("CARGO_BIN_EXE_jscycles"))
         .current_dir(temp.path())
@@ -366,7 +365,7 @@ fn invalid_utf8_stdin_is_not_silently_truncated() {
 #[cfg(target_os = "linux")]
 #[test]
 fn real_output_failure_is_nonzero() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     let output = Command::new(env!("CARGO_BIN_EXE_jscycles"))
         .current_dir(temp.path())
@@ -392,14 +391,14 @@ fn closed_stdout_is_an_output_error() {
     use std::os::fd::OwnedFd;
     use std::os::unix::net::UnixStream;
 
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     package(temp.path());
     for arguments in [vec!["--json", "--inner"], vec!["--help"], vec!["--version"]] {
         let (reader, writer) = UnixStream::pair().expect("stdout socket");
         // Force an OS write error without depending on peer-close propagation or
         // concurrent child-descriptor inheritance timing on Unix socket pairs.
         writer
-            .shutdown(std::net::Shutdown::Write)
+            .shutdown(Shutdown::Write)
             .expect("disable stdout writes");
         drop(reader);
         let output = Command::new(env!("CARGO_BIN_EXE_jscycles"))
@@ -442,7 +441,7 @@ fn readme_usage_block_matches_help_output() {
 /// clean: a CI job started in the wrong directory would otherwise succeed.
 #[test]
 fn an_empty_selection_is_an_error_not_a_clean_scan() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     for arguments in [&[][..], &["--json", "--quiet"][..], &["--outer"][..]] {
         let output = scan(temp.path(), arguments);
         assert_eq!(output.status.code(), Some(2), "{arguments:?}");

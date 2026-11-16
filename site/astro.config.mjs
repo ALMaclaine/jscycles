@@ -79,6 +79,7 @@ export default defineConfig({
           label: 'Project',
           items: [
             { label: 'Changelog', slug: 'reference/changelog' },
+            { label: 'Upgrading to 0.5', slug: 'reference/migration-0-5' },
             { label: 'Upgrading to 0.2', slug: 'reference/migration-0-2' },
             { label: 'Is this AI slop?', slug: 'project/is-this-ai-slop' },
             { label: 'Contributing', link: `${repository}/blob/main/CONTRIBUTING.md` },

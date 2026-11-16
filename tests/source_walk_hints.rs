@@ -2,12 +2,16 @@
 #![allow(clippy::expect_used, reason = "Fixture failures must fail the test")]
 
 use std::fs;
+use std::os::unix::fs as unix_fs;
+use std::process;
 
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-use jscycles::imports::ExtractionMode;
-use jscycles::{DependencyGraph, Import, ImportExtractor, ImportTarget, cycles};
+use budget::{AnalysisBudget, AnalysisLimits, Resource};
+use extract::ExtractionMode;
+use extract::ImportExtractor;
+use graph::DependencyGraph;
+use import::{Import, ImportTarget};
 
-fn extractor() -> ImportExtractor {
+fn extractor() -> ImportExtractor<'static> {
     ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], None)
 }
 
@@ -85,7 +89,7 @@ fn unselected_first_indices_and_case_variants_keep_filesystem_fallback() {
     .expect("entry");
     let ignored = root.join("ignored/index.ts");
     let imports = extractor()
-        .with_ignore_patterns(vec![glob::Pattern::escape(
+        .ignore_patterns(vec![glob::Pattern::escape(
             ignored.to_str().expect("UTF-8 fixture"),
         )])
         .extract(&root)
@@ -119,15 +123,12 @@ fn retained_index_hints_are_bounded_and_outer_mode_skips_them() {
         path_bytes += u64::try_from(path.as_os_str().len()).expect("finite path length");
     }
     for mode in [ExtractionMode::All, ExtractionMode::WorkspaceOnly] {
-        let budget = AnalysisBudget::new(AnalysisLimits {
+        let budget = AnalysisBudget::try_new(AnalysisLimits {
             max_graph_bytes: path_bytes.checked_mul(3).expect("finite payload quota") / 2,
             ..AnalysisLimits::default()
         })
         .expect("finite budget");
-        let result = extractor()
-            .with_mode(mode)
-            .with_budget(budget.clone())
-            .extract(&root);
+        let result = extractor().mode(mode).budget(budget.clone()).extract(&root);
         if mode == ExtractionMode::All {
             assert!(
                 result.is_err(),
@@ -163,10 +164,9 @@ fn file_links_keep_physical_origin_and_directory_links_stay_pruned() {
     fs::write(root.join("entry.ts"), "import './folder';").expect("entry");
     fs::write(outside.join("actual.ts"), "import './peer';").expect("physical importer");
     fs::write(outside.join("peer.ts"), "").expect("physical peer");
-    std::os::unix::fs::symlink("../../outside/actual.ts", root.join("folder/index.ts"))
-        .expect("file link");
-    std::os::unix::fs::symlink("../outside", root.join("pruned-link")).expect("directory link");
-    std::os::unix::fs::symlink("selected", base.join("selected-link")).expect("root link");
+    unix_fs::symlink("../../outside/actual.ts", root.join("folder/index.ts")).expect("file link");
+    unix_fs::symlink("../outside", root.join("pruned-link")).expect("directory link");
+    unix_fs::symlink("selected", base.join("selected-link")).expect("root link");
     for operand in [root, base.join("selected-link")] {
         let imports = extractor().extract(&operand).expect("link-aware traversal");
         assert_eq!(imports.len(), 2, "do not descend into directory links");
@@ -191,7 +191,7 @@ fn special_walk_entries_and_broken_links_fail_before_parsing() {
     let temp = tempfile::tempdir().expect("fixture");
     let fifo = temp.path().join("input.ts");
     assert!(
-        std::process::Command::new("mkfifo")
+        process::Command::new("mkfifo")
             .arg(&fifo)
             .status()
             .expect("mkfifo")
@@ -200,7 +200,6 @@ fn special_walk_entries_and_broken_links_fail_before_parsing() {
     let error = extractor().extract(temp.path()).expect_err("FIFO rejected");
     assert!(error.to_string().contains("regular"));
     fs::remove_file(fifo).expect("remove FIFO");
-    std::os::unix::fs::symlink("missing.ts", temp.path().join("broken.ts"))
-        .expect("dangling file link");
+    unix_fs::symlink("missing.ts", temp.path().join("broken.ts")).expect("dangling file link");
     assert!(extractor().extract(temp.path()).is_err());
 }

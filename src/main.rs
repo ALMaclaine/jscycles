@@ -2,15 +2,22 @@
 //!
 //! Reports file-level and workspace-package cycles in local checkouts.
 
+use std::env;
+use std::error;
+use std::ffi::OsString;
 use std::io::{self, IsTerminal as _, Read as _, Write as _};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Arg, ArgAction, Command};
 
-use jscycles::output::CycleFilter;
-use jscycles::scan::{Scan, ScanReport, TsConfigSource};
-use jscycles::{ColorMode, Config, HumanFormatter, JscyclesError};
+use clap::error::ErrorKind;
+use clap::parser::ValueSource;
+use config::Config;
+use output::CycleFilter;
+use output::{ColorMode, HumanFormatter};
+use scan::JscyclesError;
+use scan::{Scan, ScanReport, TsConfigSource};
 
 /// Build the CLI command.
 fn build_cli() -> Command {
@@ -123,7 +130,7 @@ struct InputContext {
     label: &'static str,
     path: PathBuf,
     #[source]
-    source: Box<dyn std::error::Error + Send + Sync>,
+    source: Box<dyn error::Error + Send + Sync>,
 }
 
 /// Load the selected configuration, preserving its path and typed cause.
@@ -132,7 +139,7 @@ fn load_config(matches: &clap::ArgMatches) -> Result<Config, JscyclesError> {
     let path = matches
         .get_one::<PathBuf>("config")
         .unwrap_or(&default_config);
-    let explicit = matches.value_source("config") == Some(clap::parser::ValueSource::CommandLine);
+    let explicit = matches.value_source("config") == Some(ValueSource::CommandLine);
     let config = if explicit {
         Config::load(path)
     } else {
@@ -195,7 +202,7 @@ fn scan_from(matches: &clap::ArgMatches) -> Result<Scan, JscyclesError> {
         });
     // The default value matches the library default; only an explicit
     // selection overrides per-package settings.
-    if matches.value_source("extensions") == Some(clap::parser::ValueSource::CommandLine) {
+    if matches.value_source("extensions") == Some(ValueSource::CommandLine) {
         scan = scan.extensions(strings(matches, "extensions"));
     }
     Ok(scan)
@@ -205,10 +212,10 @@ fn scan_from(matches: &clap::ArgMatches) -> Result<Scan, JscyclesError> {
 /// silently: the aliases it would have supplied can hide cycles.
 fn warn_rejected_tsconfigs(report: &ScanReport) {
     let mut stderr = io::stderr().lock();
-    for (path, error) in report.ignored_tsconfigs() {
-        let first_line = error.lines().next().unwrap_or_default();
+    for ignored in report.ignored_tsconfigs() {
+        let first_line = ignored.reason.lines().next().unwrap_or_default();
         // Debug-quote both so untrusted controls cannot forge terminal output.
-        let shown = path.display().to_string();
+        let shown = ignored.path.display().to_string();
         // A warning that cannot be written does not change the scan result.
         let _ = writeln!(
             stderr,
@@ -273,7 +280,7 @@ fn read_stdin_paths(reader: impl io::Read) -> io::Result<Vec<PathBuf>> {
 /// Successful parsing keeps the original native paths. On an error, reparse
 /// visible argument labels so Clap can retain its layout and styles without
 /// inserting raw controls into diagnostics or generated suggestions.
-fn cli_matches(arguments: &[std::ffi::OsString]) -> Result<clap::ArgMatches, clap::Error> {
+fn cli_matches(arguments: &[OsString]) -> Result<clap::ArgMatches, clap::Error> {
     // Usage and errors name `jscycles` on every platform, not `jscycles.exe`
     // or whatever path launched it.
     let cli = build_cli().bin_name("jscycles");
@@ -295,19 +302,19 @@ fn cli_matches(arguments: &[std::ffi::OsString]) -> Result<clap::ArgMatches, cla
 
 fn main() -> ExitCode {
     #[cfg(feature = "profiling")]
-    let _profile = std::env::var_os("HOTPATH_OUTPUT_PATH").map(|path| {
+    let _profile = env::var_os("HOTPATH_OUTPUT_PATH").map(|path| {
         hotpath::HotpathGuardBuilder::new("jscycles")
             .format(hotpath::Format::JsonPretty)
             .output_path(path)
             .functions_limit(100)
             .build()
     });
-    let matches = match cli_matches(&std::env::args_os().collect::<Vec<_>>()) {
+    let matches = match cli_matches(&env::args_os().collect::<Vec<_>>()) {
         Ok(parsed) => parsed,
         Err(error) => {
             let informational = matches!(
                 error.kind(),
-                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
+                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
             );
             let printed = error.print().and_then(|()| {
                 if informational {

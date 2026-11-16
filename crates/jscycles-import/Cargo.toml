@@ -1,0 +1,20 @@
+[package]
+name = "jscycles-import"
+description = "Import records and extraction errors for jscycles"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+include = ["src/**", "Cargo.toml"]
+
+[dependencies]
+budget.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

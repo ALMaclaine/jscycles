@@ -6,11 +6,14 @@
 )]
 
 use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-use jscycles::{Config, CycleFilter, DiscoveryError, JscyclesError, Scan, TsConfigSource};
-use tempfile::tempdir;
+use config::Config;
+use discovery::DiscoveryError;
+use output::CycleFilter;
+use scan::{JscyclesError, Scan, TsConfigSource};
 
 const FIXTURES: [&str; 7] = [
     "simple-cycle",
@@ -62,7 +65,7 @@ fn status_for(has_cycles: bool) -> i32 {
 #[test]
 fn explicit_package_scans_match_the_command_byte_for_byte() {
     // An empty working directory, so no ambient jscycles.yaml applies.
-    let cwd = tempdir().expect("temporary directory");
+    let cwd = tempfile::tempdir().expect("temporary directory");
     for name in FIXTURES {
         let root = fixture(name);
         let root_text = root.to_str().expect("UTF-8 fixture path");
@@ -90,7 +93,7 @@ fn explicit_package_scans_match_the_command_byte_for_byte() {
             human_arguments.push(root_text);
             assert_eq!(
                 report
-                    .to_human(jscycles::ColorMode::Plain)
+                    .to_human(output::ColorMode::Plain)
                     .expect("output fits"),
                 cli(cwd.path(), &human_arguments).stdout,
                 "human output for {context}"
@@ -181,7 +184,7 @@ fn results_are_structured_data() {
 
 #[test]
 fn a_selection_with_no_packages_is_an_error_not_a_clean_report() {
-    let empty = tempdir().expect("temporary directory");
+    let empty = tempfile::tempdir().expect("temporary directory");
     let result = Scan::new(empty.path()).run();
     assert!(
         matches!(
@@ -213,7 +216,7 @@ fn invalid_settings_are_errors() {
             .extensions([extension])
             .run();
         assert!(
-            matches!(result, Err(JscyclesError::Io(ref error)) if error.kind() == std::io::ErrorKind::InvalidInput),
+            matches!(result, Err(JscyclesError::Io(ref error)) if error.kind() == ErrorKind::InvalidInput),
             "extension {extension:?}: {result:?}"
         );
     }
@@ -249,7 +252,7 @@ fn exhausted_limits_are_errors_not_partial_results() {
 
 #[test]
 fn an_ignored_tsconfig_is_reported_to_the_caller() {
-    let temp = tempdir().expect("temporary directory");
+    let temp = tempfile::tempdir().expect("temporary directory");
     // Outside any workspace, a package's own unusable tsconfig is skipped
     // with a warning rather than failing the scan.
     let root = temp.path().join("app");
@@ -268,7 +271,7 @@ fn an_ignored_tsconfig_is_reported_to_the_caller() {
     assert!(
         ignored
             .first()
-            .is_some_and(|(path, _)| path.ends_with("tsconfig.json")),
+            .is_some_and(|ignored| ignored.path.ends_with("tsconfig.json")),
         "{ignored:?}"
     );
 }
@@ -279,7 +282,7 @@ fn packages_from_different_workspaces_are_rejected() {
     let second = fixture("monorepo-mock");
     let result = Scan::packages([first.join("packages"), second.join("packages")]).run();
     assert!(
-        matches!(result, Err(JscyclesError::Io(ref error)) if error.kind() == std::io::ErrorKind::InvalidInput),
+        matches!(result, Err(JscyclesError::Io(ref error)) if error.kind() == ErrorKind::InvalidInput),
         "{result:?}"
     );
 }

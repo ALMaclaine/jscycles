@@ -15,7 +15,8 @@ jobs:
   crates:
     name: Publish to crates.io
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # The first publication of each new crate is rate limited by crates.io.
+    timeout-minutes: 180
     permissions:
       contents: read
       # Trusted publishing, once a publisher is configured for this workflow.
@@ -34,28 +35,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           [ "$GITHUB_REF" = refs/heads/main ] || { echo "run this from main" >&2; exit 1; }
-          version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')
           gh release view "v$version" --repo "$GITHUB_REPOSITORY" > /dev/null
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Skip a version that is already published
-        id: published
-        run: |
-          status=$(curl -sS -o /dev/null -w '%{http_code}' -H 'User-Agent: jscycles-release (github.com/ALMaclaine/jscycles)' \
-            "https://crates.io/api/v1/crates/jscycles/${{ steps.version.outputs.version }}")
-          case "$status" in
-            200) echo "already on crates.io"; echo "skip=true" >> "$GITHUB_OUTPUT" ;;
-            404) echo "skip=false" >> "$GITHUB_OUTPUT" ;;
-            *) echo "unexpected crates.io status $status" >&2; exit 1 ;;
-          esac
-
       - name: Get a trusted-publishing token
         id: auth
-        if: steps.published.outputs.skip == 'false' && env.BOOTSTRAP_TOKEN == ''
+        if: env.BOOTSTRAP_TOKEN == ''
         uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
 
+      # Every workspace crate, dependencies first. Versions already on
+      # crates.io are skipped, so a run stopped by a rate limit or a failure
+      # resumes when it is run again.
       - name: Publish
-        if: steps.published.outputs.skip == 'false'
         env:
           CARGO_REGISTRY_TOKEN: ${{ env.BOOTSTRAP_TOKEN || steps.auth.outputs.token }}
-        run: cargo publish --locked
+        run: python3 -B scripts/publish_crates.py

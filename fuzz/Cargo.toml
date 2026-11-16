@@ -11,13 +11,14 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "=0.4.13"
-# WillBooster forks: the upstream 0.23 grammars reject valid tagged templates
-# and `typeof import()` type arguments; see docs/analysis-limits.md. Pinned
-# exactly because the forks ship breaking grammar changes in major bumps.
-tree-sitter = { package = "willbooster-tree-sitter", version = "=18.0.2" }
-tree-sitter-javascript = { package = "willbooster-tree-sitter-javascript", version = "=22.0.1" }
-tree-sitter-typescript = { package = "willbooster-tree-sitter-typescript", version = "=26.0.1" }
-jscycles = { path = "..", version = "0.4.0" }
+# The crates under test, renamed as in the main workspace.
+budget = { package = "jscycles-budget", path = "../crates/jscycles-budget", version = "0.4.0" }
+config = { package = "jscycles-config", path = "../crates/jscycles-config", version = "0.4.0" }
+cycles = { package = "jscycles-cycles", path = "../crates/jscycles-cycles", version = "0.4.0" }
+graph = { package = "jscycles-graph", path = "../crates/jscycles-graph", version = "0.4.0" }
+import = { package = "jscycles-import", path = "../crates/jscycles-import", version = "0.4.0" }
+module_syntax = { package = "jscycles-module-syntax", path = "../crates/jscycles-module-syntax", version = "0.4.0" }
+syntax = { package = "jscycles-syntax", path = "../crates/jscycles-syntax", version = "0.4.0" }
 serde_json = "1"
 
 [workspace]

@@ -4,7 +4,9 @@
     reason = "Fixture and subprocess failures must fail tests"
 )]
 
+use std::collections::HashSet;
 use std::fs;
+use std::os::unix::fs as unix_fs;
 use std::path::Path;
 use std::process::Command;
 
@@ -108,7 +110,7 @@ fn alias_and_relative_parent_components_are_normalized_before_following_symlinks
         let root = directory.path();
         fixture(root, r#"{"@local/b":["src/bridge/../b"]}"#);
         fs::create_dir_all(root.join("external/child")).expect("physical directory");
-        std::os::unix::fs::symlink("../external/child", root.join("src/bridge"))
+        unix_fs::symlink("../external/child", root.join("src/bridge"))
             .expect("import-path directory symlink");
         let physical = if physical_cycle {
             "import '../src/a';"
@@ -255,13 +257,15 @@ fn modern_runtime_suffixes_cannot_resolve_an_unrelated_typescript_family() {
 
 #[test]
 fn repeated_extractions_observe_alias_files_appearing_changing_and_disappearing() {
-    use jscycles::{ImportExtractor, ImportTarget, tsconfig::TsConfig};
+    use extract::ImportExtractor;
+    use import::ImportTarget;
+    use tsconfig::TsConfig;
 
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path();
     fixture(root, r#"{"@local/*":["src/*"]}"#);
     let config = TsConfig::load(&root.join("tsconfig.json")).expect("aliases");
-    let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], Some(config));
+    let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], Some(&config));
     for suffix in [None, Some("ts"), Some("tsx"), None] {
         for extension in ["ts", "tsx"] {
             let path = root.join(format!("src/model.v2.{extension}"));
@@ -290,7 +294,9 @@ fn repeated_extractions_observe_alias_files_appearing_changing_and_disappearing(
 
 #[test]
 fn parallel_repeated_aliases_keep_canonical_file_identity_and_missing_classification() {
-    use jscycles::{ImportExtractor, ImportTarget, tsconfig::TsConfig};
+    use extract::ImportExtractor;
+    use import::ImportTarget;
+    use tsconfig::TsConfig;
 
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path();
@@ -307,7 +313,7 @@ fn parallel_repeated_aliases_keep_canonical_file_identity_and_missing_classifica
     fs::write(&target, "export const leaf = 1;").expect("target");
     let canonical = fs::canonicalize(target).expect("canonical target");
     let config = TsConfig::load(&root.join("tsconfig.json")).expect("aliases");
-    let imports = ImportExtractor::new(vec!["ts".to_owned()], Some(config))
+    let imports = ImportExtractor::new(vec!["ts".to_owned()], Some(&config))
         .extract(root)
         .expect("repeated references");
     assert_eq!(imports.len(), 96, "retain every literal reference");
@@ -315,7 +321,7 @@ fn parallel_repeated_aliases_keep_canonical_file_identity_and_missing_classifica
         imports
             .iter()
             .map(|import| &import.source)
-            .collect::<std::collections::HashSet<_>>()
+            .collect::<HashSet<_>>()
             .len(),
         16,
         "every parallel source contributes"
@@ -348,9 +354,11 @@ fn parallel_repeated_aliases_keep_canonical_file_identity_and_missing_classifica
 
 #[test]
 fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_imports() {
-    use jscycles::budget::{AnalysisBudget, AnalysisLimits};
-    use jscycles::tsconfig::{PathAlias, TsConfig};
-    use jscycles::{ImportExtractor, ImportTarget, Workspace};
+    use budget::{AnalysisBudget, AnalysisLimits};
+    use extract::ImportExtractor;
+    use import::ImportTarget;
+    use tsconfig::{PathAlias, TsConfig};
+    use workspace::Workspace;
 
     let directory = tempfile::tempdir().expect("temporary directory");
     // Canonical, so macOS (`/var` -> `/private/var`) classifies like Linux.
@@ -358,24 +366,24 @@ fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_impo
     let root = canonical.as_path();
     fs::write(root.join("leaf.ts"), "export const leaf = 1;").expect("leaf source");
     let mut paths: Vec<_> = (0..1024)
-        .map(|number| PathAlias::exact(format!("@unused/{number}"), vec![root.join("missing")]))
+        .map(|number| PathAlias::new_exact(format!("@unused/{number}"), vec![root.join("missing")]))
         .collect();
-    paths.push(PathAlias::exact(
+    paths.push(PathAlias::new_exact(
         "@used".to_owned(),
         vec![root.join("leaf")],
     ));
-    paths.push(PathAlias::exact(
+    paths.push(PathAlias::new_exact(
         "@missing".to_owned(),
         vec![root.join("missing")],
     ));
-    paths.push(PathAlias::exact(
+    paths.push(PathAlias::new_exact(
         "known".to_owned(),
         vec![root.join("leaf")],
     ));
     let config = TsConfig::new(root.to_path_buf(), paths);
     let workspace = Workspace::new(
         root.to_path_buf(),
-        jscycles::workspace::WorkspaceFormat::Npm,
+        workspace::WorkspaceFormat::Npm,
         [("known".to_owned(), root.join("packages/known"))].into(),
     );
     let physical = fs::canonicalize(root.join("leaf.ts")).expect("canonical leaf");
@@ -396,14 +404,14 @@ fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_impo
             format!("import '{specifier}';\n").repeat(96),
         )
         .expect("repeated source");
-        let budget = AnalysisBudget::new(AnalysisLimits {
+        let budget = AnalysisBudget::try_new(AnalysisLimits {
             max_work: 10000,
             ..AnalysisLimits::default()
         })
         .expect("finite extraction budget");
-        let imports = ImportExtractor::new(vec!["ts".to_owned()], Some(config.clone()))
-            .with_shared_workspace(Some(std::sync::Arc::new(workspace.clone())))
-            .with_budget(budget.clone())
+        let imports = ImportExtractor::new(vec!["ts".to_owned()], Some(&config))
+            .workspace(Some(&workspace))
+            .budget(budget.clone())
             .extract(root)
             .expect("do not charge alias traversal when no traversal runs");
         assert_eq!(imports.len(), 96, "retain every import");
@@ -417,9 +425,9 @@ fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_impo
 
 #[test]
 fn uncached_alias_searches_still_exhaust_the_work_budget() {
-    use jscycles::ImportExtractor;
-    use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-    use jscycles::tsconfig::{PathAlias, TsConfig};
+    use budget::{AnalysisBudget, AnalysisLimits, Resource};
+    use extract::ImportExtractor;
+    use tsconfig::{PathAlias, TsConfig};
 
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path();
@@ -434,23 +442,23 @@ fn uncached_alias_searches_still_exhaust_the_work_budget() {
             root.to_path_buf(),
             (0..64)
                 .map(|number| {
-                    PathAlias::exact(
+                    PathAlias::new_exact(
                         format!("@unused/{number}"),
                         vec![root.join("missing"); replacements],
                     )
                 })
                 .collect(),
         );
-        let budget = AnalysisBudget::new(AnalysisLimits {
+        let budget = AnalysisBudget::try_new(AnalysisLimits {
             max_work: 10000,
             ..AnalysisLimits::default()
         })
         .expect("finite matching budget");
-        let result = ImportExtractor::new(vec!["ts".to_owned()], Some(config))
-            .with_budget(budget.clone())
+        let result = ImportExtractor::new(vec!["ts".to_owned()], Some(&config))
+            .budget(budget.clone())
             .extract(root);
         assert!(
-            matches!(result, Err(jscycles::ExtractError::Limit(_))),
+            matches!(result, Err(import::ExtractError::Limit(_))),
             "actual uncached searches must remain bounded"
         );
         assert_eq!(

@@ -3,7 +3,8 @@
 
 use std::fs;
 
-use jscycles::{DependencyGraph, ImportExtractor, cycles};
+use extract::ImportExtractor;
+use graph::DependencyGraph;
 
 #[test]
 fn mixed_grammars_and_pool_sizes_keep_graphs_and_observe_source_changes() {

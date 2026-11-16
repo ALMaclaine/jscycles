@@ -1,0 +1,19 @@
+[package]
+name = "jscycles-budget"
+description = "Shared, monotonic admission budgets for one jscycles analysis"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+include = ["src/**", "Cargo.toml"]
+
+[dependencies]
+serde.workspace = true
+
+[lints]
+workspace = true

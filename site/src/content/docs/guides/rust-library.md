@@ -3,7 +3,8 @@ title: Embedding in Rust
 description: Run the full jscycles analysis from your own Rust program, and get structured results instead of printed output.
 ---
 
-jscycles is also a Rust library. `Scan` runs the same analysis as the
+jscycles is also a set of Rust libraries. `Scan`, in the `jscycles-scan`
+crate, runs the same analysis as the
 command (package discovery, workspaces, tsconfig aliases, package ownership
 and resource limits), and returns the results as data. The command is a
 thin wrapper around it, so an embedding program and the command cannot give
@@ -14,17 +15,18 @@ command's byte for byte, for every fixture and option.
 
 ```toml
 [dependencies]
-jscycles = { version = "0.4", default-features = false }
+jscycles-scan = "0.5"
 ```
 
-`default-features = false` leaves out the command-line binary and its
-argument parser. Leave it on if you also want `cargo install jscycles`
-behavior from the same dependency. The library needs Rust 1.93 or newer.
+`jscycles-scan` re-exports the types its API uses (`Config`, the results and
+the error types), so a scan needs no other jscycles crate. The `jscycles`
+crate is the command-line binary (`cargo install jscycles`). The libraries
+need Rust 1.93 or newer.
 
 ## Scan a repository
 
 ```rust
-use jscycles::{Config, JscyclesError, Scan};
+use jscycles_scan::{Config, JscyclesError, Scan};
 use std::path::Path;
 
 fn check(root: &Path) -> Result<bool, JscyclesError> {
@@ -48,10 +50,10 @@ fn check(root: &Path) -> Result<bool, JscyclesError> {
 in that directory. `Scan::packages([...])` checks exactly the given package
 directories, like `jscycles <paths>...`. A runnable version of this program
 is the crate's
-[`check` example](https://github.com/ALMaclaine/jscycles/blob/main/examples/check.rs):
+[`check` example](https://github.com/ALMaclaine/jscycles/blob/main/crates/jscycles-scan/examples/check.rs):
 
 ```sh
-cargo run --example check -- path/to/repo
+cargo run --package jscycles-scan --example check -- path/to/repo
 ```
 
 ## Options
@@ -106,16 +108,36 @@ lower them to bound the work an untrusted checkout can cause.
 
 ## Lower-level building blocks
 
-The modules a scan is built from are public too:
-[`discovery`](https://docs.rs/jscycles/latest/jscycles/discovery/),
-[`imports`](https://docs.rs/jscycles/latest/jscycles/imports/),
-[`graph`](https://docs.rs/jscycles/latest/jscycles/graph/) and
-[`cycles`](https://docs.rs/jscycles/latest/jscycles/cycles/). Use them when
-you already have an import graph from somewhere else and only need cycle
-detection:
+A scan is built from small crates, one per part of the analysis, each
+published separately:
+
+| Crate | Holds |
+| --- | --- |
+| `jscycles-budget` | The shared resource quotas |
+| `jscycles-config` | `jscycles.yaml` |
+| `jscycles-discovery` | Package discovery |
+| `jscycles-workspace`, `jscycles-tsconfig` | Workspace and `tsconfig.json` metadata |
+| `jscycles-import` | Import records |
+| `jscycles-extract` | Import extraction and resolution (needs the native parser) |
+| `jscycles-graph` | File and package graphs |
+| `jscycles-cycles` | Cycle detection |
+| `jscycles-output` | Human and JSON reports |
+
+Use them when you already have an import graph from somewhere else and only
+need cycle detection. `jscycles-graph` and `jscycles-cycles` do not depend on
+the native parser:
+
+```toml
+[dependencies]
+jscycles-cycles = "0.5"
+jscycles-graph = "0.5"
+jscycles-import = "0.5"
+```
 
 ```rust
-use jscycles::{cycles, DependencyGraph, Import, ImportTarget};
+use jscycles_cycles as cycles;
+use jscycles_graph::DependencyGraph;
+use jscycles_import::{Import, ImportTarget};
 use std::path::PathBuf;
 
 let imports = vec![Import::new(
@@ -128,11 +150,11 @@ assert_eq!(found.len(), 1);
 ```
 
 To analyze real files, use `Scan` rather than combining the lower-level
-modules by hand. Deciding which package owns each file, which directories
+crates by hand. Deciding which package owns each file, which directories
 are boundaries, and how quotas are shared is subtle, and `Scan` is the
 version that is tested against the TypeScript compiler.
 
-The full API reference is on [docs.rs](https://docs.rs/jscycles).
+The full API reference is on [docs.rs](https://docs.rs/jscycles-scan).
 
 ## From JavaScript
 

@@ -4,16 +4,17 @@
 use std::collections::BTreeSet;
 use std::fs;
 use std::io::Write as _;
+use std::iter;
 use std::path::{Path, PathBuf};
+use std::process;
 use std::process::Command;
 use std::sync::Arc;
 use std::thread;
 
-use jscycles::DependencyGraph;
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
-use jscycles::cycles;
-use jscycles::graph::PackageDependencyGraph;
-use jscycles::imports::{Import, ImportTarget};
+use budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
+use graph::DependencyGraph;
+use graph::PackageDependencyGraph;
+use import::{Import, ImportTarget};
 
 #[test]
 fn admissions_are_exact_checked_and_sticky() {
@@ -57,7 +58,7 @@ fn admissions_are_exact_checked_and_sticky() {
             "failure remains sticky"
         );
     }
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_work: u64::MAX,
         ..AnalysisLimits::default()
     })
@@ -75,7 +76,7 @@ fn admissions_are_exact_checked_and_sticky() {
         "overflow rejects instead of wrapping"
     );
     assert!(
-        AnalysisBudget::new(AnalysisLimits {
+        AnalysisBudget::try_new(AnalysisLimits {
             max_nodes: 0,
             ..AnalysisLimits::default()
         })
@@ -90,7 +91,7 @@ fn admissions_are_exact_checked_and_sticky() {
     reason = "Spawn every worker before joining so this test exercises concurrent admissions"
 )]
 fn workers_share_admissions_without_overcommit() {
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_files: 10_000,
         ..AnalysisLimits::default()
     })
@@ -120,7 +121,7 @@ fn workers_share_admissions_without_overcommit() {
 
 #[test]
 fn file_maximum_is_not_a_cumulative_byte_counter_and_reports_are_staged() {
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_file_bytes: 4,
         max_output_bytes: 4,
         ..AnalysisLimits::default()
@@ -146,7 +147,7 @@ fn file_maximum_is_not_a_cumulative_byte_counter_and_reports_are_staged() {
     assert!(report.finish().is_err(), "no partial report accepted");
 }
 
-fn cli(root: &Path, arguments: &[&str]) -> std::process::Output {
+fn cli(root: &Path, arguments: &[&str]) -> process::Output {
     Command::new(env!("CARGO_BIN_EXE_jscycles"))
         .current_dir(root)
         .args(arguments)
@@ -271,14 +272,14 @@ fn excluded_entries_are_still_bounded() {
     .expect("limits");
     // Extraction ignores these files, but the walk must still account for them.
     fs::write(temp.path().join("package.json"), r#"{"name":"test"}"#).expect("manifest");
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_entries: 1,
         ..AnalysisLimits::default()
     })
     .expect("limits");
-    let extractor = jscycles::ImportExtractor::new(vec!["ts".to_owned()], None)
-        .with_budget(budget.clone())
-        .with_ignore_patterns(vec!["*.json".to_owned(), "*.yaml".to_owned()]);
+    let extractor = extract::ImportExtractor::new(vec!["ts".to_owned()], None)
+        .budget(budget.clone())
+        .ignore_patterns(vec!["*.json".to_owned(), "*.yaml".to_owned()]);
     assert!(
         extractor.extract(temp.path()).is_err(),
         "non-source/ignored entries consume quota"
@@ -349,7 +350,7 @@ fn oracle(edges: &[[bool; 4]; 4]) -> BTreeSet<Vec<String>> {
             if next == start && path.len() > 1 {
                 let _ = result.insert(
                     path.iter()
-                        .chain(std::iter::once(&start))
+                        .chain(iter::once(&start))
                         .map(usize::to_string)
                         .collect(),
                 );
@@ -458,7 +459,7 @@ fn dense_cycle_enumeration_stops_at_cycle_or_work_quota() {
             Resource::Work,
         ),
     ] {
-        let budget = AnalysisBudget::new(limits).expect("limits");
+        let budget = AnalysisBudget::try_new(limits).expect("limits");
         assert_eq!(
             cycles::try_package_cycles(&graph, &budget)
                 .expect_err("exponential output cut short")
@@ -488,7 +489,7 @@ fn verbose_evidence_expansion_has_its_own_admission() {
             )]
         })
         .collect();
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_cycle_bytes: 500,
         ..AnalysisLimits::default()
     })
@@ -509,7 +510,7 @@ fn verbose_evidence_expansion_has_its_own_admission() {
 fn cached_metadata_snapshots_share_ownership() {
     let temp = tempfile::tempdir().expect("directory");
     fs::write(temp.path().join("tsconfig.json"), "{}").expect("metadata");
-    let cache = jscycles::TsConfigCache::new();
+    let cache = tsconfig::TsConfigCache::new();
     let first = cache.discover_shared(temp.path()).expect("config");
     let second = cache.discover_shared(temp.path()).expect("cached config");
     assert!(
@@ -603,13 +604,13 @@ fn own_package_imports_cost_the_same_in_small_and_large_workspaces() {
             )
             .expect("source");
         }
-        let workspace = jscycles::Workspace::discover(root)
+        let workspace = workspace::Workspace::discover(root)
             .expect("workspace")
             .expect("found");
-        let budget = AnalysisBudget::new(AnalysisLimits::default()).expect("limits");
-        let imports = jscycles::ImportExtractor::new(vec!["ts".to_owned()], None)
-            .with_workspace(Some(workspace))
-            .with_budget(budget.clone())
+        let budget = AnalysisBudget::try_new(AnalysisLimits::default()).expect("limits");
+        let imports = extract::ImportExtractor::new(vec!["ts".to_owned()], None)
+            .workspace(Some(&workspace))
+            .budget(budget.clone())
             .extract(&package)
             .expect("extraction");
         assert_eq!(

@@ -1,0 +1,24 @@
+[package]
+name = "jscycles-module-syntax"
+description = "Import extraction from JavaScript and TypeScript syntax trees for jscycles"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+include = ["src/**", "Cargo.toml"]
+
+[dependencies]
+budget.workspace = true
+import.workspace = true
+syntax.workspace = true
+tree-sitter.workspace = true
+tree-sitter-javascript.workspace = true
+tree-sitter-typescript.workspace = true
+
+[lints]
+workspace = true

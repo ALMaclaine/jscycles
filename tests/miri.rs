@@ -3,18 +3,18 @@
 use std::io::Write as _;
 use std::path::PathBuf;
 
-use jscycles::DependencyGraph;
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
-use jscycles::cycles;
-use jscycles::graph::PackageDependencyGraph;
+use budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
+use graph::DependencyGraph;
+use graph::PackageDependencyGraph;
 use std::collections::BTreeSet;
+use std::thread;
 
 #[test]
 fn workspace_package_names_and_paths_agree_when_an_alias_conflicts() {
     let workspace = {
-        let mut workspace = jscycles::Workspace::new(
+        let mut workspace = workspace::Workspace::new(
             PathBuf::from("workspace"),
-            jscycles::workspace::WorkspaceFormat::Npm,
+            workspace::WorkspaceFormat::Npm,
             [
                 ("@project/a".to_owned(), PathBuf::from("packages/a")),
                 ("@project/b".to_owned(), PathBuf::from("packages/b")),
@@ -123,7 +123,7 @@ fn bounded_cycles_keep_only_complete_results() {
     assert_eq!(cycles.len(), 1, "one strongly connected component");
     assert_eq!(cycles[0].path.len(), 3, "closed two-file cycle");
     assert_eq!(cycles[0].path.first(), cycles[0].path.last(), "closed path");
-    let exhausted = AnalysisBudget::new(AnalysisLimits {
+    let exhausted = AnalysisBudget::try_new(AnalysisLimits {
         max_nodes: 1,
         ..AnalysisLimits::default()
     })
@@ -135,7 +135,7 @@ fn bounded_cycles_keep_only_complete_results() {
 
 #[test]
 fn shared_quota_and_output_fail_atomically() {
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_files: 8,
         max_output_bytes: 4,
         ..AnalysisLimits::default()
@@ -144,7 +144,7 @@ fn shared_quota_and_output_fail_atomically() {
     let workers: Vec<_> = (0..2)
         .map(|_| {
             let shared = budget.clone();
-            std::thread::spawn(move || {
+            thread::spawn(move || {
                 for _ in 0..4 {
                     shared
                         .consume(Resource::Files, 1)

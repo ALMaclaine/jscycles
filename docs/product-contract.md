@@ -64,8 +64,8 @@ origin, depth check and independent baseUrl/paths inheritance. Overridden parent
 still parse their known field types. Successful cache hits retain their snapshot
 even if the original selected file or discovery link is later removed; this is
 reuse, not a filesystem reload guarantee. Construct a new cache after changes.
-Assigning a budget with `TsConfigCache::with_budget` starts empty caches so the
-new budget pays for its own reads/retention. Ordinary clones share both snapshots
+A cache built with `TsConfigCache::new_with_budget` starts empty, so its budget
+pays for all of its own reads/retention. Ordinary clones share both snapshots
 and their original budget.
 
 Workspace alias setup may share target resolution for eligible exact aliases

@@ -2,10 +2,9 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use jscycles::DependencyGraph;
-use jscycles::budget::{AnalysisBudget, AnalysisLimits};
-use jscycles::cycles;
-use jscycles::graph::PackageDependencyGraph;
+use budget::{AnalysisBudget, AnalysisLimits};
+use graph::DependencyGraph;
+use graph::PackageDependencyGraph;
 use libfuzzer_sys::fuzz_target;
 
 // At most five vertices: even the complete graph has only 84 elementary
@@ -143,7 +142,7 @@ fuzz_target!(|bytes: &[u8]| {
         max_graph_bytes: u64::from(byte(8)) * 4 + 1,
         ..AnalysisLimits::default()
     };
-    let file_budget = AnalysisBudget::new(limits).expect("positive limits");
+    let file_budget = AnalysisBudget::try_new(limits).expect("positive limits");
     match cycles::try_file_cycles(&files, &file_budget) {
         Ok(limited) => assert_eq!(
             limited.iter().map(|cycle| &cycle.path).collect::<Vec<_>>(),
@@ -155,7 +154,7 @@ fuzz_target!(|bytes: &[u8]| {
         ),
         Err(_) => assert!(file_budget.check().is_err(), "exhaustion is sticky"),
     }
-    let package_budget = AnalysisBudget::new(limits).expect("positive limits");
+    let package_budget = AnalysisBudget::try_new(limits).expect("positive limits");
     match cycles::try_package_cycles(&packages, &package_budget) {
         Ok(limited) => assert_eq!(
             limited

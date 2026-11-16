@@ -302,24 +302,25 @@ fn mutants(sh: &Shell) -> Result<(), ()> {
 
 /// Interpret actual owned Rust code; native parser execution stays in native tests.
 fn miri(sh: &Shell) -> Result<(), ()> {
-    for filter in [
-        "graph::tests",
-        "syntax::",
-        "tsconfig::selection_tests",
-        "output::tests",
-        "input::bounded_reader_tests",
-        "imports::lexical_path_tests",
+    // Pure crates run whole; the others select their pure test modules.
+    for (package, filter) in [
+        ("jscycles-graph", "tests::"),
+        ("jscycles-syntax", ""),
+        ("jscycles-module-path", ""),
+        ("jscycles-tsconfig", "selection_tests::"),
+        ("jscycles-output", "tests::"),
+        ("jscycles-input", "bounded_reader_tests::"),
     ] {
         cmd!(
             sh,
-            "cargo +nightly-2026-10-19 miri test --locked --lib {filter} -- --skip module_syntax::tests::"
+            "cargo +nightly-2026-10-19 miri test --locked --package {package} --lib {filter}"
         )
         .run()
         .map_err(|error| eprintln!("Miri failed: {error}"))?;
     }
     cmd!(
         sh,
-        "cargo +nightly-2026-10-19 miri test --locked --test miri"
+        "cargo +nightly-2026-10-19 miri test --locked --package jscycles --test miri"
     )
     .run()
     .map_err(|error| eprintln!("Miri boundary tests failed: {error}"))

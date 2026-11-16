@@ -1,13 +1,17 @@
 //! Configuration search context, inherited snapshots, depth and shared quotas.
 #![allow(clippy::expect_used, reason = "Fixture failures must fail the test")]
 
+use std::env;
 use std::fs;
+use std::os::unix::fs as unix_fs;
+use std::path;
 use std::path::Path;
 use std::process::Command;
 use std::sync::{Arc, Barrier};
+use std::thread;
 
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-use jscycles::{TsConfig, TsConfigCache};
+use budget::{AnalysisBudget, AnalysisLimits, Resource};
+use tsconfig::{TsConfig, TsConfigCache};
 
 #[test]
 fn relative_package_operands_find_ancestor_configuration() {
@@ -74,14 +78,14 @@ fn relative_package_operands_find_ancestor_configuration() {
 #[test]
 fn relative_cache_keys_include_the_working_directory() {
     const CHILD_ROOT: &str = "JSCYCLES_TEST_CACHE_CONTEXT_ROOT";
-    if let Some(root) = std::env::var_os(CHILD_ROOT) {
+    if let Some(root) = env::var_os(CHILD_ROOT) {
         // This filtered subprocess owns its CWD; parallel parent tests never
         // observe these changes. Only successful snapshots are reused on delete.
-        let root = std::path::PathBuf::from(root);
+        let root = path::PathBuf::from(root);
         let cache = TsConfigCache::new();
         let discovery = TsConfigCache::new();
         for name in ["a", "b", "a"] {
-            std::env::set_current_dir(root.join(name)).expect("child CWD");
+            env::set_current_dir(root.join(name)).expect("child CWD");
             let found = cache
                 .load(Path::new("tsconfig.json"))
                 .expect("contextual load");
@@ -149,7 +153,7 @@ fn relative_cache_keys_include_the_working_directory() {
         .expect("configuration");
         fs::write(root.join(format!("{name}.ts")), "").expect("target");
     }
-    let result = Command::new(std::env::current_exe().expect("test binary"))
+    let result = Command::new(env::current_exe().expect("test binary"))
         .args([
             "--exact",
             "relative_cache_keys_include_the_working_directory",
@@ -196,19 +200,19 @@ fn concurrent_children_read_one_parent_and_keep_their_own_overrides() {
         fs::write(child.join("local.ts"), "").expect("local target");
         fs::write(child.join("shared.ts"), "").expect("rebased inherited target");
     }
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_files: 17,
         ..AnalysisLimits::default()
     })
     .expect("one parent plus sixteen child reads");
-    let cache = TsConfigCache::new().with_budget(budget.clone());
+    let cache = TsConfigCache::new_with_budget(budget.clone());
     let barrier = Arc::new(Barrier::new(16));
     let workers: Vec<_> = (0..16)
         .map(|number| {
             let child = root.join(format!("pkg{number}"));
             let selected_cache = cache.clone();
             let start = Arc::clone(&barrier);
-            std::thread::spawn(move || {
+            thread::spawn(move || {
                 let _ = start.wait();
                 let config = selected_cache.discover_shared(&child);
                 (number, child, config)
@@ -312,12 +316,12 @@ fn parent_shapes_and_retained_document_payloads_still_fail_closed() {
     )
     .expect("valid document");
     for limit in [1, 512] {
-        let budget = AnalysisBudget::new(AnalysisLimits {
+        let budget = AnalysisBudget::try_new(AnalysisLimits {
             max_graph_bytes: limit,
             ..AnalysisLimits::default()
         })
         .expect("finite retention quota");
-        let cache = TsConfigCache::new().with_budget(budget.clone());
+        let cache = TsConfigCache::new_with_budget(budget.clone());
         assert!(
             cache.load(&root.join("valid.json")).is_none(),
             "cache entries and document values are admitted"
@@ -341,12 +345,12 @@ fn parent_shapes_and_retained_document_payloads_still_fail_closed() {
         r#"{"extends":"./large-parent.json","compilerOptions":{"paths":{}}}"#,
     )
     .expect("small compiled child");
-    let retention_budget = AnalysisBudget::new(AnalysisLimits {
+    let retention_budget = AnalysisBudget::try_new(AnalysisLimits {
         max_graph_bytes: 4096,
         ..AnalysisLimits::default()
     })
     .expect("raw retention quota");
-    let retained = TsConfigCache::new().with_budget(retention_budget.clone());
+    let retained = TsConfigCache::new_with_budget(retention_budget.clone());
     assert!(
         retained.load(&root.join("small-child.json")).is_none(),
         "overridden raw parent data remains retained and must be charged"
@@ -386,12 +390,12 @@ fn rebinding_a_budget_cannot_reuse_another_budgets_raw_or_compiled_snapshots() {
                 .load(&root.join("small-child.json"))
                 .expect("original compiled child snapshot");
         }
-        let replacement = AnalysisBudget::new(AnalysisLimits {
+        let replacement = AnalysisBudget::try_new(AnalysisLimits {
             max_total_bytes: 512,
             ..AnalysisLimits::default()
         })
         .expect("new operation's byte quota");
-        let rebound = original.clone().with_budget(replacement.clone());
+        let rebound = TsConfigCache::new_with_budget(replacement.clone());
         assert!(
             rebound.load(&root.join("small-child.json")).is_none(),
             "rebinding cannot reuse raw or compiled values paid for by another budget"
@@ -427,8 +431,7 @@ fn shared_parent_bytes_keep_each_extends_spelling_origin() {
     for name in ["a", "b"] {
         let origin = root.join(name);
         fs::create_dir(&origin).expect("origin directory");
-        std::os::unix::fs::symlink("../shared/base.json", origin.join("parent.json"))
-            .expect("parent link");
+        unix_fs::symlink("../shared/base.json", origin.join("parent.json")).expect("parent link");
         fs::write(origin.join("child.json"), r#"{"extends":"./parent.json"}"#)
             .expect("selected child");
         fs::write(origin.join("target.ts"), "").expect("local target");
@@ -458,7 +461,7 @@ fn shared_parent_bytes_keep_each_extends_spelling_origin() {
     )
     .expect("lexical decoy");
     fs::write(root.join("decoy.ts"), "").expect("logical ancestor target");
-    std::os::unix::fs::symlink("physical/deep", root.join("linked")).expect("directory link");
+    unix_fs::symlink("physical/deep", root.join("linked")).expect("directory link");
     for config in [
         TsConfig::discover(&root.join("linked")).expect("readable tsconfig"),
         cache.discover(&root.join("linked")),

@@ -3,7 +3,11 @@
     clippy::expect_used,
     reason = "Setup failures must fail consumer tests"
 )]
+use std::error;
+use std::ffi::OsString;
 use std::fs;
+use std::os::unix::fs as unix_fs;
+use std::path;
 use std::path::Path;
 use std::process::{Command, Output};
 
@@ -61,10 +65,10 @@ fn dangling_workspace_metadata_is_an_error_instead_of_absence() {
         let temp = tempfile::tempdir().expect("directory");
         package(&temp.path().join("a"), "a", "b");
         package(&temp.path().join("b"), "b", "a");
-        std::os::unix::fs::symlink("absent", temp.path().join(name)).expect("dangling metadata");
-        let error = jscycles::Workspace::discover_without_aliases(
+        unix_fs::symlink("absent", temp.path().join(name)).expect("dangling metadata");
+        let error = workspace::Workspace::discover_without_aliases(
             temp.path(),
-            &jscycles::budget::AnalysisBudget::default(),
+            &budget::AnalysisBudget::default(),
         )
         .expect_err("an existing broken input is not absent");
         assert!(
@@ -182,9 +186,9 @@ fn inherited_config_failures_identify_the_actual_failing_file() {
     )
     .expect("child");
     fs::write(temp.path().join("broken-parent.json"), "{invalid").expect("malformed parent");
-    let error = jscycles::TsConfig::load(&temp.path().join("tsconfig.json"))
+    let error = tsconfig::TsConfig::load(&temp.path().join("tsconfig.json"))
         .expect_err("inherited parse error");
-    let mut cause: Option<&(dyn std::error::Error + 'static)> = Some(&error);
+    let mut cause: Option<&(dyn error::Error + 'static)> = Some(&error);
     let mut retained = false;
     while let Some(current) = cause {
         retained |= current.downcast_ref::<serde_json::Error>().is_some();
@@ -216,13 +220,13 @@ fn extends_depth_accepts_ten_files_and_rejects_the_eleventh() {
     }
     let path = temp.path().join("0.json");
     assert!(
-        jscycles::TsConfig::load(&path).is_ok(),
+        tsconfig::TsConfig::load(&path).is_ok(),
         "largest selected chain"
     );
     fs::write(temp.path().join("9.json"), r#"{"extends":"./10.json"}"#).expect("extend chain");
     fs::write(temp.path().join("10.json"), "{}").expect("extra file");
     assert!(
-        jscycles::TsConfig::load(&path).is_err(),
+        tsconfig::TsConfig::load(&path).is_err(),
         "first excessive depth"
     );
 }
@@ -234,7 +238,7 @@ fn duplicate_yaml_map_keys_are_rejected_before_selecting_overrides() {
         "packages:\n  a: {ignore: [], ignore: ['*.ts']}\n",
     ] {
         assert!(
-            jscycles::Config::parse(yaml).is_err(),
+            config::Config::parse(yaml).is_err(),
             "duplicate settings have no implicit last-writer policy"
         );
     }
@@ -248,12 +252,12 @@ fn workspace_parser_errors_retain_their_typed_causes() {
     ] {
         let temp = tempfile::tempdir().expect("directory");
         fs::write(temp.path().join(name), text).expect("malformed metadata");
-        let error = jscycles::Workspace::discover_without_aliases(
+        let error = workspace::Workspace::discover_without_aliases(
             temp.path(),
-            &jscycles::budget::AnalysisBudget::default(),
+            &budget::AnalysisBudget::default(),
         )
         .expect_err("parse error");
-        let cause = std::error::Error::source(&error).expect("typed parser cause retained");
+        let cause = error::Error::source(&error).expect("typed parser cause retained");
         assert!(
             cause.downcast_ref::<serde_json::Error>().is_some()
                 || cause.downcast_ref::<serde_saphyr::Error>().is_some(),
@@ -286,19 +290,19 @@ fn missing_alias_and_relative_targets_do_not_invent_resolved_graph_nodes() {
         r#"{"compilerOptions":{"paths":{"@missing":["absent.ts"]}}}"#,
     )
     .expect("config");
-    let config = jscycles::TsConfig::load(&config_path).expect("valid alias declaration");
-    let imports = jscycles::ImportExtractor::new(vec!["ts".to_owned()], Some(config))
+    let config = tsconfig::TsConfig::load(&config_path).expect("valid alias declaration");
+    let imports = extract::ImportExtractor::new(vec!["ts".to_owned()], Some(&config))
         .extract(temp.path())
         .expect("static scan");
     assert_eq!(imports.len(), 2, "retain both import values");
     assert!(
         imports
             .iter()
-            .all(|import| matches!(import.target, jscycles::ImportTarget::Unresolved(_))),
+            .all(|import| matches!(import.target, import::ImportTarget::Unresolved(_))),
         "a missing file is not a successfully resolved target"
     );
     assert_eq!(
-        jscycles::DependencyGraph::from_imports(&imports).node_count(),
+        graph::DependencyGraph::from_imports(&imports).node_count(),
         1,
         "only the actual source node is present"
     );
@@ -306,7 +310,7 @@ fn missing_alias_and_relative_targets_do_not_invent_resolved_graph_nodes() {
 
 #[test]
 fn owned_cached_metadata_copies_observe_the_shared_payload_budget() {
-    use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+    use budget::{AnalysisBudget, AnalysisLimits, Resource};
     let temp = tempfile::tempdir().expect("directory");
     let config_path = temp.path().join("tsconfig.json");
     let paths: serde_json::Map<String, serde_json::Value> = (0..32)
@@ -323,12 +327,12 @@ fn owned_cached_metadata_copies_observe_the_shared_payload_budget() {
     )
     .expect("config");
     for explicit_load in [false, true] {
-        let budget = AnalysisBudget::new(AnalysisLimits {
+        let budget = AnalysisBudget::try_new(AnalysisLimits {
             max_graph_bytes: 65_536,
             ..AnalysisLimits::default()
         })
         .expect("limits");
-        let cache = jscycles::TsConfigCache::new().with_budget(budget.clone());
+        let cache = tsconfig::TsConfigCache::new_with_budget(budget.clone());
         let mut retained = Vec::new();
         let mut exhausted = false;
         for _ in 0..64 {
@@ -363,7 +367,7 @@ fn owned_cached_metadata_copies_observe_the_shared_payload_budget() {
 
 #[test]
 fn tsconfig_alias_sorting_requires_work_admission() {
-    use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+    use budget::{AnalysisBudget, AnalysisLimits, Resource};
     let temp = tempfile::tempdir().expect("directory");
     let path = temp.path().join("tsconfig.json");
     for count in [4, 256] {
@@ -380,12 +384,12 @@ fn tsconfig_alias_sorting_requires_work_admission() {
             serde_json::json!({"compilerOptions":{"paths": paths}}).to_string(),
         )
         .expect("config");
-        let budget = AnalysisBudget::new(AnalysisLimits {
+        let budget = AnalysisBudget::try_new(AnalysisLimits {
             max_work: 1024,
             ..AnalysisLimits::default()
         })
         .expect("limits");
-        let result = jscycles::TsConfig::load_with_budget(&path, &budget);
+        let result = tsconfig::TsConfig::load_with_budget(&path, &budget);
         if count == 4 {
             assert!(result.is_ok(), "small sorted metadata fits");
         } else {
@@ -404,26 +408,21 @@ fn tsconfig_alias_sorting_requires_work_admission() {
 
 #[test]
 fn package_override_sorting_requires_work_admission() {
-    use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+    use budget::{AnalysisBudget, AnalysisLimits, Resource};
     let temp = tempfile::tempdir().expect("directory");
     package(temp.path(), "example", "./index");
     for count in [4, 256] {
-        let mut config = jscycles::Config::default();
+        let mut config = config::Config::default();
         config.packages = (0..count)
-            .map(|number| {
-                (
-                    format!("other-{number}"),
-                    jscycles::config::PackageConfig::default(),
-                )
-            })
+            .map(|number| (format!("other-{number}"), config::PackageConfig::default()))
             .collect();
-        let budget = AnalysisBudget::new(AnalysisLimits {
+        let budget = AnalysisBudget::try_new(AnalysisLimits {
             max_work: 1024,
             ..AnalysisLimits::default()
         })
         .expect("limits");
         let discovery =
-            jscycles::PackageDiscovery::new_with_budget(&config, &[], &[], budget.clone())
+            discovery::PackageDiscovery::try_new_with_budget(&config, &[], &[], budget.clone())
                 .expect("selectors fit");
         let result = discovery.discover_explicit(&[temp.path().join("package.json")]);
         if count == 4 {
@@ -449,7 +448,7 @@ fn workspace_star_matches_one_directory_component() {
     .expect("workspace");
     package(&temp.path().join("packages/a"), "a", "nested");
     package(&temp.path().join("packages/a/nested"), "nested", "a");
-    let workspace = jscycles::Workspace::discover(temp.path())
+    let workspace = workspace::Workspace::discover(temp.path())
         .expect("workspace lookup")
         .expect("workspace");
     assert!(
@@ -461,6 +460,37 @@ fn workspace_star_matches_one_directory_component() {
         output.status.code(),
         Some(0),
         "unlisted nested package cannot invent a package cycle"
+    );
+}
+
+#[test]
+fn a_member_star_does_not_claim_a_deeper_references_project() {
+    // `apps/*/web` selects `apps/<one directory>/web`; a single star must not
+    // span `one/two`, so the npm workspace above does not claim this project
+    // and its own project references stay the workspace.
+    let temp = tempfile::tempdir().expect("directory");
+    fs::write(
+        temp.path().join("package.json"),
+        r#"{"workspaces":["apps/*/web"]}"#,
+    )
+    .expect("npm workspace");
+    let project = temp.path().join("apps/one/two/web");
+    // A manifest at the candidate, so only the pattern decides membership.
+    package(&project, "web", "./index");
+    package(&project.join("lib"), "lib", "./index");
+    fs::write(
+        project.join("tsconfig.json"),
+        r#"{"references":[{"path":"./lib"}]}"#,
+    )
+    .expect("references project");
+    let workspace = workspace::Workspace::discover(&project)
+        .expect("workspace lookup")
+        .expect("workspace");
+    assert_eq!(
+        workspace.format,
+        workspace::WorkspaceFormat::TypeScript,
+        "the references project at {} is not inside an `apps/*/web` member",
+        project.display()
     );
 }
 
@@ -532,12 +562,10 @@ fn config_origin_paths_do_not_undergo_lossy_unicode_conversion() {
 #[test]
 fn alias_results_preserve_native_origin_bytes() {
     use std::os::unix::ffi::OsStringExt as _;
-    let origin = std::path::PathBuf::from(std::ffi::OsString::from_vec(
-        b"/jscycles-origin-\xff/source".to_vec(),
-    ));
-    let config = jscycles::TsConfig::new(
+    let origin = path::PathBuf::from(OsString::from_vec(b"/jscycles-origin-\xff/source".to_vec()));
+    let config = tsconfig::TsConfig::new(
         origin.clone(),
-        vec![jscycles::tsconfig::PathAlias::wildcard(
+        vec![tsconfig::PathAlias::new_wildcard(
             "@/".to_owned(),
             vec![origin.join("*.ts")],
         )],

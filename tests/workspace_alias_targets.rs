@@ -5,10 +5,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-use jscycles::tsconfig::PathAlias;
-use jscycles::workspace::WorkspaceFormat;
-use jscycles::{TsConfig, Workspace};
+use budget::{AnalysisBudget, AnalysisLimits, Resource};
+use tsconfig::PathAlias;
+use tsconfig::TsConfig;
+use workspace::Workspace;
+use workspace::WorkspaceFormat;
 
 fn workspace(root: &Path) -> Workspace {
     let mut packages = HashMap::new();
@@ -94,9 +95,9 @@ fn ineligible_public_tables_do_not_share_results_by_exact_replacements() {
     let config = TsConfig::new(
         root.clone(),
         vec![
-            PathAlias::wildcard(String::new(), vec![root.join("*")]),
-            PathAlias::exact("first".to_owned(), vec![same.clone()]),
-            PathAlias::exact("second".to_owned(), vec![same]),
+            PathAlias::new_wildcard(String::new(), vec![root.join("*")]),
+            PathAlias::new_exact("first".to_owned(), vec![same.clone()]),
+            PathAlias::new_exact("second".to_owned(), vec![same]),
         ],
     );
     selected
@@ -133,7 +134,7 @@ fn distinct_retained_targets_exhaust_payload_without_publishing_partial_aliases(
     )
     .expect("unique generated targets");
     let config = TsConfig::load(&path).expect("finite config");
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_graph_bytes: 4096,
         ..AnalysisLimits::default()
     })

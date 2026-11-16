@@ -5,28 +5,33 @@
     reason = "Tests are allowed to use expect/unwrap for simplicity"
 )]
 
+use std::collections::HashSet;
+use std::env;
+use std::fs;
 use std::path::PathBuf;
 
-use jscycles::{
-    Config, DependencyGraph, ImportExtractor, PackageDiscovery, TsConfig, Workspace,
-    WorkspaceFormat, cycles,
-};
+use config::Config;
+use discovery::PackageDiscovery;
+use extract::ImportExtractor;
+use graph::DependencyGraph;
+use tsconfig::TsConfig;
+use workspace::{Workspace, WorkspaceFormat};
 
 #[test]
 fn relative_package_roots_and_absolute_alias_configs_share_graph_nodes() {
-    let cwd = std::env::current_dir().expect("test working directory");
+    let cwd = env::current_dir().expect("test working directory");
     let root = tempfile::tempdir_in(&cwd).expect("temporary package");
-    std::fs::write(
+    fs::write(
         root.path().join("tsconfig.json"),
         r#"{"compilerOptions":{"baseUrl":".","paths":{"@/*":["*"]}}}"#,
     )
     .expect("aliases");
-    std::fs::write(
+    fs::write(
         root.path().join("a.ts"),
         "import {b} from '@/b'; export const a = b;",
     )
     .expect("source a");
-    std::fs::write(
+    fs::write(
         root.path().join("b.ts"),
         "import {a} from '@/a'; export const b = a;",
     )
@@ -36,7 +41,7 @@ fn relative_package_roots_and_absolute_alias_configs_share_graph_nodes() {
         .path()
         .strip_prefix(&cwd)
         .expect("relative package root");
-    let imports = ImportExtractor::new(vec!["ts".to_owned()], Some(config))
+    let imports = ImportExtractor::new(vec!["ts".to_owned()], Some(&config))
         .extract(relative)
         .expect("extract imports");
     assert!(
@@ -61,8 +66,8 @@ fn automatic_include_roots_are_recursive_and_globs_select_directories() {
         ("apps/c", "c"),
     ] {
         let path = root.path().join(directory);
-        std::fs::create_dir_all(&path).expect("package directory");
-        std::fs::write(path.join("package.json"), format!(r#"{{"name":"{name}"}}"#))
+        fs::create_dir_all(&path).expect("package directory");
+        fs::write(path.join("package.json"), format!(r#"{{"name":"{name}"}}"#))
             .expect("package manifest");
     }
     for (includes, expected) in [
@@ -73,13 +78,13 @@ fn automatic_include_roots_are_recursive_and_globs_select_directories() {
         (Vec::new(), Vec::new()),
     ] {
         let config = Config {
-            scan: jscycles::config::ScanConfig {
+            scan: config::ScanConfig {
                 include: includes.iter().map(|value| (*value).to_owned()).collect(),
-                ..jscycles::config::ScanConfig::default()
+                ..config::ScanConfig::default()
             },
             ..Config::default()
         };
-        let discovery = PackageDiscovery::new(&config, &[], &[]).expect("valid selection");
+        let discovery = PackageDiscovery::try_new(&config, &[], &[]).expect("valid selection");
         let mut names: Vec<_> = discovery
             .discover(root.path())
             .expect("discover packages")
@@ -111,7 +116,7 @@ fn detect_cycles_in_fixture(fixture_name: &str) -> Vec<String> {
             "js".to_owned(),
             "jsx".to_owned(),
         ],
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     let imports = extractor
@@ -169,8 +174,8 @@ fn test_fixture_with_tsconfig() {
 fn test_fixture_monorepo_discovery() {
     let path = fixture_path("monorepo-mock");
     let config = Config::default();
-    let discovery =
-        PackageDiscovery::new(&config, &[], &[]).expect("discovery should be created successfully");
+    let discovery = PackageDiscovery::try_new(&config, &[], &[])
+        .expect("discovery should be created successfully");
 
     let packages = discovery
         .discover(&path)
@@ -186,8 +191,8 @@ fn test_fixture_monorepo_discovery() {
 fn test_monorepo_per_package_cycles() {
     let path = fixture_path("monorepo-mock");
     let config = Config::default();
-    let discovery =
-        PackageDiscovery::new(&config, &[], &[]).expect("discovery should be created successfully");
+    let discovery = PackageDiscovery::try_new(&config, &[], &[])
+        .expect("discovery should be created successfully");
 
     let packages = discovery
         .discover(&path)
@@ -198,7 +203,8 @@ fn test_monorepo_per_package_cycles() {
         .iter()
         .map(|package| {
             let tsconfig = TsConfig::discover(&package.path).expect("readable tsconfig");
-            let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig);
+            let extractor =
+                ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig.as_ref());
 
             let imports = extractor
                 .extract(&package.path)
@@ -245,7 +251,7 @@ fn extract_imports_from_fixture(fixture_name: &str) -> Vec<(String, String)> {
             "js".to_owned(),
             "jsx".to_owned(),
         ],
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     let imports = extractor
@@ -271,7 +277,7 @@ fn extract_imports_from_fixture(fixture_name: &str) -> Vec<(String, String)> {
 }
 
 /// Extract raw imports from a fixture (for graph construction).
-fn extract_raw_imports_from_fixture(fixture_name: &str) -> Vec<jscycles::Import> {
+fn extract_raw_imports_from_fixture(fixture_name: &str) -> Vec<import::Import> {
     let path = fixture_path(fixture_name);
     let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
@@ -281,7 +287,7 @@ fn extract_raw_imports_from_fixture(fixture_name: &str) -> Vec<jscycles::Import>
             "js".to_owned(),
             "jsx".to_owned(),
         ],
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     extractor
@@ -363,7 +369,7 @@ fn test_fixture_tsconfig_complex_imports() {
 // Inter-package cycle detection tests
 // =============================================================================
 
-use jscycles::PackageDependencyGraph;
+use graph::PackageDependencyGraph;
 
 /// Helper to detect inter-package cycles in a fixture.
 fn detect_inter_package_cycles(fixture_name: &str) -> Vec<String> {
@@ -377,7 +383,7 @@ fn detect_inter_package_cycles(fixture_name: &str) -> Vec<String> {
         .expect("fixture should be a workspace");
 
     // Collect imports by package (sort keys for deterministic order)
-    let mut imports_by_package: HashMap<String, Vec<jscycles::Import>> = HashMap::new();
+    let mut imports_by_package: HashMap<String, Vec<import::Import>> = HashMap::new();
 
     let mut pkg_names: Vec<_> = workspace.packages.keys().cloned().collect();
     pkg_names.sort();
@@ -388,8 +394,9 @@ fn detect_inter_package_cycles(fixture_name: &str) -> Vec<String> {
             .get(&pkg_name)
             .expect("package should exist");
         let tsconfig = TsConfig::discover(pkg_path).expect("readable tsconfig");
-        let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig)
-            .with_workspace(Some(workspace.clone()));
+        let extractor =
+            ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig.as_ref())
+                .workspace(Some(&workspace));
 
         let imports = extractor
             .extract(pkg_path)
@@ -540,8 +547,7 @@ fn test_workspace_import_extraction() {
         .expect("pkg-a should exist")
         .clone();
 
-    let extractor =
-        ImportExtractor::new(vec!["ts".to_owned()], None).with_workspace(Some(workspace));
+    let extractor = ImportExtractor::new(vec!["ts".to_owned()], None).workspace(Some(&workspace));
 
     let imports = extractor
         .extract(pkg_a_path.as_path())
@@ -550,7 +556,7 @@ fn test_workspace_import_extraction() {
     // Find the workspace import
     let workspace_imports: Vec<_> = imports
         .iter()
-        .filter(|i| matches!(i.target, jscycles::ImportTarget::WorkspacePackage { .. }))
+        .filter(|i| matches!(i.target, import::ImportTarget::WorkspacePackage { .. }))
         .collect();
 
     assert_eq!(
@@ -572,8 +578,8 @@ fn test_monorepo_with_file_cycle_has_inner_cycle() {
     // The monorepo-mock fixture has an internal file cycle in pkg-a
     let path = fixture_path("monorepo-mock");
     let config = Config::default();
-    let discovery =
-        PackageDiscovery::new(&config, &[], &[]).expect("discovery should be created successfully");
+    let discovery = PackageDiscovery::try_new(&config, &[], &[])
+        .expect("discovery should be created successfully");
 
     let packages = discovery
         .discover(&path)
@@ -586,7 +592,8 @@ fn test_monorepo_with_file_cycle_has_inner_cycle() {
         .expect("should find pkg-a");
 
     let tsconfig = TsConfig::discover(&pkg_a.path).expect("readable tsconfig");
-    let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig);
+    let extractor =
+        ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig.as_ref());
 
     let imports = extractor
         .extract(&pkg_a.path)
@@ -744,7 +751,7 @@ fn test_no_cycles_graph_structure() {
             "js".to_owned(),
             "jsx".to_owned(),
         ],
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     let imports = extractor.extract(&path).expect("extraction should succeed");
@@ -783,7 +790,7 @@ fn test_complex_cycles_import_extraction() {
 #[test]
 fn test_complex_cycles_all_cycles_are_unique() {
     let cycles = detect_cycles_in_fixture("complex-cycles");
-    let unique_cycles: std::collections::HashSet<_> = cycles.iter().collect();
+    let unique_cycles: HashSet<_> = cycles.iter().collect();
     assert_eq!(
         cycles.len(),
         unique_cycles.len(),
@@ -818,7 +825,7 @@ fn test_diamond_graph_structure() {
             "js".to_owned(),
             "jsx".to_owned(),
         ],
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     let imports = extractor.extract(&path).expect("extraction should succeed");
@@ -1248,15 +1255,14 @@ fn test_workspace_import_target_types() {
         .expect("should exist")
         .clone();
 
-    let extractor =
-        ImportExtractor::new(vec!["ts".to_owned()], None).with_workspace(Some(workspace));
+    let extractor = ImportExtractor::new(vec!["ts".to_owned()], None).workspace(Some(&workspace));
 
     let imports = extractor.extract(&pkg_a_path).expect("should succeed");
 
     // Check import target types
     let has_workspace_imports = imports
         .iter()
-        .any(|i| matches!(i.target, jscycles::ImportTarget::WorkspacePackage { .. }));
+        .any(|i| matches!(i.target, import::ImportTarget::WorkspacePackage { .. }));
 
     assert!(
         has_workspace_imports,
@@ -1277,8 +1283,7 @@ fn test_workspace_import_specifier_preserved() {
         .expect("should exist")
         .clone();
 
-    let extractor =
-        ImportExtractor::new(vec!["ts".to_owned()], None).with_workspace(Some(workspace));
+    let extractor = ImportExtractor::new(vec!["ts".to_owned()], None).workspace(Some(&workspace));
 
     let imports = extractor.extract(&pkg_a_path).expect("should succeed");
 
@@ -1297,7 +1302,7 @@ fn test_workspace_import_specifier_preserved() {
 fn test_monorepo_mock_package_names() {
     let path = fixture_path("monorepo-mock");
     let config = Config::default();
-    let discovery = PackageDiscovery::new(&config, &[], &[]).expect("should create");
+    let discovery = PackageDiscovery::try_new(&config, &[], &[]).expect("should create");
 
     let packages = discovery.discover(&path).expect("should succeed");
     let mut names: Vec<_> = packages.iter().map(|p| p.name.clone()).collect();
@@ -1317,7 +1322,7 @@ fn test_monorepo_mock_package_names() {
 fn test_monorepo_mock_package_paths() {
     let path = fixture_path("monorepo-mock");
     let config = Config::default();
-    let discovery = PackageDiscovery::new(&config, &[], &[]).expect("should create");
+    let discovery = PackageDiscovery::try_new(&config, &[], &[]).expect("should create");
 
     let packages = discovery.discover(&path).expect("should succeed");
 
@@ -1331,7 +1336,7 @@ fn test_monorepo_mock_package_paths() {
 fn test_monorepo_mock_has_internal_cycles() {
     let path = fixture_path("monorepo-mock");
     let config = Config::default();
-    let discovery = PackageDiscovery::new(&config, &[], &[]).expect("should create");
+    let discovery = PackageDiscovery::try_new(&config, &[], &[]).expect("should create");
 
     let packages = discovery.discover(&path).expect("should succeed");
 
@@ -1339,7 +1344,8 @@ fn test_monorepo_mock_has_internal_cycles() {
     let mut found_cycle = false;
     for pkg in &packages {
         let tsconfig = TsConfig::discover(&pkg.path).expect("readable tsconfig");
-        let extractor = ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig);
+        let extractor =
+            ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], tsconfig.as_ref());
 
         let imports = extractor.extract(&pkg.path).expect("should succeed");
         let graph = DependencyGraph::from_imports(&imports);
@@ -1605,7 +1611,7 @@ fn test_graph_node_count_simple_cycle() {
             "js".to_owned(),
             "jsx".to_owned(),
         ],
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     let imports = extractor.extract(&path).expect("should succeed");
@@ -1628,7 +1634,7 @@ fn test_graph_edge_count_diamond() {
             "js".to_owned(),
             "jsx".to_owned(),
         ],
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     let imports = extractor.extract(&path).expect("should succeed");
@@ -1662,7 +1668,7 @@ fn test_empty_directory() {
     // Create a temp directory for this test
     let path = fixture_path("no-cycles");
     let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
-    let extractor = ImportExtractor::new(vec!["ts".to_owned()], tsconfig);
+    let extractor = ImportExtractor::new(vec!["ts".to_owned()], tsconfig.as_ref());
 
     // Extraction should succeed even with minimal files
     let result = extractor.extract(&path);
@@ -1677,7 +1683,7 @@ fn test_empty_directory() {
 fn test_import_extraction_ts_only() {
     let path = fixture_path("simple-cycle");
     let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
-    let extractor = ImportExtractor::new(vec!["ts".to_owned()], tsconfig);
+    let extractor = ImportExtractor::new(vec!["ts".to_owned()], tsconfig.as_ref());
 
     let imports = extractor.extract(&path).expect("should succeed");
 
@@ -1703,13 +1709,13 @@ fn test_import_extraction_multiple_extensions() {
             "js".to_owned(),
             "jsx".to_owned(),
         ],
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     let imports = extractor.extract(&path).expect("should succeed");
 
     // Should extract from multiple file types
-    let extensions: std::collections::HashSet<_> = imports
+    let extensions: HashSet<_> = imports
         .iter()
         .filter_map(|i| i.source.extension())
         .map(|e| e.to_string_lossy().to_string())
@@ -1755,7 +1761,7 @@ fn test_cycles_are_sorted() {
 #[test]
 fn test_no_duplicate_cycles() {
     let cycles = detect_cycles_in_fixture("complex-cycles");
-    let unique: std::collections::HashSet<_> = cycles.iter().collect();
+    let unique: HashSet<_> = cycles.iter().collect();
 
     assert_eq!(
         cycles.len(),
@@ -2074,7 +2080,7 @@ fn detect_cycles_with_extensions(fixture_name: &str, extensions: Vec<&str>) -> V
     let tsconfig = TsConfig::discover(&path).expect("readable tsconfig");
     let extractor = ImportExtractor::new(
         extensions.into_iter().map(ToOwned::to_owned).collect(),
-        tsconfig,
+        tsconfig.as_ref(),
     );
 
     let imports = extractor
@@ -2309,8 +2315,8 @@ fn test_pnpm_catalog_discovery() {
 
 #[test]
 fn test_import_extraction_empty_directory() {
-    let path = std::env::temp_dir().join("jscycles-test-empty");
-    std::fs::create_dir_all(&path).expect("should create temp dir");
+    let path = env::temp_dir().join("jscycles-test-empty");
+    fs::create_dir_all(&path).expect("should create temp dir");
 
     let extractor = ImportExtractor::new(vec!["ts".to_owned()], None);
     let imports = extractor
@@ -2319,7 +2325,7 @@ fn test_import_extraction_empty_directory() {
 
     assert!(imports.is_empty(), "empty directory should have no imports");
 
-    std::fs::remove_dir(&path).expect("should remove temp dir");
+    fs::remove_dir(&path).expect("should remove temp dir");
 }
 
 #[test]
@@ -2337,7 +2343,7 @@ fn test_import_extraction_deduplicates() {
     let imports = extract_imports_from_fixture("simple-cycle");
     // Check that we don't have duplicate import records for the same source->target
     // imports is Vec<(source, specifier)> - already pairs
-    let unique_pairs: std::collections::HashSet<_> = imports.iter().collect();
+    let unique_pairs: HashSet<_> = imports.iter().collect();
 
     assert_eq!(
         imports.len(),
@@ -2379,7 +2385,7 @@ fn test_graph_self_loop_only() {
 
 #[test]
 fn test_graph_from_empty_imports() {
-    let imports: Vec<jscycles::Import> = vec![];
+    let imports: Vec<import::Import> = vec![];
     let graph = DependencyGraph::from_imports(&imports);
 
     assert_eq!(
@@ -2469,30 +2475,30 @@ fn test_tsconfig_discovery_of_malformed_config_is_an_error() {
     // rejection (docs/analysis-limits.md).
     let root = tempfile::tempdir().expect("temporary package");
     let config = root.path().join("tsconfig.json");
-    std::fs::write(&config, "{").expect("malformed config");
-    std::fs::create_dir(root.path().join("src")).expect("source directory");
+    fs::write(&config, "{").expect("malformed config");
+    fs::create_dir(root.path().join("src")).expect("source directory");
     let error = TsConfig::discover(&root.path().join("src")).expect_err("malformed nearest config");
     assert!(
-        matches!(&error, jscycles::TsConfigError::AtPath { path, .. } if path.ends_with("tsconfig.json")),
+        matches!(&error, tsconfig::TsConfigError::AtPath { path, .. } if path.ends_with("tsconfig.json")),
         "the error names the malformed file: {error}"
     );
-    let cache = jscycles::TsConfigCache::new();
+    let cache = tsconfig::TsConfigCache::new();
     assert!(
         cache.discover(&root.path().join("src")).is_none(),
         "best-effort discovery skips the file"
     );
     assert_eq!(
-        cache.rejected().len(),
+        cache.ignored().len(),
         1,
         "and records why: {:?}",
-        cache.rejected()
+        cache.ignored()
     );
 }
 
 #[test]
 fn test_tsconfig_with_no_paths() {
     let root = tempfile::tempdir().expect("temporary package");
-    std::fs::write(root.path().join("tsconfig.json"), "{}").expect("config");
+    fs::write(root.path().join("tsconfig.json"), "{}").expect("config");
     let tsconfig = TsConfig::discover(root.path())
         .expect("readable tsconfig")
         .expect("nearest config is selected");
@@ -2544,14 +2550,14 @@ fn legacy_workspace_selection_canonicalizes_scan_paths() {
     let root = tempfile::tempdir().expect("temporary workspace");
     for name in ["a", "b"] {
         let package = root.path().join("packages").join(name);
-        std::fs::create_dir_all(&package).expect("package directory");
-        std::fs::write(
+        fs::create_dir_all(&package).expect("package directory");
+        fs::write(
             package.join("package.json"),
             format!(r#"{{"name":"{name}"}}"#),
         )
         .expect("manifest");
     }
-    std::fs::write(
+    fs::write(
         root.path().join("package.json"),
         r#"{"name":"root","private":true,"workspaces":["packages/*"]}"#,
     )
@@ -2559,7 +2565,7 @@ fn legacy_workspace_selection_canonicalizes_scan_paths() {
     let workspace = Workspace::discover(root.path())
         .expect("workspace metadata")
         .expect("workspace");
-    let discovery = PackageDiscovery::new(&Config::default(), &[], &[]).expect("discovery");
+    let discovery = PackageDiscovery::try_new(&Config::default(), &[], &[]).expect("discovery");
     // A non-canonical spelling (`..` segment; on macOS also /var vs /private/var).
     let spelled = root.path().join("packages/a/../b");
     let selected = discovery.discover_workspace_packages(&workspace, &[spelled]);

@@ -102,7 +102,7 @@ repository scanning still needs process isolation and OS resource limits.
 ## Library use and compatibility
 
 `AnalysisLimits`, `AnalysisBudget`, `Resource`, `LimitError`, and `BoundedReport`
-are public in `jscycles::budget`. Clone a budget handle to share atomic counters;
+are public in the `jscycles-budget` crate. Clone a budget handle to share atomic counters;
 create a new budget for each new operation. `check()` exposes the first recorded
 exhaustion. Do not accept a partial result or reuse an exhausted budget.
 
@@ -114,10 +114,11 @@ best-effort return types; callers using those with a shared budget must call
 convenience API retains its allocation behavior; it is not one of the CLI's
 bounded entry points.
 
-`TsConfigCache::with_budget` starts empty caches, including when called on a used
-cache or its clone. Values admitted by a previous budget cannot satisfy a new
-operation's reads or payload reservations. Ordinary clones continue sharing
-snapshots and their original budget.
+`TsConfigCache::new_with_budget` starts empty caches; a budget cannot be
+attached to a cache that already holds values. Values admitted by a previous
+budget therefore cannot satisfy a new operation's reads or payload
+reservations. Ordinary clones continue sharing snapshots and their original
+budget.
 
 Owned `TsConfigCache::discover/load` copies reserve their known string/path/record
 payloads and work before cloning; `discover_shared` retains shared snapshots.

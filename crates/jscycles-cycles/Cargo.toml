@@ -1,0 +1,26 @@
+[package]
+name = "jscycles-cycles"
+description = "File and package cycle detection for jscycles"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+include = ["src/**", "Cargo.toml"]
+
+[features]
+# Local timing reports; see `cargo xtask profile`.
+profiling = ["analysis/profiling"]
+
+[dependencies]
+analysis.workspace = true
+budget.workspace = true
+graph.workspace = true
+import.workspace = true
+
+[lints]
+workspace = true
