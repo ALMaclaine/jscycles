@@ -444,7 +444,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "clap",
  "glob",
@@ -470,7 +470,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-analysis"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "hotpath",
  "jscycles-budget",
@@ -480,14 +480,14 @@ dependencies = [
 
 [[package]]
 name = "jscycles-budget"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "jscycles-config"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "glob",
  "hotpath",
@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-cycles"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-analysis",
  "jscycles-budget",
@@ -511,7 +511,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-discovery"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "glob",
  "hotpath",
@@ -528,7 +528,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-extract"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "hotpath",
  "jscycles-budget",
@@ -545,14 +545,14 @@ dependencies = [
 
 [[package]]
 name = "jscycles-graph"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-import",
 ]
 
 [[package]]
 name = "jscycles-import"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-budget",
  "thiserror",
@@ -560,7 +560,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-input"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "glob",
  "jscycles-budget",
@@ -571,11 +571,11 @@ dependencies = [
 
 [[package]]
 name = "jscycles-module-path"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "jscycles-module-syntax"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-budget",
  "jscycles-import",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-output"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-cycles",
  "jscycles-input",
@@ -598,7 +598,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-scan"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "hotpath",
  "jscycles-budget",
@@ -617,18 +617,18 @@ dependencies = [
 
 [[package]]
 name = "jscycles-syntax"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "jscycles-terminal"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "jscycles-tsconfig"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "hotpath",
  "jscycles-budget",
@@ -643,7 +643,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-workspace"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "glob",
  "hotpath",

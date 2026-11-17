@@ -3,7 +3,7 @@ members = [".", "crates/*", "xtask"]
 resolver = "3"
 
 [workspace.package]
-version = "0.4.0"
+version = "0.5.0"
 publish = ["crates-io"]
 edition = "2024"
 rust-version = "1.93.0"
@@ -15,23 +15,23 @@ categories = ["development-tools"]
 
 [workspace.dependencies]
 # Internal crates, renamed so code reads `budget::units(...)`.
-analysis = { package = "jscycles-analysis", path = "crates/jscycles-analysis", version = "=0.4.0" }
-budget = { package = "jscycles-budget", path = "crates/jscycles-budget", version = "=0.4.0" }
-config = { package = "jscycles-config", path = "crates/jscycles-config", version = "=0.4.0" }
-cycles = { package = "jscycles-cycles", path = "crates/jscycles-cycles", version = "=0.4.0" }
-discovery = { package = "jscycles-discovery", path = "crates/jscycles-discovery", version = "=0.4.0" }
-extract = { package = "jscycles-extract", path = "crates/jscycles-extract", version = "=0.4.0" }
-graph = { package = "jscycles-graph", path = "crates/jscycles-graph", version = "=0.4.0" }
-import = { package = "jscycles-import", path = "crates/jscycles-import", version = "=0.4.0" }
-input = { package = "jscycles-input", path = "crates/jscycles-input", version = "=0.4.0" }
-module_path = { package = "jscycles-module-path", path = "crates/jscycles-module-path", version = "=0.4.0" }
-module_syntax = { package = "jscycles-module-syntax", path = "crates/jscycles-module-syntax", version = "=0.4.0" }
-output = { package = "jscycles-output", path = "crates/jscycles-output", version = "=0.4.0" }
-scan = { package = "jscycles-scan", path = "crates/jscycles-scan", version = "=0.4.0" }
-syntax = { package = "jscycles-syntax", path = "crates/jscycles-syntax", version = "=0.4.0" }
-terminal = { package = "jscycles-terminal", path = "crates/jscycles-terminal", version = "=0.4.0" }
-tsconfig = { package = "jscycles-tsconfig", path = "crates/jscycles-tsconfig", version = "=0.4.0" }
-workspace = { package = "jscycles-workspace", path = "crates/jscycles-workspace", version = "=0.4.0" }
+analysis = { package = "jscycles-analysis", path = "crates/jscycles-analysis", version = "=0.5.0" }
+budget = { package = "jscycles-budget", path = "crates/jscycles-budget", version = "=0.5.0" }
+config = { package = "jscycles-config", path = "crates/jscycles-config", version = "=0.5.0" }
+cycles = { package = "jscycles-cycles", path = "crates/jscycles-cycles", version = "=0.5.0" }
+discovery = { package = "jscycles-discovery", path = "crates/jscycles-discovery", version = "=0.5.0" }
+extract = { package = "jscycles-extract", path = "crates/jscycles-extract", version = "=0.5.0" }
+graph = { package = "jscycles-graph", path = "crates/jscycles-graph", version = "=0.5.0" }
+import = { package = "jscycles-import", path = "crates/jscycles-import", version = "=0.5.0" }
+input = { package = "jscycles-input", path = "crates/jscycles-input", version = "=0.5.0" }
+module_path = { package = "jscycles-module-path", path = "crates/jscycles-module-path", version = "=0.5.0" }
+module_syntax = { package = "jscycles-module-syntax", path = "crates/jscycles-module-syntax", version = "=0.5.0" }
+output = { package = "jscycles-output", path = "crates/jscycles-output", version = "=0.5.0" }
+scan = { package = "jscycles-scan", path = "crates/jscycles-scan", version = "=0.5.0" }
+syntax = { package = "jscycles-syntax", path = "crates/jscycles-syntax", version = "=0.5.0" }
+terminal = { package = "jscycles-terminal", path = "crates/jscycles-terminal", version = "=0.5.0" }
+tsconfig = { package = "jscycles-tsconfig", path = "crates/jscycles-tsconfig", version = "=0.5.0" }
+workspace = { package = "jscycles-workspace", path = "crates/jscycles-workspace", version = "=0.5.0" }
 
 # External crates.
 clap = "4"

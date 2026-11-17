@@ -8,6 +8,8 @@ break compatibility). Library and edge-case details are in the upgrade notes for
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-17
+
 ### Changed
 
 - The library is split into small crates, one per part of the analysis,
@@ -166,7 +168,8 @@ results on the same repository, and compare before relying on them in CI.
 
 Initial release.
 
-[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ALMaclaine/jscycles/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ALMaclaine/jscycles/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ALMaclaine/jscycles/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ALMaclaine/jscycles/compare/v0.2.0...v0.2.1

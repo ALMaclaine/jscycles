@@ -172,7 +172,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-analysis"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-budget",
  "jscycles-graph",
@@ -181,14 +181,14 @@ dependencies = [
 
 [[package]]
 name = "jscycles-budget"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "jscycles-config"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "glob",
  "jscycles-budget",
@@ -200,7 +200,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-cycles"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-analysis",
  "jscycles-budget",
@@ -225,14 +225,14 @@ dependencies = [
 
 [[package]]
 name = "jscycles-graph"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-import",
 ]
 
 [[package]]
 name = "jscycles-import"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-budget",
  "thiserror",
@@ -240,7 +240,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-input"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "glob",
  "jscycles-budget",
@@ -250,11 +250,11 @@ dependencies = [
 
 [[package]]
 name = "jscycles-module-path"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "jscycles-module-syntax"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "jscycles-budget",
  "jscycles-import",
@@ -266,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "jscycles-syntax"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "libc"

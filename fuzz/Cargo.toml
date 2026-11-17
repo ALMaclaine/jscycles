@@ -12,13 +12,13 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "=0.4.13"
 # The crates under test, renamed as in the main workspace.
-budget = { package = "jscycles-budget", path = "../crates/jscycles-budget", version = "0.4.0" }
-config = { package = "jscycles-config", path = "../crates/jscycles-config", version = "0.4.0" }
-cycles = { package = "jscycles-cycles", path = "../crates/jscycles-cycles", version = "0.4.0" }
-graph = { package = "jscycles-graph", path = "../crates/jscycles-graph", version = "0.4.0" }
-import = { package = "jscycles-import", path = "../crates/jscycles-import", version = "0.4.0" }
-module_syntax = { package = "jscycles-module-syntax", path = "../crates/jscycles-module-syntax", version = "0.4.0" }
-syntax = { package = "jscycles-syntax", path = "../crates/jscycles-syntax", version = "0.4.0" }
+budget = { package = "jscycles-budget", path = "../crates/jscycles-budget", version = "0.5.0" }
+config = { package = "jscycles-config", path = "../crates/jscycles-config", version = "0.5.0" }
+cycles = { package = "jscycles-cycles", path = "../crates/jscycles-cycles", version = "0.5.0" }
+graph = { package = "jscycles-graph", path = "../crates/jscycles-graph", version = "0.5.0" }
+import = { package = "jscycles-import", path = "../crates/jscycles-import", version = "0.5.0" }
+module_syntax = { package = "jscycles-module-syntax", path = "../crates/jscycles-module-syntax", version = "0.5.0" }
+syntax = { package = "jscycles-syntax", path = "../crates/jscycles-syntax", version = "0.5.0" }
 serde_json = "1"
 
 [workspace]
