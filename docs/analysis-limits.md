@@ -102,7 +102,7 @@ repository scanning still needs process isolation and OS resource limits.
 ## Library use and compatibility
 
 `AnalysisLimits`, `AnalysisBudget`, `Resource`, `LimitError`, and `BoundedReport`
-are public in `jscycles::budget`. Clone a budget handle to share atomic counters;
+are public in the `jscycles-budget` crate. Clone a budget handle to share atomic counters;
 create a new budget for each new operation. `check()` exposes the first recorded
 exhaustion. Do not accept a partial result or reuse an exhausted budget.
 
@@ -110,14 +110,15 @@ Discovery, workspace/tsconfig loading, and extraction expose budget-aware
 constructors/loaders; the CLI uses one handle throughout. Tsconfig/workspace
 snapshots can be shared through `Arc`. Legacy optional metadata APIs retain
 best-effort return types; callers using those with a shared budget must call
-`check()` before accepting success. Legacy `Config::load_or_default` and the
-infallible workspace-package selection convenience API retain their fallback
-and allocation behavior; they are not the CLI's bounded entry points.
+`check()` before accepting success. The infallible workspace-package selection
+convenience API retains its allocation behavior; it is not one of the CLI's
+bounded entry points.
 
-`TsConfigCache::with_budget` starts empty caches, including when called on a used
-cache or its clone. Values admitted by a previous budget cannot satisfy a new
-operation's reads or payload reservations. Ordinary clones continue sharing
-snapshots and their original budget.
+`TsConfigCache::new_with_budget` starts empty caches; a budget cannot be
+attached to a cache that already holds values. Values admitted by a previous
+budget therefore cannot satisfy a new operation's reads or payload
+reservations. Ordinary clones continue sharing snapshots and their original
+budget.
 
 Owned `TsConfigCache::discover/load` copies reserve their known string/path/record
 payloads and work before cloning; `discover_shared` retains shared snapshots.
@@ -179,12 +180,13 @@ not sources, trees, parser state or checkout metadata. They are separate from th
 operation's cumulative input/cache admissions. Source-dependent work, native u32
 length checks, whole-tree rejection and all source-range checks remain unchanged.
 
-`CycleDetector::try_detect_imports` and the package detector's
-`try_detect_imports` / `try_detect_imports_with_files` borrow imports and admit
-graph nodes/edges before allocating their analysis graph. `try_detect` checks
-analysis of a caller-owned graph; the caller already owns and has allocated
-that input. The existing `detect` and `detect_with_files` signatures remain
-infallible and have no quotas; they use the same iterative algorithms. Choose
+`cycles::try_file_cycles_from_imports`, `cycles::try_package_cycles_from_imports`
+and `cycles::try_package_cycles_with_files_from_imports` borrow imports and admit
+graph nodes/edges before allocating their analysis graph. `try_file_cycles` and
+`try_package_cycles` check analysis of a caller-owned graph; the caller already
+owns and has allocated that input. `file_cycles`, `package_cycles` and
+`package_cycles_with_files` remain infallible and have no quotas; they use the
+same iterative algorithms. Choose
 the fallible APIs when bounding search or enumeration is required.
 
 Adding `Config::limits` and quota variants to public error enums changes source

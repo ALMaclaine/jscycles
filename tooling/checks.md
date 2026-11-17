@@ -28,7 +28,7 @@ and Cargo target kind, not every operating-system target.
 | `cargo xtask coverage` | cargo-llvm-cov 0.9.1; default-feature workspace target tests; LCOV at `target/tooling/coverage/lcov.info` |
 | `cargo xtask crap` | cargo-crap 0.9.0; fresh coverage; fail above 30; JSON at `target/tooling/coverage/crap.json` |
 | `cargo xtask mutants` | cargo-mutants 27.1.0; all production Rust modules in an isolated copy; fresh source/case manifest and strict outcome review |
-| `cargo xtask miri` | nightly-2026-10-19; actual pure Rust graph/text/reporting/reader/path/quota/output tests |
+| `cargo xtask miri` | nightly-2026-10-19; the pure `syntax` and `module-path` crates whole, and pure graph/reporting/reader/tsconfig-selection tests of `graph`, `output`, `input` and `tsconfig`, plus the root `miri` quota/output tests |
 | `cargo xtask profile` | Hotpath 0.28.6 release build; checked fan-in, call-heavy, monorepo and directory-index workloads; local JSON reports |
 
 The mutation runner explicitly selects the repository's `rust-toolchain.toml`
@@ -134,8 +134,8 @@ against a concurrent hostile filesystem. No project code or package script runs.
 Rayon owns parallel scan completion; a worker error prevents a successful report.
 
 Config parse/read failures and explicitly selected missing configs fail. An
-absent default config uses defaults. The public legacy `Config::load_or_default`
-retains its best-effort fallback; new callers should use `try_load_or_default`.
+absent default config uses defaults. The library's `Config::try_load_or_default`
+has the same contract; the former best-effort `load_or_default` was removed in 0.5.
 Auto-discovered tsconfig and optional workspace aliases remain best-effort for
 ordinary input errors; an exhausted shared budget always fails the scan.
 An explicit `--tsconfig` is validated in every output mode and
@@ -213,9 +213,12 @@ copies for passing, injected formatting/lock/doctest/unsafe-operation failures,
 and repaired cases. Unsafe probes are compiled only and never called; production
 retains its safe-only policy. This evidence must be regenerated after relevant
 compiler, command, manifest, formatter, or public-example changes.
-The optional boundary selection adds three named disposable-copy fault probes
-on Unix (package identity, component globs and native path bytes), for 29 cases;
-Windows omits the Unix-only path-byte probe. It is scoped test evidence rather
+The optional boundary selection adds four named disposable-copy fault probes
+on Unix (package identity, member-expansion globs, member-selection globs and
+native path bytes), for 32 cases; Windows omits the Unix-only path-byte probe.
+Until 0.5 the glob probe changed the first of two identical option lines, the
+member-selection glob, which no test guarded; that probe passed vacuously.
+Each glob now has its own probe and regression test. It is scoped test evidence rather
 than a general mutation-coverage gate. The report checks the original inputs
 remain unchanged after the commands.
 

@@ -1,15 +1,6 @@
 #![no_main]
-use jscycles::{ExtractError, budget};
+use import::ExtractError;
 use libfuzzer_sys::fuzz_target;
-
-#[path = "../../src/module_syntax.rs"]
-mod module_syntax;
-#[path = "../../src/syntax.rs"]
-#[expect(
-    dead_code,
-    reason = "each target exercises only part of the shared private adapter module"
-)]
-mod syntax;
 
 fn extracted(source: &str, extension: &str) -> Result<Vec<String>, ExtractError> {
     let path = std::path::PathBuf::from(format!("source.{extension}"));
@@ -21,7 +12,11 @@ fn extracted(source: &str, extension: &str) -> Result<Vec<String>, ExtractError>
         module_syntax::Language::for_path(&path),
         &budget,
         // Exercise type-only skipping on half of the inputs.
-        source.len() % 2 == 0,
+        if source.len() % 2 == 0 {
+            module_syntax::TypeOnlyImports::Skip
+        } else {
+            module_syntax::TypeOnlyImports::Report
+        },
         |literal: &str| {
             budget.consume(budget::Resource::Imports, 1)?;
             budget.consume(

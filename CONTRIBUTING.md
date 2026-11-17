@@ -94,8 +94,9 @@ npm run check   # sync tests, build and internal link check, as CI runs
 
 | Path | Contents |
 | --- | --- |
-| `src/` | Library and CLI (`main.rs`) |
-| `tests/` | Integration tests and fixtures |
+| `src/` | The `jscycles` command (`main.rs`) |
+| `crates/` | The libraries, one crate per part of the analysis (see below) |
+| `tests/` | Integration tests of the command and libraries, and their fixtures |
 | `fuzz/` | cargo-fuzz targets |
 | `npm/` | The Node launcher of the `jscycles` npm package (`scripts/npm_packages.py` builds the packages) |
 | `scripts/` | Repository checks, release tooling, benchmarks, differential tests |
@@ -103,6 +104,32 @@ npm run check   # sync tests, build and internal link check, as CI runs
 | `docs/` | User documentation |
 | `site/` | The website (Astro Starlight): landing page and guides; its Reference pages are generated from `docs/` |
 | `docs/maintainers/` | Architecture, threat model, release runbook, quality records |
+
+Each library crate is a single `src/lib.rs` focused on one abstraction,
+following the
+[Google Rust style guide's code organization rules](https://google.github.io/styleguide/rustguide.html#code-organization).
+Dependencies point one way:
+
+```text
+budget, syntax, terminal, module-path        (no jscycles dependencies)
+input                    budget, module-path
+tsconfig                 budget, input, module-path, syntax
+workspace                budget, input, syntax, tsconfig
+config                   budget, input
+discovery                budget, config, input, workspace
+import                   budget
+module-syntax            budget, import, syntax
+extract                  budget, import, input, module-path, module-syntax, syntax, tsconfig, workspace
+graph                    import
+analysis                 budget, graph, import
+cycles                   analysis, budget, graph, import
+output                   cycles, input, terminal
+scan                     budget, config, cycles, discovery, extract, import, output, tsconfig, workspace
+jscycles (the command)   config, output, scan
+```
+
+Inside the workspace, each crate is depended on under its short name, so code
+reads `budget::units(..)` and `tsconfig::TsConfig`.
 
 The project follows a pinned set of Rust engineering practices ("Rust-OE")
 kept in `.rust-oe/` and summarized in [AGENTS.md](AGENTS.md), which is also the

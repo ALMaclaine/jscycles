@@ -5,19 +5,27 @@
 )]
 
 use std::fs;
+use std::io;
+use std::io::ErrorKind;
+#[cfg(unix)]
+use std::os::unix::fs as unix_fs;
+use std::path;
 use std::path::Path;
 use std::process::Command;
 
-use jscycles::ImportExtractor;
-use jscycles::Workspace;
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-use jscycles::cycles::{PackageCycle, PackageCycleWithFiles};
-use jscycles::imports::{ExtractionMode, ImportTarget};
-use jscycles::output::{
+use budget::{AnalysisBudget, AnalysisLimits, Resource};
+use config::Config;
+use cycles::Cycle;
+use cycles::{PackageCycle, PackageCycleWithFiles};
+use discovery::PackageDiscovery;
+use extract::ExtractionMode;
+use extract::ImportExtractor;
+use import::ImportTarget;
+use output::{ColorMode, HumanFormatter, JsonFormatter, PackageResult};
+use output::{
     CycleFilter, OutputFormatter as _, Results, UnifiedOutputFormatter as _, UnifiedResults,
 };
-use jscycles::{Config, PackageDiscovery};
-use jscycles::{Cycle, HumanFormatter, JsonFormatter, PackageResult};
+use workspace::Workspace;
 
 #[test]
 fn relative_specifiers_cannot_become_workspace_package_edges() {
@@ -27,18 +35,17 @@ fn relative_specifiers_cannot_become_workspace_package_edges() {
     fs::write(root.join("entry.ts"), "import './local'; import 'actual';").expect("source");
     // A member named "." must not capture the relative specifier "./local";
     // "actual" is a different member, so importing it is a package edge.
-    let workspace = Workspace {
-        root: root.clone(),
-        format: jscycles::workspace::WorkspaceFormat::Npm,
-        packages: [(".", root.clone()), ("actual", root.join("actual"))]
+    let workspace = Workspace::new(
+        root.clone(),
+        workspace::WorkspaceFormat::Npm,
+        [(".", root.clone()), ("actual", root.join("actual"))]
             .map(|(name, path)| (name.to_owned(), path))
             .into_iter()
             .collect(),
-        aliases: std::collections::HashMap::new(),
-    };
+    );
     let imports = ImportExtractor::new(vec!["ts".to_owned()], None)
-        .with_workspace(Some(workspace))
-        .with_mode(ExtractionMode::WorkspaceOnly)
+        .workspace(Some(&workspace))
+        .mode(ExtractionMode::WorkspaceOnly)
         .extract(root)
         .expect("sources");
     assert_eq!(
@@ -64,7 +71,7 @@ fn workspace_pattern_prefixes_classify_the_target_of_a_symlink() {
         r#"{"name":"member"}"#,
     )
     .expect("member manifest");
-    std::os::unix::fs::symlink("physical", root.join("linked")).expect("directory symlink");
+    unix_fs::symlink("physical", root.join("linked")).expect("directory symlink");
     let workspace = Workspace::discover(root)
         .expect("symlink prefix is a directory")
         .expect("workspace");
@@ -83,13 +90,13 @@ fn legacy_report_totals_and_human_summaries_describe_the_actual_packages() {
         "empty results have no cyclic packages"
     );
     for (name, count) in [("clean", 0), ("single", 1), ("multiple", 2)] {
-        results.packages.push(PackageResult {
-            name: name.to_owned(),
-            path: name.into(),
-            cycles: (0..count)
-                .map(|_| Cycle::new(["a", "b", "a"].map(std::path::PathBuf::from).to_vec()))
+        results.packages.push(PackageResult::new(
+            name.to_owned(),
+            name.into(),
+            (0..count)
+                .map(|_| Cycle::new(["a", "b", "a"].map(path::PathBuf::from).to_vec()))
                 .collect(),
-        });
+        ));
     }
     assert_eq!(
         results.packages_with_cycles(),
@@ -98,7 +105,7 @@ fn legacy_report_totals_and_human_summaries_describe_the_actual_packages() {
     );
     assert_eq!(results.total_cycles(), 3, "retain every cycle");
     let mut output = Vec::new();
-    HumanFormatter::new(false)
+    HumanFormatter::new(ColorMode::Plain)
         .format(&results, &mut output)
         .expect("human report");
     let text = String::from_utf8(output).expect("UTF-8 report");
@@ -118,16 +125,13 @@ fn human_package_counts_agree_with_the_json_cycle_arrays() {
                 if detailed {
                     results
                         .package_cycles_with_files
-                        .push(PackageCycleWithFiles {
-                            packages,
-                            edges: Vec::new(),
-                        });
+                        .push(PackageCycleWithFiles::new(packages, Vec::new()));
                 } else {
                     results.package_cycles.push(PackageCycle::new(packages));
                 }
             }
             let mut output = Vec::new();
-            HumanFormatter::new(false)
+            HumanFormatter::new(ColorMode::Plain)
                 .format_unified(&results, CycleFilter::Outer, &mut output)
                 .expect("human report");
             let word = if count == 1 { "cycle" } else { "cycles" };
@@ -157,23 +161,22 @@ fn human_package_counts_agree_with_the_json_cycle_arrays() {
 #[test]
 fn formatter_write_errors_are_never_successful_reports() {
     struct RejectWrites;
-    impl std::io::Write for RejectWrites {
-        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
-            Err(std::io::ErrorKind::BrokenPipe.into())
+    impl io::Write for RejectWrites {
+        fn write(&mut self, _: &[u8]) -> io::Result<usize> {
+            Err(ErrorKind::BrokenPipe.into())
         }
-        fn flush(&mut self) -> std::io::Result<()> {
+        fn flush(&mut self) -> io::Result<()> {
             Ok(())
         }
     }
-    let results = Results {
-        packages: vec![PackageResult {
-            name: "clean".to_owned(),
-            path: ".".into(),
-            cycles: Vec::new(),
-        }],
-    };
+    let mut results = Results::new();
+    results.packages = vec![PackageResult::new(
+        "clean".to_owned(),
+        ".".into(),
+        Vec::new(),
+    )];
     assert!(
-        HumanFormatter::new(false)
+        HumanFormatter::new(ColorMode::Plain)
             .format(&results, &mut RejectWrites)
             .is_err(),
         "even a summary-only write must propagate failure"
@@ -186,7 +189,7 @@ fn formatter_write_errors_are_never_successful_reports() {
     );
     for filter in [CycleFilter::All, CycleFilter::Inner, CycleFilter::Outer] {
         assert!(
-            HumanFormatter::new(false)
+            HumanFormatter::new(ColorMode::Plain)
                 .format_unified(&UnifiedResults::new(), filter, &mut RejectWrites)
                 .is_err(),
             "human {filter:?} write failure"
@@ -216,7 +219,7 @@ fn automatic_include_patterns_do_not_cross_component_boundaries() {
         .expect("manifest");
     }
     let config = Config::parse("scan:\n  include: ['packages/*/src']\n").expect("configuration");
-    let packages = PackageDiscovery::new(&config, &[], &[])
+    let packages = PackageDiscovery::try_new(&config, &[], &[])
         .expect("selectors")
         .discover(root)
         .expect("discovery");
@@ -246,7 +249,7 @@ fn discovered_packages_retain_the_selected_overrides_and_ignore_patterns() {
         "packages:\n  'app-*':\n    extensions: [jsx]\n    ignore: ['**/ignored.ts']\n",
     )
     .expect("configuration");
-    let packages = PackageDiscovery::new(&config, &[], &[])
+    let packages = PackageDiscovery::try_new(&config, &[], &[])
         .expect("selectors")
         .discover_explicit(&[root.to_path_buf()])
         .expect("discovery");
@@ -274,7 +277,7 @@ fn discovered_packages_retain_the_selected_overrides_and_ignore_patterns() {
     );
     fs::write(root.join("app-one/ignored.ts"), "import './other';").expect("ignored source");
     let imports = ImportExtractor::new(vec!["ts".to_owned()], None)
-        .with_ignore_patterns(app.config.ignore.clone().expect("selected ignores"))
+        .ignore_patterns(app.config.ignore.clone().expect("selected ignores"))
         .extract(&root.join("app-one"))
         .expect("extraction");
     assert!(
@@ -292,13 +295,13 @@ fn external_import_targets_are_admitted_as_owned_payloads() {
         format!("import '{specifier}';"),
     )
     .expect("source");
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_graph_bytes: 12_000,
         ..AnalysisLimits::default()
     })
     .expect("positive limit");
     let result = ImportExtractor::new(vec!["ts".to_owned()], None)
-        .with_budget(budget.clone())
+        .budget(budget.clone())
         .extract(directory.path());
     assert!(
         result.is_err(),
@@ -361,8 +364,7 @@ fn workspace_markers_may_be_symlinks_to_regular_files() {
         r#"{"workspaces":["packages/*"]}"#,
     )
     .expect("marker target");
-    std::os::unix::fs::symlink("workspace-marker.json", root.join("package.json"))
-        .expect("file symlink");
+    unix_fs::symlink("workspace-marker.json", root.join("package.json")).expect("file symlink");
     fs::create_dir_all(root.join("packages/member")).expect("member");
     fs::write(
         root.join("packages/member/package.json"),

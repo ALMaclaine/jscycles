@@ -107,6 +107,126 @@ configuration/discovery paths before expanding assurance; line coverage includes
 test source and is not a product correctness score.
 
 
+## Library API style pass
+
+The 0.5 library API changes, listed in the [upgrade notes](migration-0.5.md),
+apply the Google Rust style guide's API design rules for library code
+(<https://google.github.io/styleguide/rustguide.html>). They apply API-004,
+API-006, API-007, API-008 and API-010 at the source revision above.
+
+- API-004 (borrowed forms): package override lookups return borrowed slices
+  instead of cloned vectors.
+- API-006 (`?Sized`): the formatter traits take `W: Write + ?Sized`. The
+  caller benefit is that existing `&mut dyn Write` arguments keep compiling.
+  The implementations forward through the sized `&mut W`, so the
+  non-generic bodies are not monomorphized per writer type.
+- API-007 (trait promises): the added `PartialEq`/`Eq`/`Hash` implementations
+  are derived and structural, so equal values hash alike. `Debug` for
+  `ImportExtractor` shows its settings and omits caches
+  (`finish_non_exhaustive`). The crate denies
+  `missing_debug_implementations` so later public types keep `Debug`.
+- API-008 (consumer tests): tests construct results and metadata through the
+  new constructors. A malformed nearest tsconfig is checked as an error from
+  `TsConfig::discover`, and as a recorded rejection from `TsConfigCache`.
+- API-010 (compatibility):
+  - `#[non_exhaustive]` is applied where expansion is concrete:
+    - result and metadata structs, which gain fields as reports grow;
+    - classification enums, which gain variants as resolution and workspace
+      formats grow.
+  - `Config`, `ScanConfig` and `AnalysisLimits` stay exhaustive, because
+    record-update construction is their intended use.
+  - `Config::load_or_default` is removed, and `TsConfig::discover` now
+    reports errors. Both used to report a bad input as a clean default,
+    contrary to the boundary policy in [checks](../tooling/checks.md).
+
+### Code organization
+
+The Google Rust style guide's code organization rules are applied as well,
+including the two its text scopes to Chromium:
+
+- **Small crates:** each library crate under `crates/` holds one abstraction
+  in a single flat `src/lib.rs`. The root package is only the command. The
+  former `src/lib.rs` was a non-leaf module that defined every error type;
+  each error now lives in the crate that produces it. Cargo rejects
+  dependency cycles between crates, so the graph in `CONTRIBUTING.md` stays
+  acyclic.
+- **Imports:**
+  - No glob imports outside `use super::*` in tests; rayon's prelude became
+    trait imports scoped to the two functions that use them.
+  - Every `use` imports from one module.
+  - Free functions are called through their module or crate (`budget::units`).
+  - Types are imported and used bare. Ambiguous names (`io::Error`,
+    `fmt::Result`) and collision-prone modules (`unix_fs`) keep their module.
+    `clippy::absolute_paths = "deny"` enforces this.
+- **Internal crates are renamed:** they are depended on under short names
+  (`budget = { package = "jscycles-budget", ... }`), so qualified calls stay
+  short.
+- **`#[non_exhaustive]` across crates:**
+  - Matches that must stay exhaustive moved into the enum's defining crate,
+    for example `ImportTarget::retained_bytes` and
+    `UnifiedResults::has_cycles_for`. The compiler still checks them there.
+  - Where a future variant has a safe meaning, the match uses the guide's
+    `Variant | _` arm: an unknown `CycleFilter` selects the full analysis.
+- **Fuzz targets:** they depend on the `syntax` and `module-syntax` crates
+  instead of compiling private sources through `#[path]`. The fuzz graph no
+  longer includes clap or rayon.
+- **Tests:** fixture-based tests moved from the `tsconfig` and `workspace`
+  crates to root integration tests beside the fixtures.
+- **Publishing:** every crate is published (API-010). The previously private
+  crates' items are documented, and their `bool` parameters became enums
+  (`analysis::Evidence`, `module_syntax::TypeOnlyImports`).
+  `scripts/publish_crates.py` publishes them in dependency order, resumable
+  across crates.io's new-crate rate limit.
+- **Mutation review:** the reviewed mutation exclusions and timeout names were
+  remapped to the new files and checked against `cargo mutants --list`. Their
+  diff digests and selection digest change with any source change; the next
+  `cargo xtask mutants` campaign re-reviews them.
+
+### Full-text review of the guide
+
+A second pass checked the API against the guide's full text rather than a
+summary:
+
+- **Naming:**
+  - Fallible constructors are `try_new`.
+  - Further constructors are `new_with_..`/`new_from_..`; that includes
+    `TsConfigCache::new_with_budget`, since the old `with_budget` discarded
+    `self`.
+  - By-value builder setters use plain names (`ImportExtractor::workspace`,
+    `HumanFormatter::verbose`), because the guide reserves `with_..` for
+    closure accessors.
+  - Type lifetimes are descriptive (`'shared`, `'imports`, `'specifier`).
+- **Tuples:** public tuples became named structs: `EvidenceFile`,
+  `IgnoredTsConfig` and `PackageSpecifier`. The `(name, imports)` iterator
+  items stay pairs, because key/value pairs are how Rust iterates maps
+  (API-004).
+- **Iterator parameters:** functions that iterate once take `IntoIterator`.
+  - Import iterators are bounded by `Borrow<Import>`, so owned and borrowed
+    imports both work; the bound uses only `Borrow`'s reference blanket
+    impl, with no comparison or hash law (API-007).
+  - `PackageDiscovery`'s `only`/`exclude` stay slices, because they are
+    iterated twice: quota admission, then compilation.
+- **`Arc`:** `ImportExtractor` borrows the scan-wide workspace, tsconfig and
+  ownership tables, since rayon's parallel iterators are scoped, and its cache
+  is a plain `Mutex`. The `TsConfigCache` snapshots stay `Arc`, because sharing
+  them between clones is the cache's documented purpose.
+- **Poison:** poisoned locks are never read. A single `lock` helper per crate
+  propagates the other thread's panic, under a narrow
+  `#[expect(clippy::expect_used)]`. Poison implies a bug that rayon re-raises
+  anyway.
+- **Traits:**
+  - Structural `PartialEq`/`Eq` (and `Hash` for value types) on types whose
+    fields all support them, so results and configuration can be compared
+    and used as keys (API-007).
+  - `FromStr` for `Config` and `FromIterator` for `DependencyGraph`.
+  - Derived `Default` for `Results`.
+- **`for` loops:** combinator chains in `for` headers were named first.
+
+Lint policy exception: Clippy's `missing_const_for_fn` (nursery) conflicts
+with treating public `const fn` as a permanent promise. Each public builder,
+report accessor or graph accessor that may need non-const work carries a narrow
+`#[expect]` with that reason. Plain-data constructors and accessors stay `const`.
+
 ## Subsequent adherence audit
 
 The [adherence record](maintainers/rust-oe-adherence.md) closes concrete selection, output-mode,

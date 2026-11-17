@@ -3,27 +3,30 @@
 use std::io::Write as _;
 use std::path::PathBuf;
 
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
-use jscycles::cycles::PackageCycleDetector;
-use jscycles::graph::PackageDependencyGraph;
-use jscycles::{CycleDetector, DependencyGraph};
+use budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
+use graph::DependencyGraph;
+use graph::PackageDependencyGraph;
 use std::collections::BTreeSet;
+use std::thread;
 
 #[test]
 fn workspace_package_names_and_paths_agree_when_an_alias_conflicts() {
-    let workspace = jscycles::Workspace {
-        root: PathBuf::from("workspace"),
-        format: jscycles::workspace::WorkspaceFormat::Npm,
-        packages: [
-            ("@project/a".to_owned(), PathBuf::from("packages/a")),
-            ("@project/b".to_owned(), PathBuf::from("packages/b")),
-        ]
-        .into(),
-        aliases: [
+    let workspace = {
+        let mut workspace = workspace::Workspace::new(
+            PathBuf::from("workspace"),
+            workspace::WorkspaceFormat::Npm,
+            [
+                ("@project/a".to_owned(), PathBuf::from("packages/a")),
+                ("@project/b".to_owned(), PathBuf::from("packages/b")),
+            ]
+            .into(),
+        );
+        workspace.aliases = [
             ("@project/a".to_owned(), "@project/b".to_owned()),
             ("short".to_owned(), "@project/a".to_owned()),
         ]
-        .into(),
+        .into();
+        workspace
     };
     for (specifier, name) in [
         ("@project/a", "@project/a"),
@@ -42,7 +45,7 @@ fn workspace_package_names_and_paths_agree_when_an_alias_conflicts() {
             "real workspace names have precedence"
         );
         assert_eq!(
-            workspace.get_package_path(specifier),
+            workspace.package_path(specifier),
             workspace.packages.get(name),
             "lookup methods agree"
         );
@@ -94,7 +97,7 @@ fn elementary_cycles_match_independent_oracle_for_all_three_vertex_graphs() {
         for start in 0..3 {
             visit(&edges, &mut vec![start], &mut expected);
         }
-        let found = PackageCycleDetector::try_detect(&graph, &AnalysisBudget::default())
+        let found = cycles::try_package_cycles(&graph, &AnalysisBudget::default())
             .expect("bounded small graph");
         let actual: BTreeSet<_> = found.iter().map(|cycle| cycle.packages.clone()).collect();
         assert_eq!(
@@ -116,23 +119,23 @@ fn bounded_cycles_keep_only_complete_results() {
     graph.add_edge(PathBuf::from("b"), PathBuf::from("a"));
     graph.add_edge(PathBuf::from("b"), PathBuf::from("c"));
     let budget = AnalysisBudget::default();
-    let cycles = CycleDetector::try_detect(&graph, &budget).expect("valid graph");
+    let cycles = cycles::try_file_cycles(&graph, &budget).expect("valid graph");
     assert_eq!(cycles.len(), 1, "one strongly connected component");
     assert_eq!(cycles[0].path.len(), 3, "closed two-file cycle");
     assert_eq!(cycles[0].path.first(), cycles[0].path.last(), "closed path");
-    let exhausted = AnalysisBudget::new(AnalysisLimits {
+    let exhausted = AnalysisBudget::try_new(AnalysisLimits {
         max_nodes: 1,
         ..AnalysisLimits::default()
     })
     .expect("positive limit");
-    let failure = CycleDetector::try_detect(&graph, &exhausted).expect_err("cannot retain graph");
+    let failure = cycles::try_file_cycles(&graph, &exhausted).expect_err("cannot retain graph");
     assert_eq!(failure.resource(), Resource::Nodes, "node admission fails");
     assert!(exhausted.check().is_err(), "exhaustion remains sticky");
 }
 
 #[test]
 fn shared_quota_and_output_fail_atomically() {
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_files: 8,
         max_output_bytes: 4,
         ..AnalysisLimits::default()
@@ -141,7 +144,7 @@ fn shared_quota_and_output_fail_atomically() {
     let workers: Vec<_> = (0..2)
         .map(|_| {
             let shared = budget.clone();
-            std::thread::spawn(move || {
+            thread::spawn(move || {
                 for _ in 0..4 {
                     shared
                         .consume(Resource::Files, 1)

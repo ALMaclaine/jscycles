@@ -21,6 +21,7 @@ export const PAGES = {
   'docs/analysis-limits.md': 'analysis-limits',
   'docs/product-contract.md': 'product-contract',
   'docs/migration-0.2.md': 'migration-0-2',
+  'docs/migration-0.5.md': 'migration-0-5',
   'CHANGELOG.md': 'changelog',
 };
 const COMMAND_LINE = 'command-line';

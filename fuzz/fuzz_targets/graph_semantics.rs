@@ -2,10 +2,9 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use jscycles::budget::{AnalysisBudget, AnalysisLimits};
-use jscycles::cycles::PackageCycleDetector;
-use jscycles::graph::PackageDependencyGraph;
-use jscycles::{CycleDetector, DependencyGraph};
+use budget::{AnalysisBudget, AnalysisLimits};
+use graph::DependencyGraph;
+use graph::PackageDependencyGraph;
 use libfuzzer_sys::fuzz_target;
 
 // At most five vertices: even the complete graph has only 84 elementary
@@ -66,7 +65,7 @@ fuzz_target!(|bytes: &[u8]| {
     for node in 0..count {
         visit(&edges, count, &labels, &mut vec![node], &mut expected);
     }
-    let package_cycles = PackageCycleDetector::try_detect(&packages, &AnalysisBudget::default())
+    let package_cycles = cycles::try_package_cycles(&packages, &AnalysisBudget::default())
         .expect("five-node enumeration fits the default quotas");
     let actual: Vec<_> = package_cycles
         .into_iter()
@@ -109,7 +108,7 @@ fuzz_target!(|bytes: &[u8]| {
         }
     }
     let file_cycles =
-        CycleDetector::try_detect(&files, &AnalysisBudget::default()).expect("small SCCs fit");
+        cycles::try_file_cycles(&files, &AnalysisBudget::default()).expect("small SCCs fit");
     assert_eq!(
         file_cycles.len(),
         expected_components,
@@ -143,8 +142,8 @@ fuzz_target!(|bytes: &[u8]| {
         max_graph_bytes: u64::from(byte(8)) * 4 + 1,
         ..AnalysisLimits::default()
     };
-    let file_budget = AnalysisBudget::new(limits).expect("positive limits");
-    match CycleDetector::try_detect(&files, &file_budget) {
+    let file_budget = AnalysisBudget::try_new(limits).expect("positive limits");
+    match cycles::try_file_cycles(&files, &file_budget) {
         Ok(limited) => assert_eq!(
             limited.iter().map(|cycle| &cycle.path).collect::<Vec<_>>(),
             file_cycles
@@ -155,8 +154,8 @@ fuzz_target!(|bytes: &[u8]| {
         ),
         Err(_) => assert!(file_budget.check().is_err(), "exhaustion is sticky"),
     }
-    let package_budget = AnalysisBudget::new(limits).expect("positive limits");
-    match PackageCycleDetector::try_detect(&packages, &package_budget) {
+    let package_budget = AnalysisBudget::try_new(limits).expect("positive limits");
+    match cycles::try_package_cycles(&packages, &package_budget) {
         Ok(limited) => assert_eq!(
             limited
                 .into_iter()

@@ -5,10 +5,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-use jscycles::tsconfig::PathAlias;
-use jscycles::workspace::WorkspaceFormat;
-use jscycles::{TsConfig, Workspace};
+use budget::{AnalysisBudget, AnalysisLimits, Resource};
+use tsconfig::PathAlias;
+use tsconfig::TsConfig;
+use workspace::Workspace;
+use workspace::WorkspaceFormat;
 
 fn workspace(root: &Path) -> Workspace {
     let mut packages = HashMap::new();
@@ -18,11 +19,10 @@ fn workspace(root: &Path) -> Workspace {
         fs::write(path.join("index.ts"), "").expect("index");
         let _ = packages.insert(name.to_owned(), fs::canonicalize(path).expect("identity"));
     }
-    Workspace {
-        root: root.to_path_buf(),
-        format: WorkspaceFormat::Npm,
-        packages,
-        aliases: [("sentinel".to_owned(), "a".to_owned())].into(),
+    {
+        let mut workspace = Workspace::new(root.to_path_buf(), WorkspaceFormat::Npm, packages);
+        workspace.aliases = [("sentinel".to_owned(), "a".to_owned())].into();
+        workspace
     }
 }
 
@@ -92,26 +92,14 @@ fn ineligible_public_tables_do_not_share_results_by_exact_replacements() {
     let root = fs::canonicalize(temp.path()).expect("root");
     let mut selected = workspace(&root);
     let same = selected.packages.get("a").expect("a").clone();
-    let config = TsConfig {
-        base_url: root.clone(),
-        paths: vec![
-            PathAlias {
-                prefix: String::new(),
-                has_wildcard: true,
-                replacements: vec![root.join("*")],
-            },
-            PathAlias {
-                prefix: "first".to_owned(),
-                has_wildcard: false,
-                replacements: vec![same.clone()],
-            },
-            PathAlias {
-                prefix: "second".to_owned(),
-                has_wildcard: false,
-                replacements: vec![same],
-            },
+    let config = TsConfig::new(
+        root.clone(),
+        vec![
+            PathAlias::new_wildcard(String::new(), vec![root.join("*")]),
+            PathAlias::new_exact("first".to_owned(), vec![same.clone()]),
+            PathAlias::new_exact("second".to_owned(), vec![same]),
         ],
-    };
+    );
     selected
         .load_path_aliases(Some(&config), &AnalysisBudget::default())
         .expect("caller-owned first-match table");
@@ -146,7 +134,7 @@ fn distinct_retained_targets_exhaust_payload_without_publishing_partial_aliases(
     )
     .expect("unique generated targets");
     let config = TsConfig::load(&path).expect("finite config");
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_graph_bytes: 4096,
         ..AnalysisLimits::default()
     })

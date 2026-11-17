@@ -1,0 +1,21 @@
+[package]
+name = "jscycles-syntax"
+description = "Bounded text adapters for JavaScript module literals and JSONC"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+include = ["src/**", "Cargo.toml"]
+
+[dependencies]
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

@@ -71,7 +71,8 @@ def input_snapshot(project):
     fixed = ["Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "clippy.toml", "rustfmt.toml",
              "README.md", "build.rs", "xtask/Cargo.toml", "scripts/mutation.py", "scripts/test_mutation.py"]
     paths = {project / name for name in fixed if (project / name).is_file()}
-    for directory, pattern in [("src", "*.rs"), ("xtask/src", "*.rs"), ("tests", "*")]:
+    paths.update(path for path in project.glob("crates/*/Cargo.toml") if path.is_file())
+    for directory, pattern in [("src", "*.rs"), ("crates", "*.rs"), ("xtask/src", "*.rs"), ("tests", "*")]:
         paths.update(path for path in (project / directory).rglob(pattern) if path.is_file())
     # Some runners keep CARGO_HOME here: registry/git caches are generated state,
     # while only the checkout's immediate Cargo configuration is an input.

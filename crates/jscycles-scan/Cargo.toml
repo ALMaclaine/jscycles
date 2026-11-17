@@ -1,0 +1,37 @@
+[package]
+name = "jscycles-scan"
+description = "Run a complete jscycles analysis: find circular imports in JavaScript and TypeScript projects"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+include = ["src/**", "examples/**", "Cargo.toml"]
+
+[features]
+# Local timing reports; see `cargo xtask profile`.
+profiling = ["dep:hotpath", "config/profiling", "cycles/profiling", "discovery/profiling", "extract/profiling", "output/profiling", "tsconfig/profiling", "workspace/profiling"]
+
+[dependencies]
+budget.workspace = true
+config.workspace = true
+cycles.workspace = true
+discovery.workspace = true
+extract.workspace = true
+import.workspace = true
+output.workspace = true
+rayon.workspace = true
+thiserror.workspace = true
+tsconfig.workspace = true
+workspace.workspace = true
+hotpath = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

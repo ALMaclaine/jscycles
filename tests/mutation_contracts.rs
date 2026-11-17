@@ -1,19 +1,19 @@
 //! Consumer contracts added after mutation analysis of graph and metadata paths.
 
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-use jscycles::cycles::PackageCycleDetector;
-use jscycles::graph::PackageDependencyGraph;
-use jscycles::{Config, TsConfig, TsConfigError};
-use jscycles::{TsConfigCache, Workspace};
+use budget::{AnalysisBudget, AnalysisLimits, Resource};
+use config::Config;
+use graph::PackageDependencyGraph;
 use std::sync::Arc;
+use tsconfig::TsConfigCache;
+use tsconfig::{TsConfig, TsConfigError};
+use workspace::Workspace;
 
 #[test]
 fn package_graph_retains_workspace_members_without_any_imports() {
-    let imports = ["empty-a", "empty-b", "empty-c"]
-        .map(|name| (name.to_owned(), Vec::new()))
-        .into_iter()
-        .collect();
-    let graph = PackageDependencyGraph::from_imports(&imports);
+    let no_imports: [import::Import; 0] = [];
+    let graph = PackageDependencyGraph::from_imports(
+        ["empty-a", "empty-b", "empty-c"].map(|name| (name, &no_imports)),
+    );
     assert_eq!(
         graph.node_count(),
         3,
@@ -33,11 +33,11 @@ fn cached_discovery_keeps_its_selected_parent_until_a_new_cache_is_created() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path();
     let child = root.join("child");
-    std::fs::create_dir(&child).expect("child directory");
-    std::fs::write(root.join("tsconfig.json"), "{}").expect("parent config");
+    fs::create_dir(&child).expect("child directory");
+    fs::write(root.join("tsconfig.json"), "{}").expect("parent config");
     let cache = TsConfigCache::new();
     let initial = cache.discover_shared(&child).expect("parent selected");
-    std::fs::write(child.join("tsconfig.json"), "{}").expect("new nearer config");
+    fs::write(child.join("tsconfig.json"), "{}").expect("new nearer config");
     let repeated = cache.discover_shared(&child).expect("cached selection");
     assert!(
         Arc::ptr_eq(&initial, &repeated),
@@ -58,19 +58,19 @@ fn cached_discovery_keeps_its_selected_parent_until_a_new_cache_is_created() {
 fn cached_metadata_does_not_escape_an_exhausted_discovery_budget() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let child = directory.path().join("child");
-    std::fs::create_dir(&child).expect("child directory");
+    fs::create_dir(&child).expect("child directory");
     let path = directory.path().join("tsconfig.json");
-    std::fs::write(&path, "{}").expect("parent config");
+    fs::write(&path, "{}").expect("parent config");
     for resource in [Resource::Work, Resource::GraphBytes] {
         let mut failures = 0;
         for headroom in [0, 1, 2, 3, 4, 8, 16, 32, 64, 128, 256, 384, 512] {
-            let budget = AnalysisBudget::new(AnalysisLimits {
+            let budget = AnalysisBudget::try_new(AnalysisLimits {
                 max_work: 10_000,
                 max_graph_bytes: 10_000,
                 ..AnalysisLimits::default()
             })
             .expect("positive limits");
-            let cache = TsConfigCache::new().with_budget(budget.clone());
+            let cache = TsConfigCache::new_with_budget(budget.clone());
             assert!(
                 cache.load(&path).is_some(),
                 "prime the parsed-config cache without directory entries"
@@ -105,10 +105,10 @@ fn cached_metadata_does_not_escape_an_exhausted_discovery_budget() {
 fn alias_substitution_retains_components_after_the_wildcard() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let target = directory.path().join("src/widget/entry.ts");
-    std::fs::create_dir_all(target.parent().expect("target parent")).expect("source directory");
-    std::fs::write(&target, "export {};").expect("source file");
+    fs::create_dir_all(target.parent().expect("target parent")).expect("source directory");
+    fs::write(&target, "export {};").expect("source file");
     let path = directory.path().join("tsconfig.json");
-    std::fs::write(
+    fs::write(
         &path,
         r#"{"compilerOptions":{"paths":{"@entry/*":["src/*/entry.ts"]}}}"#,
     )
@@ -126,20 +126,20 @@ fn alias_substitution_retains_components_after_the_wildcard() {
 fn extensionless_extends_supports_directory_configs_and_json_file_precedence() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path().canonicalize().expect("root identity");
-    std::fs::create_dir(root.join("base")).expect("base directory");
-    std::fs::write(
+    fs::create_dir(root.join("base")).expect("base directory");
+    fs::write(
         root.join("base/tsconfig.json"),
         r#"{"compilerOptions":{"baseUrl":"dir-source"}}"#,
     )
     .expect("directory config");
     let child = root.join("tsconfig.json");
-    std::fs::write(&child, r#"{"extends":"./base"}"#).expect("child config");
+    fs::write(&child, r#"{"extends":"./base"}"#).expect("child config");
     assert_eq!(
         TsConfig::load(&child).expect("directory extends").base_url,
         root.join("base/dir-source"),
         "directory parents resolve their own declaration origin"
     );
-    std::fs::write(
+    fs::write(
         root.join("base.json"),
         r#"{"compilerOptions":{"baseUrl":"file-source"}}"#,
     )
@@ -160,19 +160,19 @@ fn workspace_patterns_support_question_classes_and_literal_braces() {
     ] {
         let directory = tempfile::tempdir().expect("temporary directory");
         let root = directory.path();
-        std::fs::write(
+        fs::write(
             root.join("package.json"),
             serde_json::json!({"workspaces": [pattern]}).to_string(),
         )
         .expect("workspace manifest");
         for name in ["pkg1", "pkg2", "pkg10", "{literal}", "ignored"] {
             let package = root.join("packages").join(name);
-            std::fs::create_dir_all(&package).expect("package directory");
+            fs::create_dir_all(&package).expect("package directory");
             if name == "ignored" {
-                std::fs::create_dir(package.join("package.json"))
+                fs::create_dir(package.join("package.json"))
                     .expect("coincidentally named directory");
             } else {
-                std::fs::write(
+                fs::write(
                     package.join("package.json"),
                     serde_json::json!({"name": name}).to_string(),
                 )
@@ -192,13 +192,12 @@ fn workspace_patterns_support_question_classes_and_literal_braces() {
 fn package_json_directories_do_not_become_workspace_manifests() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path();
-    std::fs::write(
+    fs::write(
         root.join("package.json"),
         r#"{"workspaces":["packages/*"]}"#,
     )
     .expect("workspace manifest");
-    std::fs::create_dir_all(root.join("packages/ignored/package.json"))
-        .expect("non-manifest directory");
+    fs::create_dir_all(root.join("packages/ignored/package.json")).expect("non-manifest directory");
     let workspace = Workspace::discover(root)
         .expect("coincidental name is not malformed JSON")
         .expect("workspace");
@@ -207,7 +206,7 @@ fn package_json_directories_do_not_become_workspace_manifests() {
         "only regular manifest files define packages"
     );
 }
-use jscycles::{CycleDetector, DependencyGraph};
+use graph::DependencyGraph;
 
 #[test]
 fn effective_package_settings_preserve_defaults_globs_and_lexical_precedence() {
@@ -244,10 +243,7 @@ packages:
     );
     assert_eq!(
         config.ignore_for_package("@org/lib"),
-        Some(vec![
-            "**/generated/**".to_owned(),
-            "**/*.spec.ts".to_owned()
-        ]),
+        Some(["**/generated/**".to_owned(), "**/*.spec.ts".to_owned()].as_slice()),
         "preserve ignore values and order"
     );
     assert_eq!(
@@ -257,7 +253,7 @@ packages:
     );
     assert_eq!(
         config.ignore_for_package("plain"),
-        Some(vec![]),
+        Some([].as_slice()),
         "explicit empty ignore list differs from absence"
     );
 }
@@ -272,13 +268,13 @@ fn config_text_accepts_the_exact_size_limit_and_rejects_one_more_byte() {
     );
     text.push(' ');
     assert!(
-        matches!(Config::parse(&text), Err(jscycles::ConfigError::Invalid(_))),
+        matches!(Config::parse(&text), Err(config::ConfigError::Invalid(_))),
         "oversized valid YAML is a size error"
     );
 }
 
 #[test]
-fn configuration_loading_distinguishes_absence_errors_and_best_effort() {
+fn configuration_loading_distinguishes_absence_from_errors() {
     let directory = tempfile::tempdir().expect("temporary directory");
     let path = directory.path().join("jscycles.yaml");
     assert_eq!(
@@ -289,11 +285,14 @@ fn configuration_loading_distinguishes_absence_errors_and_best_effort() {
         Config::default().defaults.extensions,
         "absence selects defaults"
     );
-    std::fs::write(&path, "defaults:\n  extensions: [mjs]\n").expect("valid config");
+    fs::write(&path, "defaults:\n  extensions: [mjs]\n").expect("valid config");
     assert_eq!(
-        Config::load_or_default(&path).defaults.extensions,
+        Config::try_load_or_default(&path)
+            .expect("valid config")
+            .defaults
+            .extensions,
         ["mjs"],
-        "the compatibility loader must actually load valid settings"
+        "an existing file's settings are loaded"
     );
     // Unix reports ENOTDIR for a path beneath a file; Windows reports the
     // path as not found, which is absence there.
@@ -302,15 +301,10 @@ fn configuration_loading_distinguishes_absence_errors_and_best_effort() {
         cfg!(unix),
         "a non-directory prefix is an input error on Unix"
     );
-    std::fs::write(&path, "defaults: [").expect("malformed config");
+    fs::write(&path, "defaults: [").expect("malformed config");
     assert!(
         Config::try_load_or_default(&path).is_err(),
         "malformed existing input is not absence"
-    );
-    assert_eq!(
-        Config::load_or_default(&path).defaults.extensions,
-        Config::default().defaults.extensions,
-        "legacy best effort retains its documented fallback"
     );
 }
 
@@ -327,7 +321,7 @@ fn selected_aliases_reject_unsupported_patterns_and_target_cardinality() {
         ("@wild/*", vec!["src/**/*"]),
     ] {
         let text = serde_json::json!({"compilerOptions": {"paths": {pattern: replacements}}});
-        std::fs::write(&path, text.to_string()).expect("write selected config");
+        fs::write(&path, text.to_string()).expect("write selected config");
         assert!(
             matches!(TsConfig::load(&path), Err(TsConfigError::InvalidPath(_))),
             "unsupported selected mapping {pattern}"
@@ -338,7 +332,7 @@ fn selected_aliases_reject_unsupported_patterns_and_target_cardinality() {
         ("@wild/*", vec!["src/*", "fallback/*"]),
     ] {
         let text = serde_json::json!({"compilerOptions": {"paths": {pattern: replacements}}});
-        std::fs::write(&path, text.to_string()).expect("write valid selected config");
+        fs::write(&path, text.to_string()).expect("write valid selected config");
         assert_eq!(
             TsConfig::load(&path)
                 .expect("supported mapping")
@@ -364,7 +358,7 @@ fn public_detectors_return_cycles_in_lexical_order() {
             files.add_edge(PathBuf::from("b"), PathBuf::from("x"));
             packages.add_edge("b".to_owned(), "x".to_owned());
         }
-        let found: Vec<Vec<String>> = CycleDetector::detect(&files)
+        let found: Vec<Vec<String>> = cycles::file_cycles(&files)
             .into_iter()
             .map(|cycle| {
                 cycle
@@ -378,7 +372,7 @@ fn public_detectors_return_cycles_in_lexical_order() {
             found, expected,
             "file SCC completion order is not report order"
         );
-        let package_cycles: Vec<_> = PackageCycleDetector::detect(&packages)
+        let package_cycles: Vec<_> = cycles::package_cycles(&packages)
             .into_iter()
             .map(|cycle| cycle.packages)
             .collect();
@@ -395,7 +389,7 @@ fn multi_file_components_prefer_a_multi_file_witness_over_a_self_import() {
     for (from, to) in [("a", "a"), ("a", "b"), ("b", "a")] {
         graph.add_edge(PathBuf::from(from), PathBuf::from(to));
     }
-    let found = CycleDetector::detect(&graph);
+    let found = cycles::file_cycles(&graph);
     assert_eq!(found.len(), 1, "one cyclic component");
     assert_eq!(
         found[0].path,
@@ -403,6 +397,7 @@ fn multi_file_components_prefer_a_multi_file_witness_over_a_self_import() {
         "a self import must not hide a cycle between files"
     );
 }
+use std::fs;
 use std::path::PathBuf;
 
 #[test]
@@ -410,13 +405,13 @@ fn long_graph_labels_cannot_bypass_payload_admission() {
     let file = PathBuf::from("😀".repeat(256));
     let mut files = DependencyGraph::new();
     files.add_edge(file.clone(), file);
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_graph_bytes: 768,
         ..AnalysisLimits::default()
     })
     .expect("positive limit");
     assert_eq!(
-        CycleDetector::try_detect(&files, &budget)
+        cycles::try_file_cycles(&files, &budget)
             .expect_err("label cannot fit")
             .resource(),
         Resource::GraphBytes,
@@ -426,13 +421,13 @@ fn long_graph_labels_cannot_bypass_payload_admission() {
     let mut packages = PackageDependencyGraph::new();
     packages.add_edge(name.clone(), "other".to_owned());
     packages.add_edge("other".to_owned(), name);
-    let package_budget = AnalysisBudget::new(AnalysisLimits {
+    let package_budget = AnalysisBudget::try_new(AnalysisLimits {
         max_graph_bytes: 768,
         ..AnalysisLimits::default()
     })
     .expect("positive limit");
     assert_eq!(
-        PackageCycleDetector::try_detect(&packages, &package_budget)
+        cycles::try_package_cycles(&packages, &package_budget)
             .expect_err("label cannot fit")
             .resource(),
         Resource::GraphBytes,
@@ -445,13 +440,13 @@ fn long_cycle_labels_cannot_bypass_result_payload_admission() {
     let mut files = DependencyGraph::new();
     let file = PathBuf::from("😀".repeat(256));
     files.add_edge(file.clone(), file);
-    let budget = AnalysisBudget::new(AnalysisLimits {
+    let budget = AnalysisBudget::try_new(AnalysisLimits {
         max_cycle_bytes: 768,
         ..AnalysisLimits::default()
     })
     .expect("positive limit");
     assert_eq!(
-        CycleDetector::try_detect(&files, &budget)
+        cycles::try_file_cycles(&files, &budget)
             .expect_err("cycle label cannot fit")
             .resource(),
         Resource::CycleBytes,
@@ -461,13 +456,13 @@ fn long_cycle_labels_cannot_bypass_result_payload_admission() {
     let mut packages = PackageDependencyGraph::new();
     packages.add_edge(name.clone(), "other".to_owned());
     packages.add_edge("other".to_owned(), name);
-    let package_budget = AnalysisBudget::new(AnalysisLimits {
+    let package_budget = AnalysisBudget::try_new(AnalysisLimits {
         max_cycle_bytes: 768,
         ..AnalysisLimits::default()
     })
     .expect("positive limit");
     assert_eq!(
-        PackageCycleDetector::try_detect(&packages, &package_budget)
+        cycles::try_package_cycles(&packages, &package_budget)
             .expect_err("cycle label cannot fit")
             .resource(),
         Resource::CycleBytes,

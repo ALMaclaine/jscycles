@@ -3,7 +3,8 @@
 
 use std::fs;
 
-use jscycles::{CycleDetector, DependencyGraph, ImportExtractor};
+use extract::ImportExtractor;
+use graph::DependencyGraph;
 
 #[test]
 fn mixed_grammars_and_pool_sizes_keep_graphs_and_observe_source_changes() {
@@ -40,7 +41,7 @@ fn mixed_grammars_and_pool_sizes_keep_graphs_and_observe_source_changes() {
                 .install(|| extractor.extract(&root))
                 .expect("complete scan");
             assert_eq!(imports.len(), if ring { 96 } else { 95 });
-            let cycles = CycleDetector::detect(&DependencyGraph::from_imports(&imports));
+            let cycles = cycles::file_cycles(&DependencyGraph::from_imports(&imports));
             assert_eq!(cycles.len(), usize::from(ring));
         }
     }

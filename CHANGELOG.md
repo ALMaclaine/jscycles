@@ -3,10 +3,46 @@
 All notable changes to jscycles are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/) (before 1.0, a minor version may
-break compatibility). Library and edge-case details for each release are in
-the [upgrade notes](docs/migration-0.2.md).
+break compatibility). Library and edge-case details are in the upgrade notes for
+[0.2](docs/migration-0.2.md) and [0.5](docs/migration-0.5.md).
 
 ## [Unreleased]
+
+## [0.5.0] - 2026-11-17
+
+### Changed
+
+- The library is split into small crates, one per part of the analysis,
+  following the Google Rust style guide's code organization rules: embed a
+  scan with `jscycles-scan`, or use `jscycles-cycles`, `jscycles-graph`,
+  `jscycles-config` and the others directly. The `jscycles` crate is now only
+  the command-line binary, so its `cli` feature is gone. The
+  [0.5 upgrade notes](docs/migration-0.5.md) map every old path to its crate.
+- The Rust library API follows the
+  [Google Rust style guide](https://google.github.io/styleguide/rustguide.html)'s
+  API design rules for library code. This breaks library callers; the command
+  and its JSON output are unchanged. The
+  [0.5 upgrade notes](docs/migration-0.5.md) list every change with its
+  replacement. In short:
+  - `CycleDetector` and `PackageCycleDetector` are replaced by functions in
+    `jscycles-cycles` (`file_cycles`, `package_cycles`, and their `try_`
+    forms).
+  - `ScanReport::to_human` and `HumanFormatter::new` take a `ColorMode`
+    instead of a `bool`.
+  - `Workspace::get_package_path` is now `package_path`.
+  - `TsConfig::discover` reports a malformed nearest `tsconfig.json` as an
+    error instead of returning `None`.
+  - `Config::extensions_for_package` and `ignore_for_package` return borrowed
+    slices.
+  - The formatter traits are generic over the writer.
+  - Public enums and result structs are `#[non_exhaustive]`, with
+    constructors for building them.
+  - Builder setters are no longer `const fn`.
+
+### Removed
+
+- `Config::load_or_default`, which silently used defaults for an unreadable or
+  invalid file. Use `Config::try_load_or_default`.
 
 ## [0.4.0] - 2026-11-13
 
@@ -132,7 +168,8 @@ results on the same repository, and compare before relying on them in CI.
 
 Initial release.
 
-[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ALMaclaine/jscycles/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ALMaclaine/jscycles/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ALMaclaine/jscycles/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ALMaclaine/jscycles/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/ALMaclaine/jscycles/compare/v0.2.0...v0.2.1

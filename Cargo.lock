@@ -444,22 +444,218 @@ dependencies = [
 
 [[package]]
 name = "jscycles"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "clap",
  "glob",
  "hotpath",
  "insta",
+ "jscycles-budget",
+ "jscycles-config",
+ "jscycles-cycles",
+ "jscycles-discovery",
+ "jscycles-extract",
+ "jscycles-graph",
+ "jscycles-import",
+ "jscycles-output",
+ "jscycles-scan",
+ "jscycles-tsconfig",
+ "jscycles-workspace",
  "rayon",
+ "serde-saphyr",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "jscycles-analysis"
+version = "0.5.0"
+dependencies = [
+ "hotpath",
+ "jscycles-budget",
+ "jscycles-graph",
+ "jscycles-import",
+]
+
+[[package]]
+name = "jscycles-budget"
+version = "0.5.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "jscycles-config"
+version = "0.5.0"
+dependencies = [
+ "glob",
+ "hotpath",
+ "jscycles-budget",
+ "jscycles-input",
+ "serde",
+ "serde-saphyr",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "jscycles-cycles"
+version = "0.5.0"
+dependencies = [
+ "jscycles-analysis",
+ "jscycles-budget",
+ "jscycles-graph",
+ "jscycles-import",
+]
+
+[[package]]
+name = "jscycles-discovery"
+version = "0.5.0"
+dependencies = [
+ "glob",
+ "hotpath",
+ "jscycles-budget",
+ "jscycles-config",
+ "jscycles-input",
+ "jscycles-workspace",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "walkdir",
+]
+
+[[package]]
+name = "jscycles-extract"
+version = "0.5.0"
+dependencies = [
+ "hotpath",
+ "jscycles-budget",
+ "jscycles-import",
+ "jscycles-input",
+ "jscycles-module-path",
+ "jscycles-module-syntax",
+ "jscycles-syntax",
+ "jscycles-tsconfig",
+ "jscycles-workspace",
+ "rayon",
+ "tempfile",
+]
+
+[[package]]
+name = "jscycles-graph"
+version = "0.5.0"
+dependencies = [
+ "jscycles-import",
+]
+
+[[package]]
+name = "jscycles-import"
+version = "0.5.0"
+dependencies = [
+ "jscycles-budget",
+ "thiserror",
+]
+
+[[package]]
+name = "jscycles-input"
+version = "0.5.0"
+dependencies = [
+ "glob",
+ "jscycles-budget",
+ "jscycles-module-path",
+ "tempfile",
+ "walkdir",
+]
+
+[[package]]
+name = "jscycles-module-path"
+version = "0.5.0"
+
+[[package]]
+name = "jscycles-module-syntax"
+version = "0.5.0"
+dependencies = [
+ "jscycles-budget",
+ "jscycles-import",
+ "jscycles-syntax",
+ "willbooster-tree-sitter",
+ "willbooster-tree-sitter-javascript",
+ "willbooster-tree-sitter-typescript",
+]
+
+[[package]]
+name = "jscycles-output"
+version = "0.5.0"
+dependencies = [
+ "jscycles-cycles",
+ "jscycles-input",
+ "jscycles-terminal",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "jscycles-scan"
+version = "0.5.0"
+dependencies = [
+ "hotpath",
+ "jscycles-budget",
+ "jscycles-config",
+ "jscycles-cycles",
+ "jscycles-discovery",
+ "jscycles-extract",
+ "jscycles-import",
+ "jscycles-output",
+ "jscycles-tsconfig",
+ "jscycles-workspace",
+ "rayon",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "jscycles-syntax"
+version = "0.5.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
+name = "jscycles-terminal"
+version = "0.5.0"
+
+[[package]]
+name = "jscycles-tsconfig"
+version = "0.5.0"
+dependencies = [
+ "hotpath",
+ "jscycles-budget",
+ "jscycles-input",
+ "jscycles-module-path",
+ "jscycles-syntax",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "jscycles-workspace"
+version = "0.5.0"
+dependencies = [
+ "glob",
+ "hotpath",
+ "jscycles-budget",
+ "jscycles-input",
+ "jscycles-syntax",
+ "jscycles-tsconfig",
  "serde",
  "serde-saphyr",
  "serde_json",
  "tempfile",
  "thiserror",
- "walkdir",
- "willbooster-tree-sitter",
- "willbooster-tree-sitter-javascript",
- "willbooster-tree-sitter-typescript",
 ]
 
 [[package]]

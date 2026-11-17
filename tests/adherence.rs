@@ -3,8 +3,14 @@
     clippy::expect_used,
     reason = "Filesystem/process setup failures must fail tests"
 )]
+use std::collections::HashMap;
+use std::env;
 use std::fs;
+use std::io;
+#[cfg(unix)]
+use std::os::unix::fs as unix_fs;
 use std::path::Path;
+use std::process;
 use std::process::{Command, Output};
 
 fn scan(root: &Path, args: &[&str]) -> Output {
@@ -203,7 +209,7 @@ fn computed_dynamic_imports_are_not_mistaken_for_literal_edges() {
         "const suffix = '.ts'; import('./b' + suffix);",
     )
     .expect("computed import");
-    let imports = jscycles::ImportExtractor::new(vec!["ts".to_owned()], None)
+    let imports = extract::ImportExtractor::new(vec!["ts".to_owned()], None)
         .extract(temp.path())
         .expect("valid source");
     assert!(
@@ -218,12 +224,12 @@ fn computed_dynamic_imports_are_not_mistaken_for_literal_edges() {
 fn sequential_extractions_invalidate_filesystem_resolution_cache() {
     let temp = tempfile::tempdir().expect("directory");
     fs::write(temp.path().join("a.ts"), "import './b';").expect("source a");
-    let extractor = jscycles::ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], None);
+    let extractor = extract::ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], None);
     let _first = extractor.extract(temp.path()).expect("initial scan");
     fs::write(temp.path().join("b.tsx"), "import './a';").expect("new source b");
     let imports = extractor.extract(temp.path()).expect("new scan");
     assert_eq!(
-        jscycles::CycleDetector::detect(&jscycles::DependencyGraph::from_imports(&imports)).len(),
+        cycles::file_cycles(&graph::DependencyGraph::from_imports(&imports)).len(),
         1,
         "new files must not reuse cached misses"
     );
@@ -254,7 +260,7 @@ fn configuration_semantics_are_validated_independently_of_discovery() {
         "packages:\n  absent:\n    ignore: ['[']",
     ] {
         assert!(
-            jscycles::Config::parse(text).is_err(),
+            config::Config::parse(text).is_err(),
             "invalid domain settings rejected by the public ingress"
         );
     }
@@ -291,7 +297,7 @@ fn alias_fallback_targets_and_directory_indexes_are_resolved() {
 #[test]
 fn malformed_control_bytes_are_rejected_without_panic() {
     assert!(
-        jscycles::Config::parse("pa\0\0\0\0\0\0\0\u{15}\u{19} uns:T\n#]\n").is_err(),
+        config::Config::parse("pa\0\0\0\0\0\0\0\u{15}\u{19} uns:T\n#]\n").is_err(),
         "sanitizer RSS artifact is malformed YAML, not a valid configuration"
     );
 }
@@ -414,10 +420,10 @@ fn inherited_workspace_aliases_preserve_package_cycles() {
 
 #[test]
 fn infallible_legacy_workspace_selection_does_not_return_budget_truncation() {
-    use jscycles::budget::{AnalysisBudget, Resource};
-    let config = jscycles::Config::default();
+    use budget::{AnalysisBudget, Resource};
+    let config = config::Config::default();
     let budget = AnalysisBudget::default();
-    let discovery = jscycles::PackageDiscovery::new_with_budget(
+    let discovery = discovery::PackageDiscovery::try_new_with_budget(
         &config,
         &["*".to_owned()],
         &[],
@@ -436,12 +442,11 @@ fn infallible_legacy_workspace_selection_does_not_return_budget_truncation() {
     let temp = tempfile::tempdir().expect("directory");
     let project = fs::canonicalize(temp.path()).expect("canonical root");
     fs::create_dir(project.join("a")).expect("member directory");
-    let workspace = jscycles::Workspace {
-        root: project.clone(),
-        format: jscycles::WorkspaceFormat::Npm,
-        packages: std::collections::HashMap::from([("a".to_owned(), project.join("a"))]),
-        aliases: std::collections::HashMap::default(),
-    };
+    let workspace = workspace::Workspace::new(
+        project.clone(),
+        workspace::WorkspaceFormat::Npm,
+        HashMap::from([("a".to_owned(), project.join("a"))]),
+    );
     let selected = discovery.discover_workspace_packages(&workspace, &[project]);
     assert_eq!(
         selected.len(),
@@ -475,10 +480,10 @@ fn invalid_cli_extension_spelling_is_not_a_clean_empty_scan() {
 #[cfg(unix)]
 #[test]
 fn dangling_default_config_and_nonregular_sources_are_errors() {
-    use std::os::unix::fs::symlink;
+    use std::os::unix::fs as unix_fs;
     let temp = tempfile::tempdir().expect("directory");
     cycle(temp.path());
-    symlink("missing.yaml", temp.path().join("jscycles.yaml")).expect("dangling config");
+    unix_fs::symlink("missing.yaml", temp.path().join("jscycles.yaml")).expect("dangling config");
     let output = scan(temp.path(), &["--inner", "--json"]);
     assert_eq!(
         output.status.code(),
@@ -487,7 +492,7 @@ fn dangling_default_config_and_nonregular_sources_are_errors() {
     );
     fs::remove_file(temp.path().join("jscycles.yaml")).expect("remove test link");
     fs::remove_file(temp.path().join("a.ts")).expect("replace source");
-    symlink("/dev/zero", temp.path().join("a.ts")).expect("nonregular source");
+    unix_fs::symlink("/dev/zero", temp.path().join("a.ts")).expect("nonregular source");
     let device = scan(temp.path(), &["--inner", "--json"]);
     assert_eq!(
         device.status.code(),
@@ -874,9 +879,9 @@ fn many_operands_share_one_workspace_discovery() {
     let mut child = Command::new(env!("CARGO_BIN_EXE_jscycles"))
         .current_dir(temp.path())
         .args(["--outer", "--json", "--stdin"])
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::piped())
+        .stdin(process::Stdio::piped())
+        .stdout(process::Stdio::null())
+        .stderr(process::Stdio::piped())
         .spawn()
         .expect("CLI starts");
     let input = "packages/a\npackages/b\n".repeat(4000);
@@ -902,8 +907,8 @@ fn bare_manifest_operands_select_the_current_package() {
     let mut child = Command::new(env!("CARGO_BIN_EXE_jscycles"))
         .current_dir(temp.path())
         .args(["--inner", "--stdin"])
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::null())
+        .stdin(process::Stdio::piped())
+        .stdout(process::Stdio::null())
         .spawn()
         .expect("CLI starts");
     {
@@ -994,7 +999,7 @@ fn dot_slash_and_absolute_exclude_and_ignore_patterns_still_apply() {
     // Absolute patterns are compared lexically with the cwd, so run from a
     // canonical spelling: macOS temp is `/var` -> `/private/var`, and Windows
     // runners spell TEMP with 8.3 names (`RUNNER~1`).
-    let canonical = fs::canonicalize(std::env::temp_dir()).expect("canonical temp");
+    let canonical = fs::canonicalize(env::temp_dir()).expect("canonical temp");
     let canonical = canonical.to_str().expect("UTF-8 path");
     let base = canonical.strip_prefix(r"\\?\").unwrap_or(canonical);
     let temp = tempfile::tempdir_in(base).expect("directory");
@@ -1498,10 +1503,8 @@ fn file_links_into_a_nested_package_belong_to_that_package() {
     let temp = tempfile::tempdir().expect("directory");
     let root = temp.path();
     member_cycle(root);
-    std::os::unix::fs::symlink(root.join("packages/a/src/x.ts"), root.join("link.ts"))
-        .expect("link");
-    std::os::unix::fs::symlink(root.join("packages/a/src/y.ts"), root.join("link2.ts"))
-        .expect("link");
+    unix_fs::symlink(root.join("packages/a/src/x.ts"), root.join("link.ts")).expect("link");
+    unix_fs::symlink(root.join("packages/a/src/y.ts"), root.join("link2.ts")).expect("link");
     let output = scan(root, &["--inner", "--json"]);
     assert_eq!(output.status.code(), Some(1));
     let json = String::from_utf8(output.stdout).expect("utf-8");
@@ -1661,7 +1664,7 @@ fn file_links_within_their_own_package_are_analyzed() {
     member_cycle(root);
     write(root, "packages/a/src/real.ts", "import './y';");
     write(root, "packages/a/src/y.ts", "import './link';");
-    std::os::unix::fs::symlink("real.ts", root.join("packages/a/src/link.ts")).expect("link");
+    unix_fs::symlink("real.ts", root.join("packages/a/src/link.ts")).expect("link");
     write(root, "packages/a/src/x.ts", "export {};");
     let output = scan(root, &["--inner", "--json"]);
     assert_eq!(
@@ -1689,14 +1692,14 @@ fn file_links_to_a_sibling_package_belong_to_that_package() {
     );
     write(root, "packages/a/index.ts", "export {};");
     write(root, "packages/b/self.ts", "import './self';");
-    std::os::unix::fs::symlink("../b/index.ts", root.join("packages/a/link.ts")).expect("link");
+    unix_fs::symlink("../b/index.ts", root.join("packages/a/link.ts")).expect("link");
     let combined = scan(root, &["--json"]);
     let json = String::from_utf8(combined.stdout).expect("utf-8");
     assert!(
         json.contains("\"package_cycles\": []"),
         "no false a -> b edge: {json}"
     );
-    std::os::unix::fs::symlink("../b/self.ts", root.join("packages/a/self-link.ts")).expect("link");
+    unix_fs::symlink("../b/self.ts", root.join("packages/a/self-link.ts")).expect("link");
     let inner = scan(root, &["--inner", "--json"]);
     let report = String::from_utf8(inner.stdout).expect("utf-8");
     assert_eq!(
@@ -1757,7 +1760,7 @@ fn self_imports_are_judged_by_the_source_location() {
         "tsconfig.json",
         r#"{"compilerOptions":{"baseUrl":".","paths":{"@alias/a":["packages/a/src/f"]}}}"#,
     );
-    std::os::unix::fs::symlink("../a/src/f.ts", root.join("packages/b/link.ts")).expect("link");
+    unix_fs::symlink("../a/src/f.ts", root.join("packages/b/link.ts")).expect("link");
     let file_cycles = |args: &[&str]| {
         let output = scan(root, args);
         let report: serde_json::Value = serde_json::from_slice(&output.stdout).expect("JSON");
@@ -1951,11 +1954,11 @@ fn byte_order_marks_and_crlf_are_accepted_everywhere() {
     let mut child = Command::new(env!("CARGO_BIN_EXE_jscycles"))
         .current_dir(root)
         .args(["--stdin", "--inner"])
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::null())
+        .stdin(process::Stdio::piped())
+        .stdout(process::Stdio::null())
         .spawn()
         .expect("CLI starts");
-    std::io::Write::write_all(
+    io::Write::write_all(
         child.stdin.as_mut().expect("stdin"),
         "\u{feff}.\r\n".as_bytes(),
     )

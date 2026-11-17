@@ -6,10 +6,11 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
-use jscycles::tsconfig::PathAlias;
-use jscycles::workspace::WorkspaceFormat;
-use jscycles::{TsConfig, Workspace};
+use budget::{AnalysisBudget, AnalysisLimits, Resource};
+use tsconfig::PathAlias;
+use tsconfig::TsConfig;
+use workspace::Workspace;
+use workspace::WorkspaceFormat;
 
 fn workspace(root: &Path) -> Workspace {
     let mut packages = HashMap::new();
@@ -18,11 +19,10 @@ fn workspace(root: &Path) -> Workspace {
         fs::create_dir_all(&path).expect("package directory");
         let _ = packages.insert(name.to_owned(), fs::canonicalize(path).expect("identity"));
     }
-    Workspace {
-        root: root.to_path_buf(),
-        format: WorkspaceFormat::Npm,
-        packages,
-        aliases: [("sentinel".to_owned(), "a".to_owned())].into(),
+    {
+        let mut workspace = Workspace::new(root.to_path_buf(), WorkspaceFormat::Npm, packages);
+        workspace.aliases = [("sentinel".to_owned(), "a".to_owned())].into();
+        workspace
     }
 }
 
@@ -47,7 +47,8 @@ fn known_workspace_names_win_over_conflicting_tsconfig_aliases() {
         } else {
             ["export const a = 1;", "import 'c';", "import 'a';"]
         };
-        for (name, source) in ["a", "b", "c"].into_iter().zip(sources) {
+        let packages = ["a", "b", "c"].into_iter().zip(sources);
+        for (name, source) in packages {
             let folder = root.join("packages").join(name);
             fs::create_dir_all(&folder).expect("member");
             fs::write(
@@ -105,7 +106,7 @@ fn loaded_alias_tables_fit_linear_work_and_fail_without_replacing_old_mappings()
     .expect("alias configuration");
     let config = TsConfig::load(&file).expect("validated loaded table");
     let mut loaded = original.clone();
-    let successful_budget = AnalysisBudget::new(AnalysisLimits {
+    let successful_budget = AnalysisBudget::try_new(AnalysisLimits {
         max_work: 10000,
         ..AnalysisLimits::default()
     })
@@ -149,7 +150,7 @@ fn loaded_alias_tables_fit_linear_work_and_fail_without_replacing_old_mappings()
             Resource::GraphBytes,
         ),
     ] {
-        let budget = AnalysisBudget::new(limits).expect("finite quota");
+        let budget = AnalysisBudget::try_new(limits).expect("finite quota");
         let mut failed = original.clone();
         let error = failed
             .load_path_aliases(Some(&config), &budget)
@@ -173,35 +174,16 @@ fn caller_constructed_alias_tables_preserve_first_match_order() {
     let original = workspace(temp.path());
     let a = original.packages.get("a").expect("a").clone();
     let b = original.packages.get("b").expect("b").clone();
-    let exact_a = PathAlias {
-        prefix: "alias".to_owned(),
-        has_wildcard: false,
-        replacements: vec![a],
-    };
-    let exact_b = PathAlias {
-        prefix: "alias".to_owned(),
-        has_wildcard: false,
-        replacements: vec![b.clone()],
-    };
-    let wildcard_b = PathAlias {
-        prefix: String::new(),
-        has_wildcard: true,
-        replacements: vec![b.join("*")],
-    };
-    let empty = PathAlias {
-        prefix: "alias".to_owned(),
-        has_wildcard: false,
-        replacements: vec![],
-    };
+    let exact_a = PathAlias::new_exact("alias".to_owned(), vec![a]);
+    let exact_b = PathAlias::new_exact("alias".to_owned(), vec![b.clone()]);
+    let wildcard_b = PathAlias::new_wildcard(String::new(), vec![b.join("*")]);
+    let empty = PathAlias::new_exact("alias".to_owned(), vec![]);
     for paths in [
         vec![wildcard_b.clone(), exact_a.clone()],
         vec![exact_b, exact_a],
         vec![empty, wildcard_b],
     ] {
-        let config = TsConfig {
-            base_url: temp.path().to_path_buf(),
-            paths,
-        };
+        let config = TsConfig::new(temp.path().to_path_buf(), paths);
         let mut selected = original.clone();
         selected
             .load_path_aliases(Some(&config), &AnalysisBudget::default())
@@ -217,7 +199,7 @@ fn caller_constructed_alias_tables_preserve_first_match_order() {
             "canonical name follows the same table"
         );
         assert_eq!(
-            selected.get_package_path("alias/subpath"),
+            selected.package_path("alias/subpath"),
             Some(&b),
             "path and name agree"
         );

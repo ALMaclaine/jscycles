@@ -40,7 +40,7 @@ fn sample(node: &Value) -> Value {
 #[test]
 fn every_schema_key_is_accepted_by_the_parser() {
     let document = sample(&schema());
-    let config = jscycles::Config::parse(&document.to_string())
+    let config = config::Config::parse(&document.to_string())
         .unwrap_or_else(|error| panic!("{error}: {document}"));
     assert!(config.defaults.skip_type_imports);
 }
@@ -68,7 +68,7 @@ fn schema_objects_are_closed_like_the_parser() {
             _ => json!({ path.rsplit('/').next().expect("name"): document }),
         };
         assert!(
-            jscycles::Config::parse(&wrapped.to_string()).is_err(),
+            config::Config::parse(&wrapped.to_string()).is_err(),
             "{path} accepts unknown keys"
         );
     }
@@ -77,9 +77,9 @@ fn schema_objects_are_closed_like_the_parser() {
 #[test]
 fn schema_defaults_match_the_built_in_defaults() {
     let schema = schema();
-    let defaults = jscycles::Config::default();
+    let defaults = config::Config::default();
     let limits = &schema["properties"]["limits"]["properties"];
-    let parsed: jscycles::Config = jscycles::Config::parse(
+    let parsed: config::Config = config::Config::parse(
         &json!({"limits": limits.as_object().expect("limits").iter()
             .map(|(key, value)| (key.clone(), value["default"].clone())).collect::<Map<_, _>>()})
         .to_string(),
@@ -94,7 +94,7 @@ fn schema_defaults_match_the_built_in_defaults() {
     assert_eq!(limits.as_object().expect("limits").len(), fields);
     assert_eq!(
         schema["properties"]["defaults"]["properties"]["extensions"]["default"],
-        json!(jscycles::DEFAULT_EXTENSIONS)
+        json!(config::DEFAULT_EXTENSIONS)
     );
     assert_eq!(
         schema["properties"]["scan"]["properties"]["exclude"]["default"],
