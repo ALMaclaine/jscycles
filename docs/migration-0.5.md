@@ -5,47 +5,28 @@ output are unchanged. The changes bring the library in line with the
 [Google Rust style guide](https://google.github.io/styleguide/rustguide.html)'s
 code organization and API design rules for library code.
 
-## One crate per part of the analysis
+## Module paths
 
-The `jscycles` crate is now only the command-line binary (`cargo install
-jscycles`); its `cli` feature is gone. The library is split into small crates.
-To embed a scan, depend on `jscycles-scan`, which re-exports the types its API
-uses (`Config`, `ConfigError`, the cycle and result types, `ColorMode`,
-`CycleFilter` and the error types):
+The crate-root re-exports (`jscycles::Scan`, `jscycles::Config`,
+`jscycles::DependencyGraph`, …) are unchanged. Two things moved:
 
-```toml
-[dependencies]
-jscycles-scan = "0.5"
-```
-
-| 0.4 path | 0.5 crate |
+| 0.4 path | 0.5 path |
 | --- | --- |
-| `jscycles::Scan`, `ScanReport`, `TsConfigSource`, `JscyclesError`, `jscycles::scan` | `jscycles-scan` |
-| `jscycles::budget` | `jscycles-budget` |
-| `jscycles::config`, `Config`, `ConfigError`, `DEFAULT_EXTENSIONS` | `jscycles-config` |
-| `jscycles::discovery`, `PackageDiscovery`, `Package`, `Discovered`, `DiscoveryError` | `jscycles-discovery` |
-| `jscycles::workspace`, `Workspace`, `WorkspaceFormat`, `WorkspaceError`, `WorkspaceYamlError` | `jscycles-workspace` |
-| `jscycles::tsconfig`, `TsConfig`, `TsConfigCache`, `PathAlias`, `TsConfigError` | `jscycles-tsconfig` |
-| `Import`, `ImportTarget`, `ExtractError` (were in `jscycles::imports` and the root) | `jscycles-import` |
-| `ImportExtractor`, `ExtractionMode` (were in `jscycles::imports`) | `jscycles-extract` |
-| `jscycles::graph`, `DependencyGraph`, `PackageDependencyGraph`, `EdgeEvidence` | `jscycles-graph` |
-| `jscycles::cycles`, `Cycle`, `PackageCycle`, `PackageCycleEdge`, `PackageCycleWithFiles` | `jscycles-cycles` |
-| `jscycles::output`, the formatters, `Results`, `UnifiedResults`, `PackageResult`, `CycleFilter`, `ColorMode` | `jscycles-output` |
+| `jscycles::imports::Import`, `ImportTarget` | `jscycles::import::Import`, `ImportTarget` |
+| `jscycles::imports::ImportExtractor`, `ExtractionMode` | `jscycles::extract::ImportExtractor`, `ExtractionMode` |
+| `jscycles::JscyclesError` | also `jscycles::scan::JscyclesError` |
+| `jscycles::ConfigError` | also `jscycles::config::ConfigError` |
+| `jscycles::DiscoveryError` | also `jscycles::discovery::DiscoveryError` |
+| `jscycles::ExtractError` | also `jscycles::import::ExtractError` |
+| `jscycles::TsConfigError` | also `jscycles::tsconfig::TsConfigError` |
+| `jscycles::WorkspaceError`, `WorkspaceYamlError` | also `jscycles::workspace::WorkspaceError`, `WorkspaceYamlError` |
 
-The other crates (`jscycles-analysis`, `-input`, `-syntax`,
-`-module-syntax`, `-module-path` and `-terminal`) were private modules. They
-are published because the crates above depend on them; their APIs are
-documented but exist to serve those crates.
+Each error type is now defined in the module that returns it; the root
+re-exports keep the 0.4 paths working.
 
-`jscycles-graph`, `jscycles-cycles` and `jscycles-import` do not depend on the
-native parser, so a caller that brings its own import graph no longer
-compiles tree-sitter.
-
-New in the crates' APIs: `UnifiedResults::has_cycles_for(filter)` (which
-`ScanReport::has_cycles` uses), `ImportTarget::retained_bytes`,
-`PathAlias::resolve`, and in `jscycles-analysis` the `Evidence` choice that
-replaces a `bool` parameter. `jscycles-module-syntax`'s `visit` takes a
-`TypeOnlyImports` choice instead of a `bool`.
+New in the API: `UnifiedResults::has_cycles_for(filter)` (which
+`ScanReport::has_cycles` uses), `ImportTarget::retained_bytes` and
+`PathAlias::resolve`.
 
 ## API changes
 
@@ -53,7 +34,7 @@ replaces a `bool` parameter. `jscycles-module-syntax`'s `visit` takes a
 
 | 0.4 | 0.5 |
 | --- | --- |
-| `CycleDetector::detect(graph)` | `jscycles_cycles::file_cycles(graph)` |
+| `CycleDetector::detect(graph)` | `jscycles::cycles::file_cycles(graph)` |
 | `CycleDetector::try_detect(graph, budget)` | `try_file_cycles(graph, budget)` |
 | `CycleDetector::try_detect_imports(imports, budget)` | `try_file_cycles_from_imports(imports, budget)` |
 | `PackageCycleDetector::detect(graph)` | `package_cycles(graph)` |
@@ -76,7 +57,7 @@ replaces a `bool` parameter. `jscycles-module-syntax`'s `visit` takes a
 | `PackageCycleEdge::with_evidence` | `PackageCycleEdge::new_with_evidence` |
 | `PackageCycleWithFiles::from_cycle` | `PackageCycleWithFiles::new_from_cycle` |
 
-The cycle functions are in `jscycles_cycles`. The detector structs held no
+The cycle functions are in `jscycles::cycles`. The detector structs held no
 state, so the functions take the same arguments. Names follow the Google
 style guide: fallible constructors are `try_new`, further constructors
 `new_with_..`/`new_from_..`, and `with_..` is kept for closure accessors.
@@ -105,8 +86,8 @@ instead of holding `Arc`s, and its builder methods drop the `with_` prefix:
   `Config::ignore_for_package` returns `Option<&[String]>` instead of cloned
   vectors. Call `.to_vec()` where an owned copy is needed.
 - Functions that only iterate their input take iterators:
-  `DependencyGraph::from_imports`, `cycles::try_file_cycles_from_imports` and
-  `Indexed::imports` take any `IntoIterator` of imports (owned or borrowed);
+  `DependencyGraph::from_imports` and `cycles::try_file_cycles_from_imports`
+  take any `IntoIterator` of imports (owned or borrowed);
   `PackageDependencyGraph::from_imports` takes `(name, imports)` pairs, so a
   `&HashMap<String, Vec<Import>>` still works; `PackageDiscovery`'s
   `discover_explicit*` and `discover_workspace_packages` take any
@@ -130,8 +111,7 @@ instead of holding `Arc`s, and its builder methods drop the `with_` prefix:
 
 These enums are `#[non_exhaustive]`; add a wildcard arm to matches outside the
 crate: `Resource`, `ExtractionMode`, `ImportTarget`, `CycleFilter`,
-`WorkspaceFormat` and the new `ColorMode`, `Evidence`, `Language` and
-`TypeOnlyImports`.
+`WorkspaceFormat` and the new `ColorMode`.
 
 These structs are `#[non_exhaustive]`. Their fields stay public for reading and
 updating, but struct literals outside the crate no longer compile; use the

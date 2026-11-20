@@ -102,7 +102,7 @@ repository scanning still needs process isolation and OS resource limits.
 ## Library use and compatibility
 
 `AnalysisLimits`, `AnalysisBudget`, `Resource`, `LimitError`, and `BoundedReport`
-are public in the `jscycles-budget` crate. Clone a budget handle to share atomic counters;
+are public in `jscycles::budget`. Clone a budget handle to share atomic counters;
 create a new budget for each new operation. `check()` exposes the first recorded
 exhaustion. Do not accept a partial result or reuse an exhausted budget.
 

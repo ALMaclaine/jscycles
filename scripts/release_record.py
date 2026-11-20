@@ -106,11 +106,7 @@ def known_cycle(report):
     return [path.replace('\\', '/') for path in cycles[0]] == ['src/a.ts', 'src/b.ts', 'src/a.ts']
 
 def release_identity(root, environment):
-    manifest = tomllib.loads((root / 'Cargo.toml').read_text())
-    version = manifest['package']['version']
-    if version == {'workspace': True}:
-        version = manifest['workspace']['package']['version']
-    version = 'v' + version
+    version = 'v' + tomllib.loads((root / 'Cargo.toml').read_text())['package']['version']
     if environment.get('GITHUB_REF_TYPE') != 'tag' or environment.get('GITHUB_REF_NAME') != version:
         raise ValueError('Release requires the matching version tag; branch dispatch cannot replace a release')
     revision = environment['GITHUB_SHA']

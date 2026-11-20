@@ -11,10 +11,14 @@ use std::process::Command;
 use std::sync::Arc;
 use std::thread;
 
-use budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
-use graph::DependencyGraph;
-use graph::PackageDependencyGraph;
-use import::{Import, ImportTarget};
+use jscycles::budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
+use jscycles::cycles;
+use jscycles::extract;
+use jscycles::graph::DependencyGraph;
+use jscycles::graph::PackageDependencyGraph;
+use jscycles::import::{Import, ImportTarget};
+use jscycles::tsconfig;
+use jscycles::workspace;
 
 #[test]
 fn admissions_are_exact_checked_and_sticky() {

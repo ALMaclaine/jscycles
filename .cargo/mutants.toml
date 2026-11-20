@@ -7,24 +7,24 @@ exclude_re = [
   # `absolute || windows` both reduce to `absolute`, and the Windows form of a
   # non-drive, non-verbatim absolute Unix path is the path itself. Windows CI
   # covers the real distinction.
-  '^crates/jscycles-input/src/lib\.rs:64:17: replace && with \|\| in pattern_spelling$',
+  '^src/input\.rs:66:17: replace && with \|\| in pattern_spelling$',
   # Uppercasing an uppercase or non-letter drive character is the identity, so
   # always taking the uppercase arm returns the same string.
-  '^crates/jscycles-input/src/lib\.rs:118:37: replace match guard drive\.is_ascii_lowercase\(\) with true in windows_user_form$',
-  '^crates/jscycles-syntax/src/lib\.rs:138:22: replace match guard string with true in jsonc$',
-  '^crates/jscycles-syntax/src/lib\.rs:184:22: replace match guard string with true in jsonc$',
+  '^src/input\.rs:120:37: replace match guard drive\.is_ascii_lowercase\(\) with true in windows_user_form$',
+  '^src/syntax\.rs:138:22: replace match guard string with true in jsonc$',
+  '^src/syntax\.rs:184:22: replace match guard string with true in jsonc$',
   # After both delimiter bytes have been blanked, these mutations merely rescan
   # one or two spaces. They preserve values, offsets and linear progress.
-  '^crates/jscycles-syntax/src/lib\.rs:153:24: replace \+= with -= in jsonc$',
-  '^crates/jscycles-syntax/src/lib\.rs:153:24: replace \+= with \*= in jsonc$',
-  '^crates/jscycles-syntax/src/lib\.rs:160:32: replace \+= with -= in jsonc$',
-  '^crates/jscycles-syntax/src/lib\.rs:160:32: replace \+= with \*= in jsonc$',
+  '^src/syntax\.rs:153:24: replace \+= with -= in jsonc$',
+  '^src/syntax\.rs:153:24: replace \+= with \*= in jsonc$',
+  '^src/syntax\.rs:160:32: replace \+= with -= in jsonc$',
+  '^src/syntax\.rs:160:32: replace \+= with \*= in jsonc$',
   # Recomputing SCCs for a one-node suffix cannot add a package cycle. The
   # extra bookkeeping has no fixed public work-unit contract. Exhaustive cycle
   # oracles and bounded deep-ring tests cover the meaningful behavior.
-  '^crates/jscycles-analysis/src/lib\.rs:581:28: replace > with >= in elementary$',
+  '^src/analysis\.rs:585:28: replace > with >= in elementary$',
   # Always following a regular entry returns the same metadata on a stable
   # checkout. It adds a redundant stat; it cannot change the classification.
   # The false guard is retained: a selected symlink prefix must be followed.
-  '^crates/jscycles-input/src/lib\.rs:24:25: replace match guard metadata.file_type\(\).is_symlink\(\) with true in optional_metadata$',
+  '^src/input\.rs:26:25: replace match guard metadata.file_type\(\).is_symlink\(\) with true in optional_metadata$',
 ]

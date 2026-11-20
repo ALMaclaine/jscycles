@@ -11,6 +11,9 @@ use std::os::unix::fs as unix_fs;
 use std::path::Path;
 use std::process::Command;
 
+use jscycles::import;
+use jscycles::workspace;
+
 fn fixture(root: &Path, mappings: &str) {
     fs::write(root.join("package.json"), r#"{"name":"dotted"}"#).expect("manifest");
     fs::write(root.join("jscycles.yaml"), "{}").expect("isolated configuration");
@@ -258,9 +261,9 @@ fn modern_runtime_suffixes_cannot_resolve_an_unrelated_typescript_family() {
 
 #[test]
 fn repeated_extractions_observe_alias_files_appearing_changing_and_disappearing() {
-    use extract::ImportExtractor;
-    use import::ImportTarget;
-    use tsconfig::TsConfig;
+    use jscycles::extract::ImportExtractor;
+    use jscycles::import::ImportTarget;
+    use jscycles::tsconfig::TsConfig;
 
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path();
@@ -295,9 +298,9 @@ fn repeated_extractions_observe_alias_files_appearing_changing_and_disappearing(
 
 #[test]
 fn parallel_repeated_aliases_keep_canonical_file_identity_and_missing_classification() {
-    use extract::ImportExtractor;
-    use import::ImportTarget;
-    use tsconfig::TsConfig;
+    use jscycles::extract::ImportExtractor;
+    use jscycles::import::ImportTarget;
+    use jscycles::tsconfig::TsConfig;
 
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path();
@@ -355,11 +358,11 @@ fn parallel_repeated_aliases_keep_canonical_file_identity_and_missing_classifica
 
 #[test]
 fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_imports() {
-    use budget::{AnalysisBudget, AnalysisLimits};
-    use extract::ImportExtractor;
-    use import::ImportTarget;
-    use tsconfig::{PathAlias, TsConfig};
-    use workspace::Workspace;
+    use jscycles::budget::{AnalysisBudget, AnalysisLimits};
+    use jscycles::extract::ImportExtractor;
+    use jscycles::import::ImportTarget;
+    use jscycles::tsconfig::{PathAlias, TsConfig};
+    use jscycles::workspace::Workspace;
 
     let directory = tempfile::tempdir().expect("temporary directory");
     // Canonical, so macOS (`/var` -> `/private/var`) classifies like Linux.
@@ -426,9 +429,9 @@ fn unused_alias_tables_do_not_exhaust_repeated_relative_workspace_or_cached_impo
 
 #[test]
 fn uncached_alias_searches_still_exhaust_the_work_budget() {
-    use budget::{AnalysisBudget, AnalysisLimits, Resource};
-    use extract::ImportExtractor;
-    use tsconfig::{PathAlias, TsConfig};
+    use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+    use jscycles::extract::ImportExtractor;
+    use jscycles::tsconfig::{PathAlias, TsConfig};
 
     let directory = tempfile::tempdir().expect("temporary directory");
     let root = directory.path();

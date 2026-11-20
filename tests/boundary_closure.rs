@@ -3,6 +3,7 @@
     clippy::expect_used,
     reason = "Setup failures must fail consumer tests"
 )]
+
 use std::error;
 #[cfg(unix)]
 use std::ffi::OsString;
@@ -13,6 +14,15 @@ use std::os::unix::fs as unix_fs;
 use std::path;
 use std::path::Path;
 use std::process::{Command, Output};
+
+use jscycles::budget;
+use jscycles::config;
+use jscycles::discovery;
+use jscycles::extract;
+use jscycles::graph;
+use jscycles::import;
+use jscycles::tsconfig;
+use jscycles::workspace;
 
 fn scan(root: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_jscycles"))
@@ -313,7 +323,7 @@ fn missing_alias_and_relative_targets_do_not_invent_resolved_graph_nodes() {
 
 #[test]
 fn owned_cached_metadata_copies_observe_the_shared_payload_budget() {
-    use budget::{AnalysisBudget, AnalysisLimits, Resource};
+    use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
     let temp = tempfile::tempdir().expect("directory");
     let config_path = temp.path().join("tsconfig.json");
     let paths: serde_json::Map<String, serde_json::Value> = (0..32)
@@ -370,7 +380,7 @@ fn owned_cached_metadata_copies_observe_the_shared_payload_budget() {
 
 #[test]
 fn tsconfig_alias_sorting_requires_work_admission() {
-    use budget::{AnalysisBudget, AnalysisLimits, Resource};
+    use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
     let temp = tempfile::tempdir().expect("directory");
     let path = temp.path().join("tsconfig.json");
     for count in [4, 256] {
@@ -411,7 +421,7 @@ fn tsconfig_alias_sorting_requires_work_admission() {
 
 #[test]
 fn package_override_sorting_requires_work_admission() {
-    use budget::{AnalysisBudget, AnalysisLimits, Resource};
+    use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
     let temp = tempfile::tempdir().expect("directory");
     package(temp.path(), "example", "./index");
     for count in [4, 256] {

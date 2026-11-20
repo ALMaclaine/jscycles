@@ -10,6 +10,8 @@
 
 use serde_json::{Map, Value, json};
 
+use jscycles::config;
+
 fn schema() -> Value {
     serde_json::from_str(include_str!("../jscycles.schema.json")).expect("schema is JSON")
 }

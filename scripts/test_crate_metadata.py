@@ -35,14 +35,8 @@ def metadata_problems(package):
 
 class CrateMetadataTests(unittest.TestCase):
     def test_published_metadata_meets_crates_io_rules(self):
-        workspace = tomllib.loads((ROOT / 'Cargo.toml').read_text())
-        inherited = workspace['workspace']['package']
-        for manifest in [ROOT / 'Cargo.toml', *sorted(ROOT.glob('crates/*/Cargo.toml'))]:
-            package = tomllib.loads(manifest.read_text())['package']
-            package = {key: inherited[key] if value == {'workspace': True} else value
-                       for key, value in package.items()}
-            with self.subTest(manifest=str(manifest.relative_to(ROOT))):
-                self.assertEqual(metadata_problems(package), [])
+        package = tomllib.loads((ROOT / 'Cargo.toml').read_text())['package']
+        self.assertEqual(metadata_problems(package), [])
 
     def test_rules_reject_what_crates_io_rejected(self):
         package = {'description': 'x', 'license': 'MIT',

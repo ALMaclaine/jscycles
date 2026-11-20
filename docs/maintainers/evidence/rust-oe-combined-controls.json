@@ -13,8 +13,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 1.173,
-      "output_tail": "   Compiling xshell-macros v0.2.7\n   Compiling xshell v0.2.7\n   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/xtask)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.78s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\n$ cargo fmt --manifest-path fuzz/Cargo.toml --check\n"
+      "seconds": 1.188,
+      "output_tail": "   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/xtask)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.72s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\n$ cargo fmt --manifest-path fuzz/Cargo.toml --check\n"
     },
     {
       "name": "C01 rejects unformatted xtask member",
@@ -25,8 +25,8 @@
       ],
       "exit": 1,
       "matched": true,
-      "seconds": 0.446,
-      "output_tail": "Diff in /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/xtask/src/main.rs:371:\n         .map_err(|error| eprintln!(\"{workload} profiling workload failed: {error}\"))\n }\n \n\u001b[31m-fn formatting_probe( ){ }\n\u001b(B\u001b[m\u001b[32m+fn formatting_probe() {}\n\u001b(B\u001b[m \n   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/xtask)\nwarning: function `formatting_probe` is never used\n   --> xtask/src/main.rs:374:4\n    |\n374 | fn formatting_probe( ){ }\n    |    ^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `xtask` (bin \"xtask\") generated 1 warning\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\nfmt failed: command exited with non-zero code `cargo fmt --all --check`: 1\n"
+      "seconds": 0.455,
+      "output_tail": "Diff in /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/xtask/src/main.rs:370:\n         .map_err(|error| eprintln!(\"{workload} profiling workload failed: {error}\"))\n }\n \n\u001b[31m-fn formatting_probe( ){ }\n\u001b(B\u001b[m\u001b[32m+fn formatting_probe() {}\n\u001b(B\u001b[m \n   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/xtask)\nwarning: function `formatting_probe` is never used\n   --> xtask/src/main.rs:373:4\n    |\n373 | fn formatting_probe( ){ }\n    |    ^^^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `xtask` (bin \"xtask\") generated 1 warning\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\nfmt failed: command exited with non-zero code `cargo fmt --all --check`: 1\n"
     },
     {
       "name": "C01 repaired",
@@ -37,8 +37,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.486,
-      "output_tail": "   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/xtask)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\n$ cargo fmt --manifest-path fuzz/Cargo.toml --check\n"
+      "seconds": 0.493,
+      "output_tail": "   Compiling xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/xtask)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask fmt`\n>> cargo fmt --all --check\n$ cargo fmt --all --check\n$ cargo fmt --manifest-path fuzz/Cargo.toml --check\n"
     },
     {
       "name": "C02 passing",
@@ -49,8 +49,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 9.385,
-      "output_tail": "ls-_ygcwvz1/project/crates/jscycles-graph)\n    Checking jscycles-module-syntax v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-module-syntax)\n    Checking jscycles-tsconfig v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-tsconfig)\n    Checking jscycles-analysis v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-analysis)\n    Checking jscycles-config v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-config)\n    Checking jscycles-cycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-cycles)\n    Checking jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n    Checking jscycles-output v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-output)\n    Checking jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n    Checking jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n    Checking jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n    Checking jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.19s\n"
+      "seconds": 1.678,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Checking xtask v0.1.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/xtask)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.47s\n"
     },
     {
       "name": "C02 rejects stale lock",
@@ -61,8 +61,8 @@
       ],
       "exit": 101,
       "matched": true,
-      "seconds": 0.037,
-      "output_tail": "error: cannot update the lock file /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/Cargo.lock because --locked was passed to prevent this\nhelp: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.\n"
+      "seconds": 0.034,
+      "output_tail": "error: cannot update the lock file /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/Cargo.lock because --locked was passed to prevent this\nhelp: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.\n"
     },
     {
       "name": "C02 repaired",
@@ -73,8 +73,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.277,
-      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s\n"
+      "seconds": 0.272,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s\n"
     },
     {
       "name": "C03 passing",
@@ -85,8 +85,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 10.248,
-      "output_tail": "lysis v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-analysis)\n   Compiling jscycles-config v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-config)\n   Compiling jscycles-cycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-cycles)\n   Compiling jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n   Compiling jscycles-output v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-output)\n   Compiling jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.37s\n   Doc-tests jscycles_analysis\n   Doc-tests jscycles_budget\n   Doc-tests jscycles_config\n   Doc-tests jscycles_cycles\n   Doc-tests jscycles_discovery\n   Doc-tests jscycles_extract\n   Doc-tests jscycles_graph\n   Doc-tests jscycles_import\n   Doc-tests jscycles_input\n   Doc-tests jscycles_module_path\n   Doc-tests jscycles_module_syntax\n   Doc-tests jscycles_output\n   Doc-tests jscycles_scan\n   Doc-tests jscycles_syntax\n   Doc-tests jscycles_terminal\n   Doc-tests jscycles_tsconfig\n   Doc-tests jscycles_workspace\n"
+      "seconds": 2.791,
+      "output_tail": "\nrunning 14 tests\ntest src/scan.rs - scan::Scan::new (line 106) - compile ... ok\ntest src/lib.rs - (line 6) - compile ... ok\ntest src/scan.rs - scan (line 4) - compile ... ok\ntest src/budget.rs - budget::AnalysisBudget (line 253) ... ok\ntest src/output.rs - output::HumanFormatter (line 217) ... ok\ntest src/workspace.rs - workspace::Workspace::new (line 120) ... ok\ntest src/tsconfig.rs - tsconfig::TsConfig (line 159) ... ok\ntest src/cycles.rs - cycles::file_cycles (line 80) ... ok\ntest src/cycles.rs - cycles (line 6) ... ok\ntest src/cycles.rs - cycles::package_cycles (line 290) ... ok\ntest src/lib.rs - (line 22) ... ok\ntest src/config.rs - config::Config (line 44) ... ok\ntest src/discovery.rs - discovery::PackageDiscovery (line 70) ... ok\ntest src/extract.rs - extract::ImportExtractor (line 52) ... ok\n\ntest result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\nall doctests ran in 0.63s; merged doctests compilation took 0.41s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.82s\n   Doc-tests jscycles\n"
     },
     {
       "name": "C03 rejects incorrect public example",
@@ -97,8 +97,8 @@
       ],
       "exit": 1,
       "matched": true,
-      "seconds": 1.67,
-      "output_tail": "ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:394:5\n   4: doctest_bundle_2024::__doctest_0::main\n   5: doctest_bundle_2024::__doctest_0::__main_fn\n   6: doctest_runner_2024::__doctest_0::TEST::{closure#0}\n   7: <doctest_runner_2024::__doctest_0::TEST::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n   8: doctest_runner_2024::main\n   9: <fn() -> std::process::ExitCode as core::ops::function::FnOnce<()>>::call_once\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\n\nfailures:\n    crates/jscycles-cycles/src/lib.rs - (line 6)\n\ntest result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\nall doctests ran in 0.35s; merged doctests compilation took 0.20s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles-cycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-cycles)\n   Compiling jscycles-output v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-output)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s\n   Doc-tests jscycles_analysis\n   Doc-tests jscycles_budget\n   Doc-tests jscycles_config\n   Doc-tests jscycles_cycles\nerror: doctest failed, to rerun pass `-p jscycles-cycles --doc`\ndoctest failed: command exited with non-zero code `cargo test --workspace --doc --all-features --locked`: 101\n"
+      "seconds": 1.372,
+      "output_tail": "ft == right` failed\n  left: 1\n right: 2\nstack backtrace:\n   0: __rustc::rust_begin_unwind\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5\n   1: core::panicking::panic_fmt\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14\n   2: core::panicking::assert_failed_inner\n   3: core::panicking::assert_failed::<usize, usize>\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:394:5\n   4: doctest_bundle_2024::__doctest_2::main\n   5: doctest_bundle_2024::__doctest_2::__main_fn\n   6: doctest_runner_2024::__doctest_2::TEST::{closure#0}\n   7: <doctest_runner_2024::__doctest_2::TEST::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n   8: doctest_runner_2024::main\n   9: <fn() -> std::process::ExitCode as core::ops::function::FnOnce<()>>::call_once\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\n\nfailures:\n    src/cycles.rs - cycles (line 6)\n\ntest result: FAILED. 13 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s\n\nall doctests ran in 0.62s; merged doctests compilation took 0.30s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.47s\n   Doc-tests jscycles\nerror: doctest failed, to rerun pass `-p jscycles --doc`\ndoctest failed: command exited with non-zero code `cargo test --workspace --doc --all-features --locked`: 101\n"
     },
     {
       "name": "C03 repaired",
@@ -109,8 +109,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 4.223,
-      "output_tail": "d; 0 filtered out; finished in 0.00s\n\n\nrunning 1 test\ntest crates/jscycles-tsconfig/src/lib.rs - TsConfig (line 155) ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\nall doctests ran in 0.33s; merged doctests compilation took 0.17s\n\nrunning 1 test\ntest crates/jscycles-workspace/src/lib.rs - Workspace::new (line 116) ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\nall doctests ran in 0.33s; merged doctests compilation took 0.19s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles-cycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-cycles)\n   Compiling jscycles-output v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-output)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s\n   Doc-tests jscycles_analysis\n   Doc-tests jscycles_budget\n   Doc-tests jscycles_config\n   Doc-tests jscycles_cycles\n   Doc-tests jscycles_discovery\n   Doc-tests jscycles_extract\n   Doc-tests jscycles_graph\n   Doc-tests jscycles_import\n   Doc-tests jscycles_input\n   Doc-tests jscycles_module_path\n   Doc-tests jscycles_module_syntax\n   Doc-tests jscycles_output\n   Doc-tests jscycles_scan\n   Doc-tests jscycles_syntax\n   Doc-tests jscycles_terminal\n   Doc-tests jscycles_tsconfig\n   Doc-tests jscycles_workspace\n"
+      "seconds": 1.568,
+      "output_tail": "\nrunning 14 tests\ntest src/lib.rs - (line 6) - compile ... ok\ntest src/scan.rs - scan (line 4) - compile ... ok\ntest src/scan.rs - scan::Scan::new (line 106) - compile ... ok\ntest src/cycles.rs - cycles::file_cycles (line 80) ... ok\ntest src/cycles.rs - cycles::package_cycles (line 290) ... ok\ntest src/lib.rs - (line 22) ... ok\ntest src/output.rs - output::HumanFormatter (line 217) ... ok\ntest src/budget.rs - budget::AnalysisBudget (line 253) ... ok\ntest src/cycles.rs - cycles (line 6) ... ok\ntest src/workspace.rs - workspace::Workspace::new (line 120) ... ok\ntest src/config.rs - config::Config (line 44) ... ok\ntest src/tsconfig.rs - tsconfig::TsConfig (line 159) ... ok\ntest src/discovery.rs - discovery::PackageDiscovery (line 70) ... ok\ntest src/extract.rs - extract::ImportExtractor (line 52) ... ok\n\ntest result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\nall doctests ran in 0.65s; merged doctests compilation took 0.30s\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask doctest`\n$ cargo test --workspace --doc --all-features --locked\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s\n   Doc-tests jscycles\n"
     },
     {
       "name": "C04 rejects implicit unsafe operation",
@@ -121,8 +121,8 @@
       ],
       "exit": 1,
       "matched": true,
-      "seconds": 0.734,
-      "output_tail": "s/jscycles-workspace)\nerror[E0133]: dereference of raw pointer is unsafe and requires unsafe block\n    --> crates/jscycles-cycles/src/lib.rs:1602:55\n     |\n1602 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n     |                                                       ^^^^^^^^ dereference of raw pointer\n     |\n     = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior\nnote: an unsafe function restricts its caller, but its body is safe by default\n    --> crates/jscycles-cycles/src/lib.rs:1602:1\n     |\n1602 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>\n     = note: requested on the command line with `-F unsafe-op-in-unsafe-fn`\n\nwarning: function `operation_probe` is never used\n    --> crates/jscycles-cycles/src/lib.rs:1602:11\n     |\n1602 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n     |           ^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nFor more information about this error, try `rustc --explain E0133`.\nwarning: `jscycles-cycles` (lib) generated 1 warning\nerror: could not compile `jscycles-cycles` (lib) due to 1 previous error; 1 warning emitted\nwarning: build failed, waiting for other jobs to finish...\nwarning: `jscycles-cycles` (lib test) generated 1 warning (1 duplicate)\nerror: could not compile `jscycles-cycles` (lib test) due to 1 previous error; 1 warning emitted\ncheck failed: command exited with non-zero code `cargo check --workspace --all-targets --all-features --locked`: 101\n"
+      "seconds": 1.205,
+      "output_tail": "jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\nerror[E0133]: dereference of raw pointer is unsafe and requires unsafe block\n    --> src/cycles.rs:1602:55\n     |\n1602 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n     |                                                       ^^^^^^^^ dereference of raw pointer\n     |\n     = note: raw pointers may be null, dangling or unaligned; they can violate aliasing rules and cause data races: all of these are undefined behavior\nnote: an unsafe function restricts its caller, but its body is safe by default\n    --> src/cycles.rs:1602:1\n     |\n1602 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/unsafe-op-in-unsafe-fn.html>\n     = note: requested on the command line with `-F unsafe-op-in-unsafe-fn`\n\nwarning: function `operation_probe` is never used\n    --> src/cycles.rs:1602:11\n     |\n1602 | unsafe fn operation_probe(pointer: *const u8) -> u8 { *pointer }\n     |           ^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nFor more information about this error, try `rustc --explain E0133`.\nwarning: `jscycles` (lib) generated 1 warning\nerror: could not compile `jscycles` (lib) due to 1 previous error; 1 warning emitted\nwarning: build failed, waiting for other jobs to finish...\nwarning: `jscycles` (lib test) generated 1 warning (1 duplicate)\nerror: could not compile `jscycles` (lib test) due to 1 previous error; 1 warning emitted\ncheck failed: command exited with non-zero code `cargo check --workspace --all-targets --all-features --locked`: 101\n"
     },
     {
       "name": "C04 explicit operation compiles",
@@ -133,8 +133,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.953,
-      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking jscycles-cycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-cycles)\n    Checking jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n    Checking jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\nwarning: function `operation_probe` is never used\n    --> crates/jscycles-cycles/src/lib.rs:1602:11\n     |\n1602 | unsafe fn operation_probe(pointer: *const u8) -> u8 { unsafe { *pointer } }\n     |           ^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `jscycles-cycles` (lib) generated 1 warning\n    Checking jscycles-output v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-output)\nwarning: `jscycles-cycles` (lib test) generated 1 warning (1 duplicate)\n    Checking jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n    Checking jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.74s\n"
+      "seconds": 1.349,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\nwarning: function `operation_probe` is never used\n    --> src/cycles.rs:1602:11\n     |\n1602 | unsafe fn operation_probe(pointer: *const u8) -> u8 { unsafe { *pointer } }\n     |           ^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `jscycles` (lib) generated 1 warning\nwarning: `jscycles` (lib test) generated 1 warning (1 duplicate)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.10s\n"
     },
     {
       "name": "C04 restored safe-only project",
@@ -145,8 +145,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 1.505,
-      "output_tail": "ls-_ygcwvz1/project/crates/jscycles-graph)\n    Checking jscycles-module-syntax v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-module-syntax)\n    Checking jscycles-tsconfig v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-tsconfig)\n    Checking jscycles-config v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-config)\n    Checking jscycles-analysis v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-analysis)\n    Checking jscycles-cycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-cycles)\n    Checking jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n    Checking jscycles-output v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-output)\n    Checking jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n    Checking jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n    Checking jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n    Checking jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.28s\n"
+      "seconds": 1.3,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check`\n$ cargo check --workspace --all-targets --all-features --locked\n    Checking jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.09s\n"
     },
     {
       "name": "Fuzz dependency policy passing",
@@ -157,8 +157,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 1.579,
-      "output_tail": "     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n$ cargo deny --workspace --all-features --locked check --config ../deny.toml\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:47:6\n   \u2502\n47 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:51:6\n   \u2502\n51 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:54:6\n   \u2502\n54 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n"
+      "seconds": 1.404,
+      "output_tail": "     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n$ cargo deny --workspace --all-features --locked check --config ../deny.toml\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:47:6\n   \u2502\n47 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:51:6\n   \u2502\n51 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:54:6\n   \u2502\n54 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n"
     },
     {
       "name": "Fuzz dependency policy rejects an unapproved license",
@@ -169,8 +169,8 @@
       ],
       "exit": 1,
       "matched": true,
-      "seconds": 1.087,
-      "output_tail": "4.13\n     \u2514\u2500\u2500 jscycles-fuzz v0.0.0\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:47:6\n   \u2502\n47 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:51:6\n   \u2502\n51 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:54:6\n   \u2502\n54 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nfuzz dependency policy failed: command exited with non-zero code `cargo deny --workspace --all-features --locked check --config ../deny.toml`: 4\n"
+      "seconds": 1.223,
+      "output_tail": "4.13\n     \u2514\u2500\u2500 jscycles-fuzz v0.0.0\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:47:6\n   \u2502\n47 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:51:6\n   \u2502\n51 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:54:6\n   \u2502\n54 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nfuzz dependency policy failed: command exited with non-zero code `cargo deny --workspace --all-features --locked check --config ../deny.toml`: 4\n"
     },
     {
       "name": "Fuzz dependency policy repaired",
@@ -181,8 +181,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 1.162,
-      "output_tail": "     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n$ cargo deny --workspace --all-features --locked check --config ../deny.toml\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:47:6\n   \u2502\n47 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:51:6\n   \u2502\n51 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/fuzz/../deny.toml:54:6\n   \u2502\n54 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n"
+      "seconds": 1.118,
+      "output_tail": "     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n$ cargo deny --workspace --all-features --locked check --config ../deny.toml\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:46:6\n   \u2502\n46 \u2502     \"Apache-2.0 WITH LLVM-exception\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:47:6\n   \u2502\n47 \u2502     \"BSD-2-Clause\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:49:6\n   \u2502\n49 \u2502     \"BSL-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:51:6\n   \u2502\n51 \u2502     \"CC0-1.0\",\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:50:6\n   \u2502\n50 \u2502     \"ISC\",\n   \u2502      \u2501\u2501\u2501 unmatched license allowance\n\nwarning[license-not-encountered]: license was not encountered\n   \u250c\u2500 /private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project/fuzz/../deny.toml:54:6\n   \u2502\n54 \u2502     \"MPL-2.0\",         # Weak copyleft, file-level only\n   \u2502      \u2501\u2501\u2501\u2501\u2501\u2501\u2501 unmatched license allowance\n\n"
     },
     {
       "name": "Guidance integrity passing",
@@ -193,7 +193,7 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.046,
+      "seconds": 0.045,
       "output_tail": "Rust-OE integrity passed: 17 managed files, configuration, and agent block\n"
     },
     {
@@ -205,7 +205,7 @@
       ],
       "exit": 1,
       "matched": true,
-      "seconds": 0.029,
+      "seconds": 0.027,
       "output_tail": "Rust-OE integrity failed: managed content drift: INDEX.md\n"
     },
     {
@@ -217,7 +217,7 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.03,
+      "seconds": 0.028,
       "output_tail": "Rust-OE integrity passed: 17 managed files, configuration, and agent block\n"
     },
     {
@@ -235,8 +235,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.612,
-      "output_tail": "a: rate limited; retrying in 600 s\n.......................................................status 429 Too Many Requestserror: invalid manifest......................\n----------------------------------------------------------------------\nRan 77 tests in 0.526s\n\nOK\n"
+      "seconds": 0.552,
+      "output_tail": "........................................................................\n----------------------------------------------------------------------\nRan 72 tests in 0.480s\n\nOK\n"
     },
     {
       "name": "Baseline rejects unrecognized selection arguments",
@@ -248,8 +248,8 @@
       ],
       "exit": 1,
       "matched": true,
-      "seconds": 0.17,
-      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check --unexpected`\nxtask commands accept no extra arguments except install-tools <tool>\n"
+      "seconds": 0.163,
+      "output_tail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n     Running `/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/xtask check --unexpected`\nxtask commands accept no extra arguments except install-tools <tool>\n"
     },
     {
       "name": "Package identity passing",
@@ -265,8 +265,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 4.443,
-      "output_tail": "T/jscycles-controls-_ygcwvz1/project/crates/jscycles-module-syntax)\n   Compiling jscycles-tsconfig v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-tsconfig)\n   Compiling jscycles-config v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-config)\n   Compiling jscycles-analysis v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-analysis)\n   Compiling jscycles-cycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-cycles)\n   Compiling jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n   Compiling jscycles-output v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-output)\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.95s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\n"
+      "seconds": 2.625,
+      "output_tail": "\nrunning 1 test\ntest duplicate_names_fail_without_workspace_metadata_in_every_output_mode ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.23s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.11s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\n"
     },
     {
       "name": "Package identity rejects injected fault",
@@ -282,8 +282,8 @@
       ],
       "exit": 101,
       "matched": true,
-      "seconds": 1.066,
-      "output_tail": "4116b6d856af0985/library/core/src/panicking.rs:394:5\n   4: boundary_closure::duplicate_names_fail_without_workspace_metadata_in_every_output_mode\n             at ./tests/boundary_closure.rs:38:9\n   5: boundary_closure::duplicate_names_fail_without_workspace_metadata_in_every_output_mode::{closure#0}\n             at ./tests/boundary_closure.rs:32:74\n   6: <boundary_closure::duplicate_names_fail_without_workspace_metadata_in_every_output_mode::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\n   7: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\nfailures:\n    duplicate_names_fail_without_workspace_metadata_in_every_output_mode\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.28s\n\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.53s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\nerror: test failed, to rerun pass `--test boundary_closure`\n"
+      "seconds": 1.31,
+      "output_tail": "re::panicking::panic_fmt\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14\n   2: core::panicking::assert_failed_inner\n   3: core::panicking::assert_failed::<core::option::Option<i32>, core::option::Option<i32>>\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:394:5\n   4: boundary_closure::duplicate_names_fail_without_workspace_metadata_in_every_output_mode\n             at ./tests/boundary_closure.rs:48:9\n   5: boundary_closure::duplicate_names_fail_without_workspace_metadata_in_every_output_mode::{closure#0}\n             at ./tests/boundary_closure.rs:42:74\n   6: <boundary_closure::duplicate_names_fail_without_workspace_metadata_in_every_output_mode::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\n   7: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\nfailures:\n    duplicate_names_fail_without_workspace_metadata_in_every_output_mode\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.29s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.75s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\nerror: test failed, to rerun pass `--test boundary_closure`\n"
     },
     {
       "name": "Package identity repaired",
@@ -299,8 +299,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 1.036,
-      "output_tail": "\nrunning 1 test\ntest duplicate_names_fail_without_workspace_metadata_in_every_output_mode ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.24s\n\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.55s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\n"
+      "seconds": 1.472,
+      "output_tail": "\nrunning 1 test\ntest duplicate_names_fail_without_workspace_metadata_in_every_output_mode ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.36s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.73s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\n"
     },
     {
       "name": "Workspace glob components passing",
@@ -316,8 +316,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.326,
-      "output_tail": "\nrunning 1 test\ntest workspace_star_matches_one_directory_component ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.24s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\n"
+      "seconds": 0.342,
+      "output_tail": "\nrunning 1 test\ntest workspace_star_matches_one_directory_component ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.25s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\n"
     },
     {
       "name": "Workspace glob components rejects injected fault",
@@ -333,8 +333,8 @@
       ],
       "exit": 101,
       "matched": true,
-      "seconds": 0.996,
-      "output_tail": "ectory_component::{closure#0}\n             at ./tests/boundary_closure.rs:445:52\n   4: <boundary_closure::workspace_star_matches_one_directory_component::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\n   5: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\nfailures:\n    workspace_star_matches_one_directory_component\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.03s\n\n   Compiling jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.71s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\nerror: test failed, to rerun pass `--test boundary_closure`\n"
+      "seconds": 1.104,
+      "output_tail": "--\n\nthread 'workspace_star_matches_one_directory_component' (288241461) panicked at tests/boundary_closure.rs:467:5:\nsingle star does not admit nested package names\nstack backtrace:\n   0: __rustc::rust_begin_unwind\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5\n   1: core::panicking::panic_fmt\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14\n   2: boundary_closure::workspace_star_matches_one_directory_component\n             at ./tests/boundary_closure.rs:467:5\n   3: boundary_closure::workspace_star_matches_one_directory_component::{closure#0}\n             at ./tests/boundary_closure.rs:455:52\n   4: <boundary_closure::workspace_star_matches_one_directory_component::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\n   5: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\nfailures:\n    workspace_star_matches_one_directory_component\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.05s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.69s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\nerror: test failed, to rerun pass `--test boundary_closure`\n"
     },
     {
       "name": "Workspace glob components repaired",
@@ -350,8 +350,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 1.204,
-      "output_tail": "\nrunning 1 test\ntest workspace_star_matches_one_directory_component ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.24s\n\n   Compiling jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n   Compiling jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.72s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\n"
+      "seconds": 1.19,
+      "output_tail": "\nrunning 1 test\ntest workspace_star_matches_one_directory_component ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.23s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.69s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\n"
     },
     {
       "name": "Workspace member selection passing",
@@ -367,8 +367,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.078,
-      "output_tail": "\nrunning 1 test\ntest a_member_star_does_not_claim_a_deeper_references_project ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\n"
+      "seconds": 0.077,
+      "output_tail": "\nrunning 1 test\ntest a_member_star_does_not_claim_a_deeper_references_project ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\n"
     },
     {
       "name": "Workspace member selection rejects injected fault",
@@ -384,8 +384,8 @@
       ],
       "exit": 101,
       "matched": true,
-      "seconds": 1.071,
-      "output_tail": "losure#0}\n             at ./tests/boundary_closure.rs:470:62\n   6: <boundary_closure::a_member_star_does_not_claim_a_deeper_references_project::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\n   7: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\nfailures:\n    a_member_star_does_not_claim_a_deeper_references_project\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.02s\n\n   Compiling jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n   Compiling jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.80s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\nerror: test failed, to rerun pass `--test boundary_closure`\n"
+      "seconds": 0.975,
+      "output_tail": "icking.rs:679:5\n   1: core::panicking::panic_fmt\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14\n   2: core::panicking::assert_failed_inner\n   3: core::panicking::assert_failed::<jscycles::workspace::WorkspaceFormat, jscycles::workspace::WorkspaceFormat>\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:394:5\n   4: boundary_closure::a_member_star_does_not_claim_a_deeper_references_project\n             at ./tests/boundary_closure.rs:502:5\n   5: boundary_closure::a_member_star_does_not_claim_a_deeper_references_project::{closure#0}\n             at ./tests/boundary_closure.rs:480:62\n   6: <boundary_closure::a_member_star_does_not_claim_a_deeper_references_project::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\n   7: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\nfailures:\n    a_member_star_does_not_claim_a_deeper_references_project\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.04s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.65s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\nerror: test failed, to rerun pass `--test boundary_closure`\n"
     },
     {
       "name": "Workspace member selection repaired",
@@ -401,8 +401,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 1.062,
-      "output_tail": "\nrunning 1 test\ntest a_member_star_does_not_claim_a_deeper_references_project ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s\n\n   Compiling jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n   Compiling jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.80s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\n"
+      "seconds": 0.951,
+      "output_tail": "\nrunning 1 test\ntest a_member_star_does_not_claim_a_deeper_references_project ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.01s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.67s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\n"
     },
     {
       "name": "Native alias bytes passing",
@@ -418,8 +418,8 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 0.088,
-      "output_tail": "\nrunning 1 test\ntest alias_results_preserve_native_origin_bytes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\n"
+      "seconds": 0.076,
+      "output_tail": "\nrunning 1 test\ntest alias_results_preserve_native_origin_bytes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s\n\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\n"
     },
     {
       "name": "Native alias bytes rejects injected fault",
@@ -435,8 +435,8 @@
       ],
       "exit": 101,
       "matched": true,
-      "seconds": 1.763,
-      "output_tail": ":{closure#0} as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\n   7: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\nfailures:\n    alias_results_preserve_native_origin_bytes\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.02s\n\n   Compiling jscycles-tsconfig v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-tsconfig)\n   Compiling jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.01s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\nerror: test failed, to rerun pass `--test boundary_closure`\n"
+      "seconds": 0.998,
+      "output_tail": "4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5\n   1: core::panicking::panic_fmt\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14\n   2: core::panicking::assert_failed_inner\n   3: core::panicking::assert_failed::<core::option::Option<std::path::PathBuf>, core::option::Option<std::path::PathBuf>>\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:394:5\n   4: boundary_closure::alias_results_preserve_native_origin_bytes\n             at ./tests/boundary_closure.rs:586:5\n   5: boundary_closure::alias_results_preserve_native_origin_bytes::{closure#0}\n             at ./tests/boundary_closure.rs:576:48\n   6: <boundary_closure::alias_results_preserve_native_origin_bytes::{closure#0} as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\n   7: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once\n             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5\nnote: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.\n\n\nfailures:\n    alias_results_preserve_native_origin_bytes\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.04s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.68s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\nerror: test failed, to rerun pass `--test boundary_closure`\n"
     },
     {
       "name": "Native alias bytes repaired",
@@ -452,62 +452,28 @@
       ],
       "exit": 0,
       "matched": true,
-      "seconds": 1.1,
-      "output_tail": "\nrunning 1 test\ntest alias_results_preserve_native_origin_bytes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s\n\n   Compiling jscycles-tsconfig v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-tsconfig)\n   Compiling jscycles-workspace v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-workspace)\n   Compiling jscycles-discovery v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-discovery)\n   Compiling jscycles-extract v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-extract)\n   Compiling jscycles-scan v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project/crates/jscycles-scan)\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-_ygcwvz1/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.85s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-03583413fa6f41e1)\n"
+      "seconds": 0.943,
+      "output_tail": "\nrunning 1 test\ntest alias_results_preserve_native_origin_bytes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s\n\n   Compiling jscycles v0.5.0 (/private/var/folders/wn/wyh67cpj5532znhzmxc4xgpm0000gn/T/jscycles-controls-rvnvgesb/project)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.67s\n     Running tests/boundary_closure.rs (/Users/alm/repos/jscycles/target/tooling/control-pilot/debug/deps/boundary_closure-7660d1ceb39087d6)\n"
     }
   ],
   "input_sha256": {
     ".cargo/config.toml": "77c33876d6611a8a2f4d92dd782f037643545201cd3c9329395f3fe99432b298",
     ".github/workflows/ci.yml": "bf34f9f1132f51159491cf50c42319645bddcc1b5a303965fd4c9830a369354e",
     ".github/workflows/maintenance.yml": "ca4de0d6a66398e5bc97c5aad4091c839404d574794fcdc927af085ab44a3ae3",
-    ".github/workflows/release.yml": "1ab5c1aa045426a3ae82c64dfaa37e52b7b703a6928f9c59bc38adf475633318",
+    ".github/workflows/release.yml": "f4865f845761d9046ac0b821089981306e9ea99948fb96a35a9db67f79ab396f",
     "AGENTS.md": "9544d6661052ec360615378581203c5f131c6368916f6dd9d2c6e505609e9e9f",
-    "Cargo.lock": "f5fcd65f20acda9dd79ada88ee17f8157a7609159dd7cd2d55cb0f7c6ca04d5a",
-    "Cargo.toml": "53685bae9a6bedd9a93782214b3e1c02bf0c7d659687f4a45c914f39ba19af44",
+    "Cargo.lock": "c07ce93cf35c687b357efe423b3c71408bdd3c3e219233f4ed31a8d0419ab7ed",
+    "Cargo.toml": "c22a2134b6f32b52a69bb84d2adcf5bf73861ea260e87a253a114afcf29ff4a6",
     "clippy.toml": "88ae2190c00cde179abc8b397f4b55e87abf1f9b4db839e6c577fabaa20157ac",
-    "crates/jscycles-analysis/Cargo.toml": "d4c65b5bc57e5c054cb7e628317fd193126b85c1fe52e3d975c2ee842d7401d4",
-    "crates/jscycles-analysis/src/lib.rs": "1ea490ea4c6062734fd01d9395d8329131ef89f23e4705418da2b141e6c80193",
-    "crates/jscycles-budget/Cargo.toml": "2a1d08e9caca0c49b4b95311f25232019f74b55dae84f84a230fee1bad1129e6",
-    "crates/jscycles-budget/src/lib.rs": "d196c105c97bb6245d9e0382f984790a8f6edfa295793ed369e5e07aefc9e21d",
-    "crates/jscycles-config/Cargo.toml": "aeb7c3e0827cd3aea7403931650d6c4f8eccbf3e2305d8574de18d5327627a55",
-    "crates/jscycles-config/src/lib.rs": "4aad0ba1a8062280a128bb0ef3070f17d4481d697ed45bc352d0238fecdb34e5",
-    "crates/jscycles-cycles/Cargo.toml": "fbc6bce9c23416363acc71735e951a01c8d3ab30160216e95b9f7885d6efce1b",
-    "crates/jscycles-cycles/src/lib.rs": "8f82106f353c16411977f42674b2569c7a775bed284c0371d73ec176e2a71cf7",
-    "crates/jscycles-discovery/Cargo.toml": "8c075d3fc38e91b912cba5cb138eb52bd32b4de0019f1d86f175450f7affb169",
-    "crates/jscycles-discovery/src/lib.rs": "a88fd474f484b1e07ffac6ef2c7789f5cfbff5083981049712b4603fce966915",
-    "crates/jscycles-extract/Cargo.toml": "d216e60b5af48b1a2d9877a4f1bf30e1ae5f252a0ae2a1bb1de2b11a6badefbb",
-    "crates/jscycles-extract/src/lib.rs": "ab32a592e68b8d0fdf86ed50ca1824b06ba85d35e803ef985aef831855ddfb3e",
-    "crates/jscycles-graph/Cargo.toml": "a06a3462a284400321c525f1d18dcf61a63f46f1b0a2cfdcb5cb2f090f6e971d",
-    "crates/jscycles-graph/src/lib.rs": "28a077292387691dedff53fc557fcf814778209e1c3fc255457f0502b889e45f",
-    "crates/jscycles-import/Cargo.toml": "af3462cd6f334f7e004882cec3a96ec1d5d7d68b7584e42492403ce18a63c135",
-    "crates/jscycles-import/src/lib.rs": "beec6e286f5c0a8c740eca16673f925a735be351de0ffdeec56f9bbdad43347f",
-    "crates/jscycles-input/Cargo.toml": "2ba0982feb01a999af44499490b29a4bf1484775c0f7d59c7decb5525d393398",
-    "crates/jscycles-input/src/lib.rs": "f74468465a5946d16abc2915ddb25e99c11b14e7bc4f35f949e4725210f82a78",
-    "crates/jscycles-module-path/Cargo.toml": "297183ede7da56fa433272f5cf4b6734c8bd8da5faa6434df8d6258cfa1b7620",
-    "crates/jscycles-module-path/src/lib.rs": "3ba8daa996a6262c71507672f3b2692f34427bcc0eded4c8b701072d5f448595",
-    "crates/jscycles-module-syntax/Cargo.toml": "84faa3e79541b873fd70fa62bc779b154ec58f06aaf8da8d3747a8e13c67c978",
-    "crates/jscycles-module-syntax/src/lib.rs": "c75ee359894bda8f05f955efd1bac985fbb7bfb5a3cb8817728bd3f1fe132b1e",
-    "crates/jscycles-output/Cargo.toml": "984b759b1e4673c38e3836185b717e94c8554098283954c2faaa417edcfe94a7",
-    "crates/jscycles-output/src/lib.rs": "af7d1e5ec50300adeff0d9ecd2f565d262aa80d1df9afaaaf6ca54cec218a9e1",
-    "crates/jscycles-scan/Cargo.toml": "68e87826c774fe0a051dcc7ce8da5845e252cd457b1a7e0da5f3fb755bc31545",
-    "crates/jscycles-scan/examples/check.rs": "2b438b8a6d044c41a2f1a722743f8e5b74314303389a200e6d07790d7f1e61cb",
-    "crates/jscycles-scan/src/lib.rs": "11d19e285b59ba084c09c04517a5c5e581f9909b5f33ae2c71eeb8cf9c326dc3",
-    "crates/jscycles-syntax/Cargo.toml": "1ee8360726ad864b5f4a20da732e1534199b9eb359dea825231acb067e71f68b",
-    "crates/jscycles-syntax/src/lib.rs": "0d1ed1100c7ee9022dc3912bdaa9023f0007940e9d40fb13f1975d7d23a43841",
-    "crates/jscycles-terminal/Cargo.toml": "8b363145d91a947229e537664bb1b388dbcd4e2e7a47259b9e26a0f4dc255cac",
-    "crates/jscycles-terminal/src/lib.rs": "5a37928e94121fe86f68455afc0313cbd3cbfefc5ef64fc7fa247383994e8618",
-    "crates/jscycles-tsconfig/Cargo.toml": "eccc88a9e09c02ff10fe1e620ca89d02935ce17fd19f3586eb890c6383aa7ca8",
-    "crates/jscycles-tsconfig/src/lib.rs": "b274d1a27b121077758f183da2b0846da02107abc2b46c9d1cdd6c43b085141a",
-    "crates/jscycles-workspace/Cargo.toml": "0a1e3b7bfe1e232a2ddd862de82e059db2cc47597fa165fec7d0bf96d0d24ab0",
-    "crates/jscycles-workspace/src/lib.rs": "e778bb8cfcc9ad9b24e0db633de1e370bb26989297d51bf66933a71f394b16c2",
     "deny.toml": "193cc980fa7105153e5022bf17f81fdeb6d9c364fed2031e0c058a78feb65472",
-    "fuzz/Cargo.lock": "ec249efe7a2e3bd80422504132f810b66bfac8e459334f29fe17c9c778ca594b",
-    "fuzz/Cargo.toml": "259759c6aa210e319ef7262be9f4466f6060655df643bc3f24cb753e277dea48",
+    "examples/check.rs": "133aa2fbb008317885474a891531562e49b84777d278dacaf05ac50761cb1ee2",
+    "fuzz/Cargo.lock": "2dad272814941155de190db9781fa8d185afb2ce83c428946d7d02aa47805da4",
+    "fuzz/Cargo.toml": "029cdaf706963f163b6a1876c405e1dbdbdd52baccd4a27b8dd5526d78de945f",
     "fuzz/deny.exceptions.toml": "153db57af33bb2d66ce435c5bd637a96a293a9dacf2c931ad05e5555ec50abaa",
-    "fuzz/fuzz_targets/configuration.rs": "a6ce2031cf3adb8f612813d23dc32631062eee644b8cfed2801f0e04b148f321",
-    "fuzz/fuzz_targets/graph_semantics.rs": "03374fbe1a117e9c276596dd9c78c3a6fb0279c49b44ce18df3e57dece70b704",
-    "fuzz/fuzz_targets/source_syntax.rs": "4f06a48dc5364950b6d2708a36480be114a65b57a67a578c448d93725e4f3c42",
-    "fuzz/fuzz_targets/text_adapters.rs": "6e89c5f208bedf2f35b19db707e8b1f3abc0397faf7fae3f5de90bb487fe3f22",
+    "fuzz/fuzz_targets/configuration.rs": "28edf5df37bc4958f9400baa319e3f78a1758a28380ddab830161399a695cc50",
+    "fuzz/fuzz_targets/graph_semantics.rs": "1b06d4eb14c76578baefc60d536a6d5d2bea3af23b51e8c7625288071afdf285",
+    "fuzz/fuzz_targets/source_syntax.rs": "c55903b184fab2130fd6ff3af2bd7f7996a5c05e2f1a8dacca9b78bc8059cb27",
+    "fuzz/fuzz_targets/text_adapters.rs": "97c6eb8a8f58563187df9149ad8e9f5a31aef8c0533b0deec386927d6bf422ca",
     "rust-oe.lock.json": "014ff57cc6f231d185683b0c69061a8626cf726af2d79c19d17bab47b8d11d0e",
     "rust-oe.toml": "8b1d236531d0f364d702403353816500ca93ffe66cde17c0513bbba1d3e25937",
     "rust-toolchain.toml": "b36eb8ee6d003e4a655f23628f257dd3e89e13d9dee83eb4901f50dce60b4f10",
@@ -517,41 +483,57 @@
     "scripts/compare_tools.py": "fe8a603c1fb98d7b15e3ba56ca7d457cc8f6f9bf4ed48e0f0a2e283cc52b2e4d",
     "scripts/differential/difftest.py": "2ff0940c88e12f1633ec2cd1dcf5f7dcf22a6ad9928585e642ead81f644426cb",
     "scripts/differential/real_repos.py": "061cd91429a48d4370fd6b4e5d09cca19b986acbb9c8a083e8aa0175b135b744",
-    "scripts/fuzz.py": "669a95cfa3dd2d636486be9c0517a7d45a241279fc79f72ddec997d02ff9a809",
-    "scripts/mutation.py": "3a67ebc1d7ed0f4436fb1fd4d687f407838fa5622af1150c40599c4c6227b70d",
+    "scripts/fuzz.py": "09f018854e3fc7cb0074fec4416745aa32a6f344e30396a1c2d81aa7eea9d1c4",
+    "scripts/mutation.py": "9ade0c8457b0dc2ef5cbe7f7e5270f96a94162bb5e8f042eb6e4bf733dc8796f",
     "scripts/npm_packages.py": "00c7a97260f2153795cbf4ef467bb7b2481359a34657643f4f56adea7201bc13",
-    "scripts/publish_crates.py": "24c3ada7ca5b5f2022c844435d46c423cf80ed2b266d83c5f85473050be192c0",
-    "scripts/release_record.py": "31ac3e7771e733e86c87bd323f7592aa5b7ac7d3f907d734170672ec563903cc",
+    "scripts/release_record.py": "a69239f9980f82c9a92fc149507773081ba46253ad9854c22cfdbaa761ccc379",
     "scripts/test_check_adoption.py": "d438e162f60f126bc6d6c2fd070ab8a037ff295342616688ae2591e4ff80da34",
-    "scripts/test_crate_metadata.py": "2d8b67ed396ebe56ceb35905446f9f3b2d9b82f9e42ead5f724b4ee3d369e0b8",
+    "scripts/test_crate_metadata.py": "465461d612baf57347cbf9b94e3410cbb18c8f1910709379c6b05741da61a173",
     "scripts/test_mutation.py": "6844a31d71a206b29b54a382879bb8d4ae517212950260163fce437086c23aee",
     "scripts/test_npm_packages.py": "36804a9f01a79bad2abeba4c49be5146017d82bdfb0344e5e476ec71509f8cf7",
-    "scripts/test_publish_crates.py": "94ac44e1e5aaba03d93391831c490d18d001c26ec5ad86282b5b5944e71ac8ca",
-    "scripts/test_release_record.py": "4be0e161c6c79b38c8719126e37ab805220266f04d78ec951f25622389ae0552",
-    "scripts/verify-controls.py": "8583dc17d5945a36295bedd52cbc1cc5c5015e7a716ddd8e616748492fecc7f7",
-    "src/main.rs": "a2c75d30a075e7fe96d54ae124f233ff9aae0b7eb9be2f82b994cf29afd5a864",
-    "tests/adherence.rs": "e8616c06a0788ac0ca4cc618fcf8e58613c9644d8f9a37dacfc8eef4ea185aca",
-    "tests/boundary_closure.rs": "0d18b22bc3a06018a797ae7f28168460da74881da5991874872c381b311710a4",
-    "tests/budgets.rs": "86e1b46f31ef7f8deb5c3ed4f782283d8852b18c1387ccb6ef6f3b5bca384dc9",
+    "scripts/test_release_record.py": "b1c296ca9bbc629a1c7a778e1c4517c158509ab3f089b4dbf302feaa17899e83",
+    "scripts/verify-controls.py": "31d4148c7fdbcda4dac96c4eeb495294652a9a94dd62ed8af7450d2519d1e6d3",
+    "src/analysis.rs": "5030c1c7b1af47167dce7da58f8daa9e90f5573306a3aafa9a8cab232931c37d",
+    "src/budget.rs": "96efd37f6300f5d2d4e3e0cd69b32a22e991881d787f044f5b781c8f20680b1c",
+    "src/config.rs": "bf3e2247c90fde784d5d89ceb1cb0514604a20796efa35eb59bf91a733e9abe3",
+    "src/cycles.rs": "8be6cde45e26f9498c628c4e4e0e75308457610ef710144d383abf2249299960",
+    "src/discovery.rs": "779d65d54c7f7311bedbfa39ef507336658bc2d05a41be7bcc49c9031715479e",
+    "src/extract.rs": "139ea6ee5e2c58258120450d53f25e81e9cccd385beb341cb5a032530cd2974b",
+    "src/graph.rs": "376fce2fd68e5b1ab9b174e853d12667ff45aae822bc288ba985724637b1c85c",
+    "src/import.rs": "e1ad0e7e58ec4a751ca3f11a88e54d3c060b688f47619d94ddc551e8f013e9b4",
+    "src/input.rs": "9c8ff37cbd4909e8d86d1013f99beb9190d01078813fa89762588382eb22271b",
+    "src/lib.rs": "0008fae9bcab0c91988f65946095325479f22914874e89bbaff1986966073f18",
+    "src/main.rs": "8e81029c6264740207060aec10710741d05a44487a1a7715be4a32e72bdd5313",
+    "src/module_path.rs": "d04485db7cf5a2b8f07a276c2e3443ec2d0aad5bb3213fb451302b2938249b32",
+    "src/module_syntax.rs": "66d9811b54cea68b241c31338c83608eceb66721bc813a91494c8e6c983e596d",
+    "src/output.rs": "a913a62a1ebdfe184278d47ea3d200027752b44df56e8cff4ec8554c3866e4a0",
+    "src/scan.rs": "5f8b4b83a686bfe05ea1481d0bb631bd623f1b715ddedbd355d602fc0fcfef41",
+    "src/syntax.rs": "dd54a49ca8bc0aba73728986e48ab30a8606c7ab4ed2d843dd4cbda55dee4e46",
+    "src/terminal.rs": "def9b305bd08477d50e92413178bc2e45d100c2fd77a24006d2e783c619feef0",
+    "src/tsconfig.rs": "c60392b0e5202b5caa2c9bf346b9b921a82fd5452d204b8206e0cbfa26cf23ff",
+    "src/workspace.rs": "92095b283d2a56b0a574462368fb045efd6ba70e3a0e681eaae0ca0d107d7129",
+    "tests/adherence.rs": "793c03f4fb68b3648fbb86471014960053f53f1296c137571040b696a40db346",
+    "tests/boundary_closure.rs": "9598dc60c65e918c74c9b200486f821839ee78b745c203d932052aa4fa98bde1",
+    "tests/budgets.rs": "d223b479567a6e5ccd8428aba2718f314aa7f6000f354cd99f6e4166cc2c3aee",
     "tests/cli.rs": "6c8ccc525694188cda061a74a732711d409355aecdf45d5de109bd11d8c8c3d3",
-    "tests/config_schema.rs": "b0c692b18c7e7107f14f394d1e1dd1bf7829bcd0d5023ada3c54d11d3a624100",
-    "tests/import_forms.rs": "1177bcd9a6d5d0a1f87557a77185930d5e385b47696a7e94a1ce06a49ec4e4c8",
-    "tests/integration.rs": "468939e1166f00c31eb9ce2ffc5d6501eccc2ce44b2af8c5e6610e76ae369358",
-    "tests/library.rs": "bc9cf844ed8909eec15c27e69a9cf11f15e1cae5f6f835589ba61c577a44ad0f",
-    "tests/miri.rs": "b9c6ba4c6d4e396bb8dff87e0f11f2cee0bbcb1a7d59c930d2726189e8843f0f",
-    "tests/mutation_contracts.rs": "2c426e255eda498c964704e9d95d93bf3f0e7ca20bd572f9943cbce83a695ba4",
-    "tests/resolution.rs": "a76e81973fd7e9e4e25b06585daec86cfd1eb452d215c4b7832065b858353812",
-    "tests/source_boundaries.rs": "aa2fccfb18a0fc5f5ab78bd13bb1c751cf2a2dd7882a9512ae4295a836b56fe1",
-    "tests/source_traversal.rs": "9f1a809baade2b4ed2ec200a0a7d3d582bf6ecf22cdee1fafd0a0d1356692526",
-    "tests/source_walk_hints.rs": "cc9e7ca7084defcbba54f2a2fb260167b0dc303cb9c0ad905eede6e10552a37c",
+    "tests/config_schema.rs": "460ca85a3cd7257de50a7c0a1008a1918dd4e5ce5d3b135fe5cdf99243c28d7e",
+    "tests/import_forms.rs": "d4077e1098d23d67b6f0e57c892e91e24a934b4650f1fc527c038716e70cbf4e",
+    "tests/integration.rs": "c1ecc652d7e7b180897971f4a683be7295457a879a49f760c5cc026481c7ea9f",
+    "tests/library.rs": "e35b98abaefc82dd204e29eed405645b15f7c1451075cb6b08622e8128abce8f",
+    "tests/miri.rs": "3725d0f2ef917456c082b9d7ab25f66ea40e019d77a15afa312f96cb2c4cf2e7",
+    "tests/mutation_contracts.rs": "c530169acce8104dbd45a89f7b805a29cf2d62adb974b74090f80018f81fe241",
+    "tests/resolution.rs": "917e6f5725e16c3c4bc6e7c1fea26be56cc4739b30c2a4ffeba55de06b3c6ddf",
+    "tests/source_boundaries.rs": "313c24fb6d24f0f70bf4a31e204649121d928486d46784604d12baa7d454a226",
+    "tests/source_traversal.rs": "b921c0944ec9615436d14b4b4a3d92e87184de598b9ba1e36980849759bd2e04",
+    "tests/source_walk_hints.rs": "8072052aca08becd74e62bf6d6a6860e39fe9c66d6780312e5d2185c26703de0",
     "tests/spelling_matrix.rs": "777b81a475b958739d4cbf2376e18a21c4b09b8a2ceb5eaa46f2f9c9e91eebbd",
-    "tests/tsconfig_cache.rs": "71920e4e01e504349c6108f24e4e42acc254ab4688524cac3e9dcfa0ece67fdd",
-    "tests/tsconfig_fixtures.rs": "692c35f1ecc5d71d27008c17c8ba426b77babb942ba59d2ca7de18001f2085fb",
-    "tests/workspace_alias_targets.rs": "c7168338edd4569bd58771dd04b9c0b7dcf33bb2a428c03e65dc7e8653c38488",
-    "tests/workspace_aliases.rs": "961c43e7d405c77a5277342b48384af810f00e504f5f2ac94e39533051c83726",
-    "tests/workspace_fixtures.rs": "2d8bc4a695b33df59742e81843451113e32a1be57a1630b321b1a38ab2feef1b",
+    "tests/tsconfig_cache.rs": "114554c252b6f83c8a08ced06557195238b27dfd9261b24c4d93a09b1daa5b1a",
+    "tests/tsconfig_fixtures.rs": "7da2905aa58bca4c597057e98b861c6ca2f360530a3dce2828aff890872c7002",
+    "tests/workspace_alias_targets.rs": "015c0010718c7ec835812dd42fea8bddfdc9279460501ae41cdb07f08ba78ff8",
+    "tests/workspace_aliases.rs": "813232ac53196162dbf21a79eabefd3f759b4b068611fea1c06e09f08496e7d3",
+    "tests/workspace_fixtures.rs": "ad8a3daaf4f47714dc2d95cfa79f1f8685a250f13b947eeeb05d2b026364f98a",
     "xtask/Cargo.toml": "a3f9cf0f2ed6c637e33b8407b51e5c7357b0630a9082223db39f3f5adf646741",
-    "xtask/src/main.rs": "5f7b6df02614f97bd074b4881e3619c8594f61e2c0fdbc5dc46dcfce238cccf0"
+    "xtask/src/main.rs": "886f697032f98060179a42e039d73668d9e95a66202be3261d84a30a0b5ce34c"
   },
   "source_unchanged": true,
   "passed": true

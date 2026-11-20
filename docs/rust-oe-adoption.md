@@ -141,46 +141,43 @@ API-006, API-007, API-008 and API-010 at the source revision above.
 
 ### Code organization
 
-The Google Rust style guide's code organization rules are applied as well,
-including the two its text scopes to Chromium:
+The Google Rust style guide's untagged code organization rules are applied.
+Its two Chromium-scoped rules (small crates, flat layout) are not:
 
-- **Small crates:** each library crate under `crates/` holds one abstraction
-  in a single flat `src/lib.rs`. The root package is only the command. The
-  former `src/lib.rs` was a non-leaf module that defined every error type;
-  each error now lives in the crate that produces it. Cargo rejects
-  dependency cycles between crates, so the graph in `CONTRIBUTING.md` stays
-  acyclic.
+- **One crate:** the library is a single crate of leaf modules, each named
+  after its primary item, with the command in `src/main.rs` behind the `cli`
+  feature. The crate root, a non-leaf module, holds only module declarations
+  and re-exports; each error type is defined in the module that returns it.
+- **Small crates were tried and reverted:** before 0.5 was released the
+  library was split into seventeen crates under `crates/`, one per module.
+  Measured on this repository, only release rebuilds got faster (the release
+  profile's `codegen-units = 1` had recompiled the whole library), clean
+  builds were no faster, and every crate added a manifest, a published
+  version, a publish step against crates.io's new-crate rate limit, and
+  per-crate handling in the release, fuzz, Miri and mutation tooling. The
+  guide's rationale for the rule is build-graph scale in Chromium, which a
+  15,000-line project does not have. The split was undone before release, so
+  no `jscycles-*` crates were published.
 - **Imports:**
   - No glob imports outside `use super::*` in tests; rayon's prelude became
     trait imports scoped to the two functions that use them.
   - Every `use` imports from one module.
-  - Free functions are called through their module or crate (`budget::units`).
+  - Free functions are called through their module (`budget::units`), after
+    `use crate::budget`.
   - Types are imported and used bare. Ambiguous names (`io::Error`,
     `fmt::Result`) and collision-prone modules (`unix_fs`) keep their module.
     `clippy::absolute_paths = "deny"` enforces this.
-- **Internal crates are renamed:** they are depended on under short names
-  (`budget = { package = "jscycles-budget", ... }`), so qualified calls stay
-  short.
-- **`#[non_exhaustive]` across crates:**
-  - Matches that must stay exhaustive moved into the enum's defining crate,
-    for example `ImportTarget::retained_bytes` and
-    `UnifiedResults::has_cycles_for`. The compiler still checks them there.
-  - Where a future variant has a safe meaning, the match uses the guide's
-    `Variant | _` arm: an unknown `CycleFilter` selects the full analysis.
-- **Fuzz targets:** they depend on the `syntax` and `module-syntax` crates
-  instead of compiling private sources through `#[path]`. The fuzz graph no
-  longer includes clap or rayon.
-- **Tests:** fixture-based tests moved from the `tsconfig` and `workspace`
-  crates to root integration tests beside the fixtures.
-- **Publishing:** every crate is published (API-010). The previously private
-  crates' items are documented, and their `bool` parameters became enums
-  (`analysis::Evidence`, `module_syntax::TypeOnlyImports`).
-  `scripts/publish_crates.py` publishes them in dependency order, resumable
-  across crates.io's new-crate rate limit.
+- **Private modules stay private:** `analysis`, `input`, `module_path`,
+  `module_syntax`, `syntax` and `terminal` are crate-private. Their former
+  `bool` parameters became enums (`analysis::Evidence`,
+  `module_syntax::TypeOnlyImports`). The fuzz targets compile `syntax` and
+  `module_syntax` through `#[path]` rather than widening the public API.
+- **Tests:** the fixture-based `tsconfig` and `workspace` tests are root
+  integration tests beside the fixtures.
 - **Mutation review:** the reviewed mutation exclusions and timeout names were
-  remapped to the new files and checked against `cargo mutants --list`. Their
-  diff digests and selection digest change with any source change; the next
-  `cargo xtask mutants` campaign re-reviews them.
+  remapped to the current lines. Their diff digests and selection digest
+  change with any source change; the next `cargo xtask mutants` campaign
+  re-reviews them.
 
 ### Full-text review of the guide
 
@@ -210,8 +207,8 @@ summary:
   ownership tables, since rayon's parallel iterators are scoped, and its cache
   is a plain `Mutex`. The `TsConfigCache` snapshots stay `Arc`, because sharing
   them between clones is the cache's documented purpose.
-- **Poison:** poisoned locks are never read. A single `lock` helper per crate
-  propagates the other thread's panic, under a narrow
+- **Poison:** poisoned locks are never read. A `lock` helper in each module
+  that locks propagates the other thread's panic, under a narrow
   `#[expect(clippy::expect_used)]`. Poison implies a bug that rayon re-raises
   anyway.
 - **Traits:**

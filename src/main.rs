@@ -9,15 +9,14 @@ use std::io::{self, IsTerminal as _, Read as _, Write as _};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{Arg, ArgAction, Command};
-
 use clap::error::ErrorKind;
 use clap::parser::ValueSource;
-use config::Config;
-use output::CycleFilter;
-use output::{ColorMode, HumanFormatter};
-use scan::JscyclesError;
-use scan::{Scan, ScanReport, TsConfigSource};
+use clap::{Arg, ArgAction, Command};
+use jscycles::config::Config;
+use jscycles::output::CycleFilter;
+use jscycles::output::{ColorMode, HumanFormatter};
+use jscycles::scan::JscyclesError;
+use jscycles::scan::{Scan, ScanReport, TsConfigSource};
 
 /// Build the CLI command.
 fn build_cli() -> Command {

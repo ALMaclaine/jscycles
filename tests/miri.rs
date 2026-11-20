@@ -3,9 +3,11 @@
 use std::io::Write as _;
 use std::path::PathBuf;
 
-use budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
-use graph::DependencyGraph;
-use graph::PackageDependencyGraph;
+use jscycles::budget::{AnalysisBudget, AnalysisLimits, BoundedReport, Resource};
+use jscycles::cycles;
+use jscycles::graph::DependencyGraph;
+use jscycles::graph::PackageDependencyGraph;
+use jscycles::workspace;
 use std::collections::BTreeSet;
 use std::thread;
 

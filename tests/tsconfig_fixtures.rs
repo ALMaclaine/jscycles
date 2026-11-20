@@ -7,7 +7,7 @@
 
 use std::path::{Path, PathBuf};
 
-use tsconfig::TsConfig;
+use jscycles::tsconfig::TsConfig;
 
 fn fixture(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))

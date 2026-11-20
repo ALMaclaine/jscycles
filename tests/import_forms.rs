@@ -2,7 +2,7 @@
 use std::fs;
 use std::process::Command;
 
-use extract::ImportExtractor;
+use jscycles::extract::ImportExtractor;
 
 #[test]
 fn literal_call_forms_preserve_real_cycles() {

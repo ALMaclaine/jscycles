@@ -1,56 +1,11 @@
 [workspace]
-members = [".", "crates/*", "xtask"]
+members = ["xtask"]
 resolver = "3"
 
 [workspace.package]
-version = "0.5.0"
-publish = ["crates-io"]
 edition = "2024"
 rust-version = "1.93.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/ALMaclaine/jscycles"
-readme = "README.md"
-keywords = ["javascript", "typescript", "circular-imports", "dependency-cycles", "static-analysis"]
-categories = ["development-tools"]
-
-[workspace.dependencies]
-# Internal crates, renamed so code reads `budget::units(...)`.
-analysis = { package = "jscycles-analysis", path = "crates/jscycles-analysis", version = "=0.5.0" }
-budget = { package = "jscycles-budget", path = "crates/jscycles-budget", version = "=0.5.0" }
-config = { package = "jscycles-config", path = "crates/jscycles-config", version = "=0.5.0" }
-cycles = { package = "jscycles-cycles", path = "crates/jscycles-cycles", version = "=0.5.0" }
-discovery = { package = "jscycles-discovery", path = "crates/jscycles-discovery", version = "=0.5.0" }
-extract = { package = "jscycles-extract", path = "crates/jscycles-extract", version = "=0.5.0" }
-graph = { package = "jscycles-graph", path = "crates/jscycles-graph", version = "=0.5.0" }
-import = { package = "jscycles-import", path = "crates/jscycles-import", version = "=0.5.0" }
-input = { package = "jscycles-input", path = "crates/jscycles-input", version = "=0.5.0" }
-module_path = { package = "jscycles-module-path", path = "crates/jscycles-module-path", version = "=0.5.0" }
-module_syntax = { package = "jscycles-module-syntax", path = "crates/jscycles-module-syntax", version = "=0.5.0" }
-output = { package = "jscycles-output", path = "crates/jscycles-output", version = "=0.5.0" }
-scan = { package = "jscycles-scan", path = "crates/jscycles-scan", version = "=0.5.0" }
-syntax = { package = "jscycles-syntax", path = "crates/jscycles-syntax", version = "=0.5.0" }
-terminal = { package = "jscycles-terminal", path = "crates/jscycles-terminal", version = "=0.5.0" }
-tsconfig = { package = "jscycles-tsconfig", path = "crates/jscycles-tsconfig", version = "=0.5.0" }
-workspace = { package = "jscycles-workspace", path = "crates/jscycles-workspace", version = "=0.5.0" }
-
-# External crates.
-clap = "4"
-glob = "0.3"
-hotpath = { version = "=0.28.6", default-features = false, features = ["hotpath"] }
-insta = "1"
-rayon = "1.10"
-serde = { version = "1", features = ["derive"] }
-serde-saphyr = { version = "2.1.1", default-features = false, features = ["deserialize"] }
-serde_json = "1"
-tempfile = "3"
-thiserror = "2"
-walkdir = "2"
-# WillBooster forks: the upstream 0.23 grammars reject valid tagged templates
-# and `typeof import()` type arguments; see docs/analysis-limits.md. Pinned
-# exactly because the forks ship breaking grammar changes in major bumps.
-tree-sitter = { package = "willbooster-tree-sitter", version = "=18.0.2" }
-tree-sitter-javascript = { package = "willbooster-tree-sitter-javascript", version = "=22.0.1" }
-tree-sitter-typescript = { package = "willbooster-tree-sitter-typescript", version = "=26.0.1" }
 
 [workspace.lints.rust]
 missing-docs = "warn"
@@ -161,17 +116,17 @@ unimplemented = "deny"
 
 [package]
 name = "jscycles"
-description = "Find circular imports between files and workspace packages in JavaScript and TypeScript projects"
-publish.workspace = true
-version.workspace = true
+publish = ["crates-io"]
+version = "0.5.0"
 edition.workspace = true
 rust-version.workspace = true
+description = "Find circular imports between files and workspace packages in JavaScript and TypeScript projects"
+readme = "README.md"
+include = ["src/**", "tests/**", "/examples/**", "/README.md", "/CHANGELOG.md", "/jscycles.schema.json", "/LICENSE-*", "/clippy.toml", "/rustfmt.toml", "Cargo.toml", "Cargo.lock"]
+repository = "https://github.com/ALMaclaine/jscycles"
 license.workspace = true
-repository.workspace = true
-readme.workspace = true
-keywords.workspace = true
+keywords = ["javascript", "typescript", "circular-imports", "dependency-cycles", "static-analysis"]
 categories = ["development-tools", "command-line-utilities"]
-include = ["src/**", "tests/**", "/README.md", "/CHANGELOG.md", "/jscycles.schema.json", "/LICENSE-*", "Cargo.toml", "Cargo.lock"]
 
 [profile.release]
 opt-level = 3
@@ -182,37 +137,39 @@ strip = "symbols"
 [[bin]]
 name = "jscycles"
 path = "src/main.rs"
+required-features = ["cli"]
+
+[[example]]
+name = "check"
 
 [features]
+default = ["cli"]
+# The command-line binary. Embedders can turn it off:
+# `jscycles = { version = "...", default-features = false }`.
+cli = ["dep:clap"]
 # Local timing reports are opt-in; normal builds contain no profiler.
-profiling = ["dep:hotpath", "config/profiling", "scan/profiling"]
+profiling = ["dep:hotpath"]
 
 [dependencies]
-clap.workspace = true
-config.workspace = true
-hotpath = { workspace = true, optional = true }
-output.workspace = true
-scan.workspace = true
-thiserror.workspace = true
+clap = { version = "4", optional = true }
+glob = "0.3"
+hotpath = { version = "=0.28.6", optional = true, default-features = false, features = ["hotpath"] }
+rayon = "1.10"
+serde = { version = "1", features = ["derive"] }
+serde-saphyr = { version = "2.1.1", default-features = false, features = ["deserialize"] }
+serde_json = "1"
+thiserror = "2"
+# WillBooster forks: the upstream 0.23 grammars reject valid tagged templates
+# and `typeof import()` type arguments; see docs/analysis-limits.md. Pinned
+# exactly because the forks ship breaking grammar changes in major bumps.
+tree-sitter = { package = "willbooster-tree-sitter", version = "=18.0.2" }
+tree-sitter-javascript = { package = "willbooster-tree-sitter-javascript", version = "=22.0.1" }
+tree-sitter-typescript = { package = "willbooster-tree-sitter-typescript", version = "=26.0.1" }
+walkdir = "2"
 
 [dev-dependencies]
-budget.workspace = true
-config.workspace = true
-cycles.workspace = true
-discovery.workspace = true
-extract.workspace = true
-glob.workspace = true
-graph.workspace = true
-import.workspace = true
-insta.workspace = true
-output.workspace = true
-rayon.workspace = true
-scan.workspace = true
-serde-saphyr.workspace = true
-serde_json.workspace = true
-tempfile.workspace = true
-tsconfig.workspace = true
-workspace.workspace = true
+insta = "1"
+tempfile = "3"
 
 [lints]
 workspace = true

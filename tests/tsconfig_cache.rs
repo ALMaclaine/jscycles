@@ -11,8 +11,8 @@ use std::process::Command;
 use std::sync::{Arc, Barrier};
 use std::thread;
 
-use budget::{AnalysisBudget, AnalysisLimits, Resource};
-use tsconfig::{TsConfig, TsConfigCache};
+use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+use jscycles::tsconfig::{TsConfig, TsConfigCache};
 
 #[test]
 fn relative_package_operands_find_ancestor_configuration() {

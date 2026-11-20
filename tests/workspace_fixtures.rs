@@ -7,7 +7,7 @@
 
 use std::path::{Path, PathBuf};
 
-use workspace::{Workspace, WorkspaceFormat};
+use jscycles::workspace::{Workspace, WorkspaceFormat};
 
 fn fixture(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))

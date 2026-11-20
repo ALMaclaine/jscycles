@@ -13,19 +13,20 @@ use std::path;
 use std::path::Path;
 use std::process::Command;
 
-use budget::{AnalysisBudget, AnalysisLimits, Resource};
-use config::Config;
-use cycles::Cycle;
-use cycles::{PackageCycle, PackageCycleWithFiles};
-use discovery::PackageDiscovery;
-use extract::ExtractionMode;
-use extract::ImportExtractor;
-use import::ImportTarget;
-use output::{ColorMode, HumanFormatter, JsonFormatter, PackageResult};
-use output::{
+use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+use jscycles::config::Config;
+use jscycles::cycles::Cycle;
+use jscycles::cycles::{PackageCycle, PackageCycleWithFiles};
+use jscycles::discovery::PackageDiscovery;
+use jscycles::extract::ExtractionMode;
+use jscycles::extract::ImportExtractor;
+use jscycles::import::ImportTarget;
+use jscycles::output::{ColorMode, HumanFormatter, JsonFormatter, PackageResult};
+use jscycles::output::{
     CycleFilter, OutputFormatter as _, Results, UnifiedOutputFormatter as _, UnifiedResults,
 };
-use workspace::Workspace;
+use jscycles::workspace;
+use jscycles::workspace::Workspace;
 
 #[test]
 fn relative_specifiers_cannot_become_workspace_package_edges() {
