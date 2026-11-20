@@ -3,6 +3,7 @@
     clippy::expect_used,
     reason = "Filesystem/process setup failures must fail tests"
 )]
+
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -12,6 +13,13 @@ use std::os::unix::fs as unix_fs;
 use std::path::Path;
 use std::process;
 use std::process::{Command, Output};
+
+use jscycles::config;
+use jscycles::cycles;
+use jscycles::discovery;
+use jscycles::extract;
+use jscycles::graph;
+use jscycles::workspace;
 
 fn scan(root: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_jscycles"))
@@ -420,7 +428,7 @@ fn inherited_workspace_aliases_preserve_package_cycles() {
 
 #[test]
 fn infallible_legacy_workspace_selection_does_not_return_budget_truncation() {
-    use budget::{AnalysisBudget, Resource};
+    use jscycles::budget::{AnalysisBudget, Resource};
     let config = config::Config::default();
     let budget = AnalysisBudget::default();
     let discovery = discovery::PackageDiscovery::try_new_with_budget(

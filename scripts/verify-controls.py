@@ -33,7 +33,7 @@ def main():
         str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(root.rglob("*"))
         if path.is_file() and "target" not in path.parts and ".git" not in path.parts
-        and (path.suffix in (".rs", ".py") or path.match("crates/*/Cargo.toml") or str(path.relative_to(root)) in
+        and (path.suffix in (".rs", ".py") or str(path.relative_to(root)) in
              {"Cargo.toml", "Cargo.lock", ".cargo/config.toml", "xtask/Cargo.toml", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml", "rust-oe.toml", "rust-oe.lock.json", "AGENTS.md", ".github/workflows/ci.yml", ".github/workflows/release.yml", ".github/workflows/maintenance.yml", "fuzz/Cargo.toml", "fuzz/Cargo.lock", "fuzz/deny.exceptions.toml", "deny.toml"})
     }
     environment = dict(os.environ, RUSTUP_TOOLCHAIN=args.toolchain,
@@ -69,14 +69,13 @@ def main():
         run("C02 passing", "check")
         manifest = project / "Cargo.toml"
         original_manifest = manifest.read_text()
-        version = tomllib.loads(original_manifest)["workspace"]["package"]["version"]
-        # Every member and internal dependency inherits the workspace version.
-        manifest.write_text(original_manifest.replace(version, "0.0.0-rust-oe-probe"))
+        version = tomllib.loads(original_manifest)["package"]["version"]
+        manifest.write_text(original_manifest.replace(f'version = "{version}"', 'version = "0.0.0-rust-oe-probe"', 1))
         run("C02 rejects stale lock", "check", False, "locked")
         manifest.write_text(original_manifest)
         run("C02 repaired", "check")
 
-        library = project / "crates/jscycles-cycles/src/lib.rs"
+        library = project / "src/cycles.rs"
         original_library = library.read_text()
         run("C03 passing", "doctest")
         library.write_text(original_library.replace("//! assert_eq!(found.len(), 1);", "//! assert_eq!(found.len(), 2);", 1))
@@ -120,22 +119,22 @@ def main():
             # Only the disposable copy is changed, one fault at a time. Each
             # command has run()'s 180-second subprocess budget and Cargo scope.
             probes = [
-                ("Package identity", "crates/jscycles-discovery/src/lib.rs", "if previous_path != canonical {",
+                ("Package identity", "src/discovery.rs", "if previous_path != canonical {",
                  "if previous_path == canonical {",
                  "duplicate_names_fail_without_workspace_metadata_in_every_output_mode"),
                 # The leading newline and indentation select one of the two
                 # identical option lines: member expansion, then selection.
-                ("Workspace glob components", "crates/jscycles-workspace/src/lib.rs",
+                ("Workspace glob components", "src/workspace.rs",
                  "\n                require_literal_separator: true",
                  "\n                require_literal_separator: false",
                  "workspace_star_matches_one_directory_component"),
-                ("Workspace member selection", "crates/jscycles-workspace/src/lib.rs",
+                ("Workspace member selection", "src/workspace.rs",
                  "\n            require_literal_separator: true",
                  "\n            require_literal_separator: false",
                  "a_member_star_does_not_claim_a_deeper_references_project"),
             ]
             if os.name == "posix":
-                probes.append(("Native alias bytes", "crates/jscycles-tsconfig/src/lib.rs", "return Some(resolved);",
+                probes.append(("Native alias bytes", "src/tsconfig.rs", "return Some(resolved);",
                                "return Some(PathBuf::from(resolved.to_string_lossy().into_owned()));",
                                "alias_results_preserve_native_origin_bytes"))
             else:

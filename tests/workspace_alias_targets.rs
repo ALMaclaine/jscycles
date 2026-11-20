@@ -5,11 +5,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use budget::{AnalysisBudget, AnalysisLimits, Resource};
-use tsconfig::PathAlias;
-use tsconfig::TsConfig;
-use workspace::Workspace;
-use workspace::WorkspaceFormat;
+use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+use jscycles::tsconfig::PathAlias;
+use jscycles::tsconfig::TsConfig;
+use jscycles::workspace::Workspace;
+use jscycles::workspace::WorkspaceFormat;
 
 fn workspace(root: &Path) -> Workspace {
     let mut packages = HashMap::new();

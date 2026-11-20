@@ -28,7 +28,7 @@ and Cargo target kind, not every operating-system target.
 | `cargo xtask coverage` | cargo-llvm-cov 0.9.1; default-feature workspace target tests; LCOV at `target/tooling/coverage/lcov.info` |
 | `cargo xtask crap` | cargo-crap 0.9.0; fresh coverage; fail above 30; JSON at `target/tooling/coverage/crap.json` |
 | `cargo xtask mutants` | cargo-mutants 27.1.0; all production Rust modules in an isolated copy; fresh source/case manifest and strict outcome review |
-| `cargo xtask miri` | nightly-2026-10-19; the pure `syntax` and `module-path` crates whole, and pure graph/reporting/reader/tsconfig-selection tests of `graph`, `output`, `input` and `tsconfig`, plus the root `miri` quota/output tests |
+| `cargo xtask miri` | nightly-2026-10-19; actual pure Rust graph/text/reporting/reader/path/quota/output tests |
 | `cargo xtask profile` | Hotpath 0.28.6 release build; checked fan-in, call-heavy, monorepo and directory-index workloads; local JSON reports |
 
 The mutation runner explicitly selects the repository's `rust-toolchain.toml`

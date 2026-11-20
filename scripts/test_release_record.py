@@ -41,8 +41,7 @@ class ReleaseRecordTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        (self.root / 'Cargo.toml').write_text(
-            '[workspace.package]\nversion="0.2.0"\n\n[package]\nversion.workspace=true\n')
+        (self.root / 'Cargo.toml').write_text('[package]\nversion="0.2.0"\n')
         (self.root / 'Cargo.lock').write_text('lock graph')
         self.env = dict(GITHUB_REF_TYPE='tag', GITHUB_REF_NAME='v0.2.0', GITHUB_SHA='a'*40,
                         GITHUB_WORKFLOW_REF='owner/repo/.github/workflows/release.yml@refs/tags/v0.2.0',

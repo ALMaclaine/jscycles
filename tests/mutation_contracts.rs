@@ -1,12 +1,15 @@
 //! Consumer contracts added after mutation analysis of graph and metadata paths.
 
-use budget::{AnalysisBudget, AnalysisLimits, Resource};
-use config::Config;
-use graph::PackageDependencyGraph;
+use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+use jscycles::config;
+use jscycles::config::Config;
+use jscycles::cycles;
+use jscycles::graph::PackageDependencyGraph;
+use jscycles::import;
+use jscycles::tsconfig::TsConfigCache;
+use jscycles::tsconfig::{TsConfig, TsConfigError};
+use jscycles::workspace::Workspace;
 use std::sync::Arc;
-use tsconfig::TsConfigCache;
-use tsconfig::{TsConfig, TsConfigError};
-use workspace::Workspace;
 
 #[test]
 fn package_graph_retains_workspace_members_without_any_imports() {
@@ -206,7 +209,7 @@ fn package_json_directories_do_not_become_workspace_manifests() {
         "only regular manifest files define packages"
     );
 }
-use graph::DependencyGraph;
+use jscycles::graph::DependencyGraph;
 
 #[test]
 fn effective_package_settings_preserve_defaults_globs_and_lexical_precedence() {

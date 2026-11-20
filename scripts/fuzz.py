@@ -36,7 +36,7 @@ def main():
     # Bound ASan's freed-allocation quarantine, whose default overwhelmed the
     # 512 MiB campaign RSS limit despite a 53 MiB single-input reproduction.
     environment['ASAN_OPTIONS'] = environment.get('ASAN_OPTIONS', '') + ':quarantine_size_mb=64'
-    inputs = sorted([*root.glob('crates/*/src/*.rs'), *root.glob('crates/*/Cargo.toml'), root/'Cargo.toml', root/'Cargo.lock', root/'fuzz/Cargo.toml', root/'fuzz/Cargo.lock', root/'fuzz/deny.exceptions.toml', root/'deny.toml', root/'scripts/fuzz.py', *root.glob('fuzz/fuzz_targets/*.rs'), *root.glob(f'fuzz/corpus/{args.target}/*')])
+    inputs = sorted([*[path for path in root.glob('src/*.rs') if path.name != 'main.rs'], root/'Cargo.toml', root/'Cargo.lock', root/'fuzz/Cargo.toml', root/'fuzz/Cargo.lock', root/'fuzz/deny.exceptions.toml', root/'deny.toml', root/'scripts/fuzz.py', *root.glob('fuzz/fuzz_targets/*.rs'), *root.glob(f'fuzz/corpus/{args.target}/*')])
     hashes = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in inputs}
     compiler = subprocess.check_output([environment.get('CC', 'cc'), '--version'], text=True, timeout=10)
     if 'Apple clang' in compiler:

@@ -1,6 +1,17 @@
 #![no_main]
-use import::ExtractError;
+use jscycles::budget;
+use jscycles::import;
+use jscycles::import::ExtractError;
 use libfuzzer_sys::fuzz_target;
+
+#[path = "../../src/module_syntax.rs"]
+mod module_syntax;
+#[path = "../../src/syntax.rs"]
+#[expect(
+    dead_code,
+    reason = "each target exercises only part of the shared private adapter module"
+)]
+mod syntax;
 
 fn extracted(source: &str, extension: &str) -> Result<Vec<String>, ExtractError> {
     let path = std::path::PathBuf::from(format!("source.{extension}"));

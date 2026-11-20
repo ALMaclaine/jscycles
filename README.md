@@ -144,21 +144,20 @@ counts are not comparable. Reproduce with
 
 ## Library
 
-jscycles is also a set of Rust libraries. `Scan`, in the `jscycles-scan` crate,
-runs the same analysis as the command and returns the results as data:
+jscycles is also a Rust library. `Scan` runs the same analysis as the command
+and returns the results as data:
 
 ```rust
-let report = jscycles_scan::Scan::new("path/to/repo").run()?;
+let report = jscycles::Scan::new("path/to/repo").run()?;
 for cycle in &report.results().package_cycles {
     println!("{}", cycle.packages.join(" -> "));
 }
 ```
 
-Depend on it with `jscycles-scan = "0.5"`; the `jscycles` crate is the
-command-line binary. The analysis is split into small crates (graphs, cycle
-detection, extraction, configuration, …) that can also be used on their own.
-See [embedding in Rust](https://jscycles.dev/guides/rust-library/) and the API
-reference on [docs.rs](https://docs.rs/jscycles-scan).
+Depend on it with `jscycles = { version = "0.5", default-features = false }`
+to leave out the command-line binary. See
+[embedding in Rust](https://jscycles.dev/guides/rust-library/) and the API
+reference on [docs.rs](https://docs.rs/jscycles).
 
 ## Contributing
 

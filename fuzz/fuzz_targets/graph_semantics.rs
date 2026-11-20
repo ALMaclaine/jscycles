@@ -2,9 +2,9 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use budget::{AnalysisBudget, AnalysisLimits};
-use graph::DependencyGraph;
-use graph::PackageDependencyGraph;
+use jscycles::budget::{AnalysisBudget, AnalysisLimits};
+use jscycles::cycles;
+use jscycles::graph::{DependencyGraph, PackageDependencyGraph};
 use libfuzzer_sys::fuzz_target;
 
 // At most five vertices: even the complete graph has only 84 elementary

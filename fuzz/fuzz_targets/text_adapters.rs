@@ -3,6 +3,15 @@ use std::fmt::Write as _;
 
 use libfuzzer_sys::fuzz_target;
 
+// Compile the actual private production adapters without enlarging the public
+// library API solely for a fuzz harness. This module has no I/O dependencies.
+#[path = "../../src/syntax.rs"]
+#[expect(
+    dead_code,
+    reason = "each target exercises only part of the shared private adapter module"
+)]
+mod syntax;
+
 fuzz_target!(|bytes: &[u8]| {
     if bytes.len() > 32_768 {
         return;

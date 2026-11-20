@@ -10,10 +10,11 @@ use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-use config::Config;
-use discovery::DiscoveryError;
-use output::CycleFilter;
-use scan::{JscyclesError, Scan, TsConfigSource};
+use jscycles::config::Config;
+use jscycles::discovery::DiscoveryError;
+use jscycles::output;
+use jscycles::output::CycleFilter;
+use jscycles::scan::{JscyclesError, Scan, TsConfigSource};
 
 const FIXTURES: [&str; 7] = [
     "simple-cycle",

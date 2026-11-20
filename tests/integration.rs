@@ -10,12 +10,16 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
-use config::Config;
-use discovery::PackageDiscovery;
-use extract::ImportExtractor;
-use graph::DependencyGraph;
-use tsconfig::TsConfig;
-use workspace::{Workspace, WorkspaceFormat};
+use jscycles::config;
+use jscycles::config::Config;
+use jscycles::cycles;
+use jscycles::discovery::PackageDiscovery;
+use jscycles::extract::ImportExtractor;
+use jscycles::graph::DependencyGraph;
+use jscycles::import;
+use jscycles::tsconfig;
+use jscycles::tsconfig::TsConfig;
+use jscycles::workspace::{Workspace, WorkspaceFormat};
 
 #[test]
 fn relative_package_roots_and_absolute_alias_configs_share_graph_nodes() {
@@ -369,7 +373,7 @@ fn test_fixture_tsconfig_complex_imports() {
 // Inter-package cycle detection tests
 // =============================================================================
 
-use graph::PackageDependencyGraph;
+use jscycles::graph::PackageDependencyGraph;
 
 /// Helper to detect inter-package cycles in a fixture.
 fn detect_inter_package_cycles(fixture_name: &str) -> Vec<String> {

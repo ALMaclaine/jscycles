@@ -7,11 +7,12 @@ use std::os::unix::fs as unix_fs;
 #[cfg(unix)]
 use std::process;
 
-use budget::{AnalysisBudget, AnalysisLimits, Resource};
-use extract::ExtractionMode;
-use extract::ImportExtractor;
-use graph::DependencyGraph;
-use import::{Import, ImportTarget};
+use jscycles::budget::{AnalysisBudget, AnalysisLimits, Resource};
+use jscycles::cycles;
+use jscycles::extract::ExtractionMode;
+use jscycles::extract::ImportExtractor;
+use jscycles::graph::DependencyGraph;
+use jscycles::import::{Import, ImportTarget};
 
 fn extractor() -> ImportExtractor<'static> {
     ImportExtractor::new(vec!["ts".to_owned(), "tsx".to_owned()], None)

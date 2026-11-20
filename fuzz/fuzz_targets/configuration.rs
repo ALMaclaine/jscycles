@@ -7,6 +7,6 @@ fuzz_target!(|bytes: &[u8]| {
         return;
     }
     if let Ok(text) = std::str::from_utf8(bytes) {
-        let _result = config::Config::parse(text);
+        let _result = jscycles::config::Config::parse(text);
     }
 });
